@@ -1,0 +1,717 @@
+{
+  "title": "Practical Generative and Agentic AI for Developers",
+  "audience": "beginner to intermediate software developers",
+  "tone": "clear, practical, project-based",
+  "depth": "intermediate",
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Foundations of Generative and Agentic AI",
+      "chapter_goal": "Introduce core concepts, terminology, and differences between generative AI (content creation) and agentic AI (autonomous task execution) to build a conceptual baseline.",
+      "sections": [
+        {
+          "title": "What is Generative AI? Definitions and Core Principles",
+          "goal": "Explain the fundamental idea of generative AI, its purpose, and the primary techniques that enable content creation.",
+          "key_questions": [
+            "What does \"generative\" mean in the AI context?",
+            "Which types of content can generative models produce?",
+            "What are the most common generative model families (e.g., GANs, VAEs, diffusion, LLMs)?",
+            "How does training data influence generated output?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Understanding Agentic AI: Autonomous Decision-Making Explained",
+          "goal": "Define agentic AI, describe how agents perceive, plan, and act, and outline typical architectures used for autonomous tasks.",
+          "key_questions": [
+            "What distinguishes an AI agent from a static model?",
+            "What are the core components of an autonomous agent (perception, reasoning, actuation)?",
+            "Which algorithms (e.g., reinforcement learning, planning) power agentic behavior?",
+            "How do agents interact with external environments or APIs?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Key Differences: Content Creation vs Task Execution",
+          "goal": "Contrast generative and agentic AI across objectives, workflows, evaluation metrics, and typical use‑cases to clarify their distinct roles.",
+          "key_questions": [
+            "In what ways do goals of generative and agentic systems diverge?",
+            "How do training pipelines differ between content generators and task agents?",
+            "What metrics are appropriate for assessing generated content versus agent performance?",
+            "Which real‑world scenarios favor one approach over the other?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Fundamental Building Blocks: Data, Models, and Python Tools",
+          "goal": "Introduce the essential resources—datasets, model architectures, and Python libraries—that underpin both generative and agentic projects.",
+          "key_questions": [
+            "What types of data are required for generative versus agentic AI?",
+            "Which open‑source model families are most accessible for beginners?",
+            "What Python packages (e.g., PyTorch, Transformers, LangChain) support rapid prototyping?",
+            "How do versioning and reproducibility affect project success?"
+          ],
+          "estimated_words": 640
+        },
+        {
+          "title": "Real-World Context: Why Generative and Agentic AI Matter in 2026",
+          "goal": "Provide a forward‑looking perspective on industry trends, emerging applications, and the strategic importance of mastering both paradigms today.",
+          "key_questions": [
+            "What sectors are adopting generative AI at scale in 2026?",
+            "How are agentic systems reshaping automation and decision‑making?",
+            "What skill gaps do employers seek to fill in the next few years?",
+            "How can developers position themselves for future AI opportunities?"
+          ],
+          "estimated_words": 590
+        }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Python Essentials for AI Projects",
+      "chapter_goal": "Equip readers with the Python skills, libraries, and environment setup needed for AI development, including virtual environments, NumPy, pandas, and basic scripting.",
+      "sections": [
+        {
+          "title": "Setting Up a Reliable Python Development Environment",
+          "goal": "Guide readers through installing Python, choosing an IDE, and creating isolated virtual environments with pip and conda to ensure reproducible AI projects.",
+          "key_questions": [
+            "Which Python distribution should I install for AI work?",
+            "How do I create and manage virtual environments?",
+            "What IDE or editor features best support AI development?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Core Python Syntax and Practices for AI Coding",
+          "goal": "Introduce essential Python language constructs—variables, data types, control flow, functions, and basic OOP—tailored to the needs of AI scripts.",
+          "key_questions": [
+            "What are the most common Python data structures used in AI?",
+            "How do I write clean, reusable functions for model pipelines?",
+            "When should I use classes versus simple functions in AI projects?"
+          ],
+          "estimated_words": 720
+        },
+        {
+          "title": "Numerical Computing with NumPy",
+          "goal": "Teach readers how to use NumPy for efficient array operations, broadcasting, and linear algebra, forming the computational backbone of most AI models.",
+          "key_questions": [
+            "How do NumPy arrays differ from Python lists?",
+            "What are the key NumPy functions for vectorized calculations?",
+            "How can I perform matrix multiplication and other linear algebra tasks with NumPy?"
+          ],
+          "estimated_words": 680
+        },
+        {
+          "title": "Data Manipulation and Analysis Using pandas",
+          "goal": "Enable readers to load, clean, transform, and explore tabular data with pandas, preparing datasets for training and evaluation.",
+          "key_questions": [
+            "How do I read data from CSV, JSON, and SQL sources into pandas?",
+            "What techniques help clean missing or inconsistent values?",
+            "How can I perform feature engineering using pandas operations?"
+          ],
+          "estimated_words": 710
+        },
+        {
+          "title": "Putting It All Together: Writing and Running a Simple AI Script",
+          "goal": "Walk readers through building a minimal end‑to‑end AI script that loads data with pandas, processes it with NumPy, and makes a basic prediction using a scikit‑learn model, reinforcing the earlier concepts.",
+          "key_questions": [
+            "How do I structure a Python script for an AI workflow?",
+            "What are the steps to train and evaluate a simple model programmatically?",
+            "How can I package the script for easy execution within a virtual environment?"
+          ],
+          "estimated_words": 750
+        }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Fundamentals of Machine Learning and Deep Learning",
+      "chapter_goal": "Explain supervised, unsupervised, and deep learning basics, covering neural networks, training loops, and evaluation metrics relevant to generative and agentic models.",
+      "sections": [
+        {
+          "title": "Supervised Learning Foundations for Generative & Agentic AI",
+          "goal": "Introduce the core concepts of supervised learning, data labeling, and common algorithms, and show how they underpin many generative and agentic applications.",
+          "key_questions": [
+            "What is supervised learning and how does it differ from other learning paradigms?",
+            "Which supervised algorithms are most useful for building generative or agentic systems?",
+            "How do training data quality and labeling affect model performance in practice?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Unsupervised Learning Techniques and Their Role in Model Pretraining",
+          "goal": "Explain unsupervised methods such as clustering and representation learning, emphasizing their importance for pretraining large generative models and autonomous agents.",
+          "key_questions": [
+            "What unsupervised learning approaches are commonly used before supervised fine‑tuning?",
+            "How do clustering and dimensionality reduction help in understanding data for generative tasks?",
+            "What are the practical steps to create and evaluate unsupervised pretraining pipelines?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Neural Network Basics: Architecture and Activation Functions",
+          "goal": "Provide a concrete understanding of neural network building blocks, layer types, and activation functions that form the backbone of modern generative and agentic models.",
+          "key_questions": [
+            "What are the essential components of a neural network (layers, weights, biases)?",
+            "How do different activation functions impact model expressiveness and training stability?",
+            "When should you choose feed‑forward, convolutional, or recurrent architectures for a given project?"
+          ],
+          "estimated_words": 660
+        },
+        {
+          "title": "Training Loops: Optimization, Loss Functions, and Regularization",
+          "goal": "Detail the mechanics of training loops, covering gradient descent variants, loss design for generation and agency, and techniques to prevent overfitting.",
+          "key_questions": [
+            "What are the steps of a typical training loop for deep models?",
+            "Which loss functions are appropriate for text generation, image synthesis, or decision‑making agents?",
+            "How do regularization methods like dropout, weight decay, and early stopping improve model robustness?"
+          ],
+          "estimated_words": 710
+        },
+        {
+          "title": "Evaluation Metrics for Generative and Agentic Models",
+          "goal": "Introduce quantitative and qualitative metrics that assess the performance of generative content and autonomous agents, linking evaluation to real‑world usefulness.",
+          "key_questions": [
+            "What metrics (e.g., BLEU, FID, RL reward) are standard for evaluating generative outputs?",
+            "How can you measure task success, safety, and alignment for agentic AI?",
+            "What practical evaluation pipelines can be integrated into continuous deployment workflows?"
+          ],
+          "estimated_words": 540
+        }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "Getting Started with Large Language Models (LLMs)",
+      "chapter_goal": "Demonstrate how to access and use pre‑trained LLM APIs, understand prompts, and perform simple text generation tasks.",
+      "sections": [
+        {
+          "title": "Preparing Your Development Environment and API Access",
+          "goal": "Guide readers through installing Python, required libraries, obtaining an API key, and securely configuring credentials for LLM services.",
+          "key_questions": [
+            "Which Python packages are needed to call LLM APIs?",
+            "How do I obtain and store an API key safely?",
+            "What environment variables or config files should I set up?"
+          ],
+          "estimated_words": 400
+        },
+        {
+          "title": "Fundamentals of Large Language Models and Prompt Design",
+          "goal": "Explain the core concepts behind LLMs and introduce basic prompt‑engineering techniques that influence generated text.",
+          "key_questions": [
+            "What is a large language model and how does it generate text?",
+            "How does the wording of a prompt affect the output?",
+            "What are simple best‑practice patterns for effective prompts?"
+          ],
+          "estimated_words": 500
+        },
+        {
+          "title": "Making Your First Text Generation Request",
+          "goal": "Walk through writing Python code that sends a prompt to a pre‑trained LLM API and displays the generated response.",
+          "key_questions": [
+            "How do I construct a minimal API request to an LLM service?",
+            "Which request parameters are mandatory for text generation?",
+            "How do I extract and present the generated text from the API response?"
+          ],
+          "estimated_words": 450
+        },
+        {
+          "title": "Tuning Generation Parameters for Desired Output",
+          "goal": "Introduce key generation controls such as temperature, max tokens, top‑p, and stop sequences, and show how to adjust them for different results.",
+          "key_questions": [
+            "What does the temperature setting control?",
+            "How can I limit the length of generated text?",
+            "When and how should I use stop sequences or top‑p sampling?"
+          ],
+          "estimated_words": 500
+        },
+        {
+          "title": "Creating a Simple Interactive Chatbot with an LLM",
+          "goal": "Combine environment setup, prompt design, and API calls into a loop that lets users converse with the LLM, demonstrating basic state handling.",
+          "key_questions": [
+            "How can I maintain conversational context across turns?",
+            "What code structure supports a responsive chat loop?",
+            "How can I run the chatbot locally and test different prompts?"
+          ],
+          "estimated_words": 600
+        }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Project 1 – Building a Conversational Chatbot",
+      "chapter_goal": "Guide readers through creating, fine‑tuning, and deploying a basic chatbot using an LLM, covering prompt engineering and basic state management.",
+      "sections": [
+        {
+          "title": "Setting Up the Python Environment and Required Libraries",
+          "goal": "Prepare a reproducible development setup, install Python, virtual environments, and essential AI libraries needed for LLM interaction.",
+          "key_questions": [
+            "Which Python version and packages are required for LLM APIs?",
+            "How do I create and manage a virtual environment for this project?",
+            "What tools are needed for version control and dependency tracking?"
+          ],
+          "estimated_words": 450
+        },
+        {
+          "title": "Fundamentals of LLM Prompt Engineering for Chatbots",
+          "goal": "Explain how prompts shape LLM responses and teach practical techniques to craft effective conversational prompts.",
+          "key_questions": [
+            "What is prompt engineering and why does it matter for chatbots?",
+            "How can I design prompts that guide the model toward desired behavior?",
+            "What are common pitfalls and how can they be mitigated?"
+          ],
+          "estimated_words": 600
+        },
+        {
+          "title": "Implementing Basic Conversation Flow and State Management",
+          "goal": "Build a simple chatbot loop, introduce session handling, and demonstrate how to maintain context across turns.",
+          "key_questions": [
+            "How do I structure a request‑response loop with an LLM?",
+            "What techniques allow the bot to remember prior user inputs?",
+            "When should I reset or truncate conversation history?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Fine‑Tuning the LLM on Custom Dialogue Data",
+          "goal": "Show how to collect, format, and use a small dialogue dataset to fine‑tune the base model for more domain‑specific responses.",
+          "key_questions": [
+            "What data format does the fine‑tuning API expect?",
+            "How many examples are sufficient for a noticeable improvement?",
+            "What hyperparameters should I adjust for a quick fine‑tune?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Deploying the Chatbot with FastAPI and Docker",
+          "goal": "Guide readers through wrapping the chatbot in a FastAPI service, containerizing it with Docker, and deploying to a cloud platform.",
+          "key_questions": [
+            "How do I expose the chatbot logic as a REST endpoint?",
+            "What Dockerfile configuration is needed for the Python app?",
+            "Which cloud service offers the simplest path for a small AI service?"
+          ],
+          "estimated_words": 800
+        }
+      ]
+    },
+    {
+      "chapter_number": 6,
+      "title": "Introduction to Generative Vision Models",
+      "chapter_goal": "Cover concepts behind image generation models (e.g., diffusion, GANs) and how to use hosted APIs for creating visual content.",
+      "sections": [
+        {
+          "title": "Fundamentals of Generative Vision: From Pixels to Models",
+          "goal": "Establish the basic terminology and mathematical foundations that underlie image generation, preparing readers for deeper model-specific study.",
+          "key_questions": [
+            "What is a generative model and how does it differ from discriminative models?",
+            "Which core concepts (latent space, loss functions, sampling) are essential for vision generation?",
+            "How do probability distributions relate to image synthesis?"
+          ],
+          "estimated_words": 550
+        },
+        {
+          "title": "Generative Adversarial Networks (GANs) for Image Synthesis",
+          "goal": "Explain the architecture, training dynamics, and practical considerations of GANs, enabling readers to grasp how realistic images are produced.",
+          "key_questions": [
+            "What are the roles of the generator and discriminator in a GAN?",
+            "How does adversarial training converge, and what are common failure modes?",
+            "Which popular GAN variants (DCGAN, StyleGAN) are most relevant for beginners?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Diffusion Models: Iterative Denoising for High‑Quality Images",
+          "goal": "Introduce diffusion models, describe their forward‑and‑reverse processes, and highlight why they have become state‑of‑the‑art for image generation.",
+          "key_questions": [
+            "What is the diffusion (noise‑adding) process and how is it mathematically defined?",
+            "How does the reverse denoising process generate images from random noise?",
+            "What advantages do diffusion models offer over GANs in terms of stability and diversity?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Choosing Between GANs and Diffusion Models",
+          "goal": "Provide a comparative framework so readers can decide which model type fits their project constraints and quality requirements.",
+          "key_questions": [
+            "When is a GAN preferable for speed or resource constraints?",
+            "When do diffusion models excel in fidelity and controllability?",
+            "What hybrid or emerging approaches combine strengths of both?"
+          ],
+          "estimated_words": 450
+        },
+        {
+          "title": "Getting Started with Hosted Vision APIs (e.g., DALL·E, Stable Diffusion)",
+          "goal": "Guide readers through authentication, request construction, and response handling for major commercial image‑generation APIs.",
+          "key_questions": [
+            "How do you obtain API keys and set up secure access?",
+            "What request parameters control image size, style, and prompt specificity?",
+            "How are generated images returned (URLs, base64) and what post‑processing steps are typical?"
+          ],
+          "estimated_words": 600
+        },
+        {
+          "title": "Building a Simple Python App that Generates and Displays Images via an API",
+          "goal": "Walk through a complete, end‑to‑end project that integrates a hosted vision API, processes the output, and serves it through a minimal web interface.",
+          "key_questions": [
+            "How do you structure a Python project to call the API and handle errors?",
+            "What libraries (requests, Flask, Pillow) are needed for image handling and web serving?",
+            "How can the app be deployed locally or to a cloud platform for real‑world use?"
+          ],
+          "estimated_words": 750
+        }
+      ]
+    },
+    {
+      "chapter_number": 7,
+      "title": "Project 2 – Image Generation Service",
+      "chapter_goal": "Walk through building a web‑based image generation tool, integrating a vision model API, handling user inputs, and storing results.",
+      "sections": [
+        {
+          "title": "Set Up the Python Environment and Project Scaffold",
+          "goal": "Prepare a clean development environment, install required libraries, and create the basic project structure for a Flask/FastAPI web app.",
+          "key_questions": [
+            "Which Python version and virtual environment tool should be used?",
+            "What core dependencies are needed for web handling and API calls?",
+            "How should the project directories be organized for code, templates, and static assets?"
+          ],
+          "estimated_words": 500
+        },
+        {
+          "title": "Design the User Interface for Prompt Input and Image Display",
+          "goal": "Build a simple, responsive web page that lets users submit text prompts and view generated images.",
+          "key_questions": [
+            "What HTML form elements capture the user's text prompt?",
+            "How can CSS and minimal JavaScript provide instant feedback and image rendering?",
+            "How will the front‑end communicate with the back‑end endpoint securely?"
+          ],
+          "estimated_words": 600
+        },
+        {
+          "title": "Integrate a Generative Vision Model API",
+          "goal": "Connect the web app to a cloud‑based image generation service (e.g., DALL·E, Stable Diffusion) and handle request/response cycles.",
+          "key_questions": [
+            "Which API endpoint and authentication method are required?",
+            "How should the prompt be formatted and sent to the model?",
+            "What error‑handling strategies ensure graceful degradation when the API fails?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Store Generated Images and Metadata Persistently",
+          "goal": "Implement a reliable storage solution for generated images and their associated prompts, enabling later retrieval and analysis.",
+          "key_questions": [
+            "Should images be saved locally or uploaded to cloud storage (e.g., S3)?",
+            "How to generate unique filenames and maintain a reference database?",
+            "What metadata (prompt, timestamp, user ID) should be recorded and how?"
+          ],
+          "estimated_words": 550
+        },
+        {
+          "title": "Deploy the Image Generation Service to a Cloud Platform",
+          "goal": "Package the application with Docker, configure environment variables, and launch it on a cloud service (e.g., Heroku, Render, AWS Elastic Beanstalk).",
+          "key_questions": [
+            "What Dockerfile instructions are needed for a production‑ready image?",
+            "How to manage secret API keys in the deployment environment?",
+            "What basic monitoring or logging should be set up to track usage and errors?"
+          ],
+          "estimated_words": 650
+        }
+      ]
+    },
+    {
+      "chapter_number": 8,
+      "title": "Agentic AI Principles and Tool Use",
+      "chapter_goal": "Explain autonomous agents, tool‑use frameworks, and planning loops that enable AI to act on external environments.",
+      "sections": [
+        {
+          "title": "Foundations of Autonomous Agents",
+          "goal": "Introduce the core concepts of agentic AI, including autonomy, perception‑action cycles, and the distinction between reactive and deliberative agents.",
+          "key_questions": [
+            "What defines an autonomous AI agent?",
+            "How does the perception‑action loop enable interaction with external environments?",
+            "What are the trade‑offs between reactive and deliberative agent designs?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Tool‑Use Frameworks for Agents",
+          "goal": "Explain how agents can invoke external tools and APIs, covering function calling, retrieval‑augmented generation, and common integration patterns.",
+          "key_questions": [
+            "How can an LLM safely call external functions or APIs?",
+            "What role does retrieval‑augmented generation play in tool use?",
+            "Which integration patterns are most effective for beginner projects?"
+          ],
+          "estimated_words": 720
+        },
+        {
+          "title": "Planning Loops and Decision Strategies",
+          "goal": "Describe planning architectures such as ReAct, Tree of Thoughts, and hierarchical task decomposition that guide agents toward goal‑directed behavior.",
+          "key_questions": [
+            "What is the ReAct loop and how does it combine reasoning with acting?",
+            "How does Tree of Thoughts improve multi‑step problem solving?",
+            "When should hierarchical planning be introduced in a project?"
+          ],
+          "estimated_words": 800
+        },
+        {
+          "title": "Building a Simple Autonomous Agent: Web‑Search and Summarization",
+          "goal": "Walk through a concrete project that combines tool use and planning loops to create an agent that searches the web, extracts content, and generates summaries.",
+          "key_questions": [
+            "What components are needed to assemble a web‑search agent?",
+            "How does the agent decide when to invoke the search tool versus the summarizer?",
+            "What minimal code structure supports iterative planning and execution?"
+          ],
+          "estimated_words": 950
+        },
+        {
+          "title": "Deploying, Monitoring, and Safeguarding Agents",
+          "goal": "Provide practical guidance on packaging agents for production, setting up monitoring, and implementing safety checks to prevent undesirable actions.",
+          "key_questions": [
+            "What are best practices for containerizing an autonomous agent?",
+            "How can runtime monitoring detect and mitigate harmful behavior?",
+            "Which logging and feedback mechanisms help iterate on agent performance?"
+          ],
+          "estimated_words": 700
+        }
+      ]
+    },
+    {
+      "chapter_number": 9,
+      "title": "Project 3 – Task‑Oriented Agentic Assistant",
+      "chapter_goal": "Create an AI agent that can retrieve information, schedule tasks, and interact with external APIs, illustrating end‑to‑end autonomy.",
+      "sections": [
+        {
+          "title": "Define the Agentic Assistant Architecture",
+          "goal": "Introduce the overall system design, outlining the LLM core, retrieval module, task scheduler, and external API connectors so readers grasp how components collaborate to achieve autonomy.",
+          "key_questions": [
+            "What are the essential components of a task‑oriented agentic assistant?",
+            "How do the retrieval, scheduling, and API modules communicate with the language model?",
+            "What data flows and control signals are needed for end‑to‑end operation?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Set Up the Python Environment and Core Libraries",
+          "goal": "Guide readers through installing Python, virtual environments, and the specific libraries (e.g., LangChain, OpenAI SDK, vector store client) required to build the assistant, ensuring a reproducible development setup.",
+          "key_questions": [
+            "Which Python version and packages are required?",
+            "How do I configure API keys securely for LLM and external services?",
+            "What tooling supports debugging and iterative development of the agent?"
+          ],
+          "estimated_words": 440
+        },
+        {
+          "title": "Implement Information Retrieval with Vector Stores",
+          "goal": "Teach how to embed documents, store them in a vector database, and query relevant information at runtime, enabling the assistant to fetch contextually appropriate data.",
+          "key_questions": [
+            "How are text embeddings generated for retrieval?",
+            "What vector store options are suitable for a project of this scale?",
+            "How does the retrieval step integrate with the LLM prompt?"
+          ],
+          "estimated_words": 720
+        },
+        {
+          "title": "Build Task Scheduling and Calendar Integration",
+          "goal": "Show how to connect the assistant to a calendar service (e.g., Google Calendar), create, update, and query events, allowing the agent to manage user schedules autonomously.",
+          "key_questions": [
+            "What authentication flow is needed for calendar APIs?",
+            "How does the assistant translate natural‑language requests into calendar actions?",
+            "How are conflicts and confirmations handled programmatically?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Connect to External APIs and Orchestrate Actions",
+          "goal": "Demonstrate wrapping external services (weather, news, ticketing) as callable tools, using function calling or tool use patterns so the agent can perform real‑world tasks.",
+          "key_questions": [
+            "How are API wrappers defined and exposed to the LLM?",
+            "What error‑handling strategies keep the agent robust?",
+            "How does the agent decide which tool to invoke for a given user intent?"
+          ],
+          "estimated_words": 730
+        },
+        {
+          "title": "Test, Deploy, and Monitor the Autonomous Assistant",
+          "goal": "Provide a workflow for end‑to‑end testing, containerization, cloud deployment, and basic monitoring to ensure the assistant operates reliably in production.",
+          "key_questions": [
+            "What test cases validate retrieval, scheduling, and API interactions?",
+            "How can the assistant be packaged with Docker for scalable deployment?",
+            "Which metrics and logs are essential for ongoing monitoring?"
+          ],
+          "estimated_words": 790
+        }
+      ]
+    },
+    {
+      "chapter_number": 10,
+      "title": "Project 4 – Recommendation Engine with Generative Feedback",
+      "chapter_goal": "Combine collaborative filtering with generative explanations to build a recommendation system that suggests items and generates natural‑language rationales.",
+      "sections": [
+        {
+          "title": "Foundations of Collaborative Filtering for Recommendations",
+          "goal": "Introduce the core concepts, data structures, and similarity metrics behind collaborative filtering so readers can grasp how item‑based and user‑based recommendations are computed.",
+          "key_questions": [
+            "What are the main types of collaborative filtering and when are they appropriate?",
+            "How are similarity scores between users or items calculated?",
+            "What data preprocessing steps are required for effective collaborative filtering?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Preparing the Recommendation Dataset and Evaluation Pipeline",
+          "goal": "Guide developers through loading, cleaning, and splitting a real‑world dataset, and setting up metrics (e.g., precision@k, recall) to evaluate recommendation quality.",
+          "key_questions": [
+            "Which public datasets are suitable for a recommendation project?",
+            "How should missing values and implicit feedback be handled?",
+            "What evaluation metrics best reflect recommendation performance?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Implementing a Collaborative Filtering Model in Python",
+          "goal": "Walk through building a user‑item matrix, applying matrix factorization (e.g., SVD) with a Python library, and generating top‑N item suggestions for a given user.",
+          "key_questions": [
+            "How is a sparse user‑item matrix constructed efficiently?",
+            "What are the steps to train a matrix factorization model using Surprise or implicit?",
+            "How are recommendation lists extracted from the trained model?"
+          ],
+          "estimated_words": 710
+        },
+        {
+          "title": "Generating Natural‑Language Rationales with a Generative Model",
+          "goal": "Show how to connect a fine‑tuned language model (e.g., GPT‑3.5) to the recommendation engine to produce concise explanations for each suggested item.",
+          "key_questions": [
+            "What prompt design yields relevant and accurate recommendation explanations?",
+            "How can item metadata be incorporated into the generative prompt?",
+            "How to handle token limits and ensure consistent response formatting?"
+          ],
+          "estimated_words": 660
+        },
+        {
+          "title": "Deploying the Integrated Recommendation Service",
+          "goal": "Teach readers to wrap the collaborative filtering and generative components into a FastAPI service, containerize it with Docker, and expose endpoints for real‑time recommendations and explanations.",
+          "key_questions": [
+            "How should the API routes be structured for recommendation and explanation calls?",
+            "What are best practices for model loading, caching, and scaling in a production setting?",
+            "How to test and monitor the deployed service using Docker and simple health checks?"
+          ],
+          "estimated_words": 590
+        }
+      ]
+    },
+    {
+      "chapter_number": 11,
+      "title": "Deployment, Monitoring, and Scaling",
+      "chapter_goal": "Teach practical deployment strategies (Docker, cloud services), monitoring model performance, handling latency, and scaling generative/agentic services.",
+      "sections": [
+        {
+          "title": "Containerizing Generative Models with Docker",
+          "goal": "Show how to package a generative or agentic model and its runtime dependencies into a reproducible Docker image for consistent deployment.",
+          "key_questions": [
+            "What files and environment settings are required to run the model locally?",
+            "How do you write an efficient Dockerfile for Python AI projects?",
+            "How can you test the container before pushing it to a registry?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Deploying to Cloud Platforms (AWS, GCP, Azure)",
+          "goal": "Guide readers through selecting a cloud service, configuring infrastructure-as-code, and launching the Dockerized model as a managed service.",
+          "key_questions": [
+            "Which cloud compute option (ECS, Cloud Run, Azure Container Apps) best fits a generative API?",
+            "How do you set up CI/CD pipelines to automate deployment?",
+            "What security and networking considerations are essential for AI services?"
+          ],
+          "estimated_words": 720
+        },
+        {
+          "title": "Monitoring Model Performance and Data Drift",
+          "goal": "Introduce tools and metrics for tracking inference quality, latency, and data distribution changes after deployment.",
+          "key_questions": [
+            "What key performance indicators (KPIs) should be logged for generative and agentic models?",
+            "How can you detect data drift in real time?",
+            "Which monitoring services (Prometheus, CloudWatch, Grafana) integrate easily with deployed containers?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Managing Latency and Real‑time Inference",
+          "goal": "Teach techniques to measure, optimize, and guarantee low‑latency responses for interactive AI applications.",
+          "key_questions": [
+            "How do you benchmark inference latency across hardware and batch sizes?",
+            "What role do model quantization and caching play in latency reduction?",
+            "How can you implement request throttling and timeout handling in an API?"
+          ],
+          "estimated_words": 540
+        },
+        {
+          "title": "Scaling Strategies for Agentic Services",
+          "goal": "Explain auto‑scaling, load balancing, and state management approaches to handle variable traffic and multi‑agent coordination.",
+          "key_questions": [
+            "When should you use horizontal pod autoscaling versus serverless scaling?",
+            "How do you maintain session state for long‑running agents?",
+            "What patterns help distribute work across multiple instances without conflict?"
+          ],
+          "estimated_words": 690
+        }
+      ]
+    },
+    {
+      "chapter_number": 12,
+      "title": "Ethics, Safety, and the Future of AI (2026 Outlook)",
+      "chapter_goal": "Discuss responsible AI practices, bias mitigation, security, and emerging trends expected by 2026, preparing readers for ongoing learning.",
+      "sections": [
+        {
+          "title": "Foundations of AI Ethics and Responsibility",
+          "goal": "Introduce core ethical principles, why they matter for generative and agentic AI, and set a mindset for responsible development.",
+          "key_questions": [
+            "What are the fundamental ethical principles relevant to AI systems?",
+            "Why is responsible AI especially critical for generative and agentic models?",
+            "How can developers embed ethical thinking early in the project lifecycle?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Detecting and Mitigating Bias in Generative and Agentic Models",
+          "goal": "Provide practical techniques for identifying bias in data and model outputs, and outline mitigation strategies suitable for developers.",
+          "key_questions": [
+            "What types of bias commonly appear in generative and agentic AI?",
+            "Which tools and metrics can be used to detect bias during development?",
+            "What concrete steps can developers take to reduce bias before deployment?"
+          ],
+          "estimated_words": 680
+        },
+        {
+          "title": "Security and Safety Practices for Deploying AI Agents",
+          "goal": "Explain the main security threats to AI systems and present best‑practice safeguards for safe deployment and operation.",
+          "key_questions": [
+            "What are the primary security risks associated with AI agents and generative models?",
+            "How can threat modeling be applied to AI deployments?",
+            "What safeguards (e.g., sandboxing, monitoring, access controls) help ensure safe operation?"
+          ],
+          "estimated_words": 590
+        },
+        {
+          "title": "Emerging Ethical Challenges and the 2026 Regulatory Landscape",
+          "goal": "Explore upcoming policy trends, standards, and societal concerns expected by 2026, and how developers can stay compliant.",
+          "key_questions": [
+            "Which regulatory initiatives are shaping AI governance by 2026?",
+            "How might new standards impact the design of generative and agentic systems?",
+            "What proactive measures can developers take to anticipate future compliance requirements?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Building a Continuous Responsible AI Practice",
+          "goal": "Guide readers on establishing ongoing monitoring, feedback loops, and learning processes to maintain ethical and safe AI over time.",
+          "key_questions": [
+            "What processes support continuous evaluation of AI ethics and safety post‑deployment?",
+            "How can feedback from users and stakeholders be integrated into model updates?",
+            "What resources and communities help developers stay current with evolving best practices?"
+          ],
+          "estimated_words": 560
+        }
+      ]
+    }
+  ]
+}
