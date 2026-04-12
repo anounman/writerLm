@@ -2,7 +2,7 @@ import re
 from collections import Counter
 from typing import Any
 
-from schemas import UserBookRequest, PlanningContext
+from planner_agent.schemas import PlanningContext, UserBookRequest
 
 
 class ScopeBuilder:

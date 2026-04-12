@@ -1,8 +1,8 @@
 from typing import Optional, TypedDict
 
-from schemas import UserBookRequest, PlanningContext, BookPlan
-from outline_schemas import ChapterOutlinePlan
-from section_schemas import ChapterSectionPlan
+from planner_agent.outline_schemas import ChapterOutlinePlan
+from planner_agent.schemas import BookPlan, PlanningContext, UserBookRequest
+from planner_agent.section_schemas import ChapterSectionPlan
 
 
 class PlannerState(TypedDict):

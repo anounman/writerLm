@@ -1,0 +1,801 @@
+{
+  "book_plan": {
+    "title": "Retrieval-Augmented Generation for Software Engineers",
+    "audience": "software engineers new to GenAI",
+    "tone": "practical and educational",
+    "depth": "intermediate",
+    "chapters": [
+      {
+        "chapter_number": 1,
+        "title": "Python Foundations for AI Development",
+        "chapter_goal": "Equip readers with the essential Python skills, libraries, and environment setup needed to build and experiment with generative AI systems.",
+        "sections": [
+          {
+            "title": "Setting Up a Reproducible Python Development Environment",
+            "goal": "Guide readers through installing Python, creating virtual environments, selecting an IDE, and managing dependencies so they can start AI projects with confidence.",
+            "key_questions": [
+              "Which Python version and tools are recommended for AI development?",
+              "How do I create and activate a virtual environment?",
+              "What IDE or editor features best support AI coding workflows?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Fundamental Python Syntax and Programming Concepts for AI",
+            "goal": "Introduce the core language constructs—variables, data structures, control flow, functions, and basic OOP—that are repeatedly used when building generative AI pipelines.",
+            "key_questions": [
+              "What Python data types are most useful for handling model inputs and outputs?",
+              "How can functions and modules be organized for reusable AI code?",
+              "When should I apply classes versus simple functions in AI projects?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Data Manipulation with NumPy and pandas",
+            "goal": "Teach practical techniques for loading, cleaning, and transforming data using NumPy arrays and pandas DataFrames, preparing datasets for embedding and retrieval tasks.",
+            "key_questions": [
+              "How do I efficiently load large text or CSV datasets?",
+              "What are common pandas operations for preprocessing text data?",
+              "When should I prefer NumPy over pandas for numerical preprocessing?"
+            ],
+            "estimated_words": 680
+          },
+          {
+            "title": "Getting Started with AI Libraries: PyTorch, TensorFlow, and Hugging Face Transformers",
+            "goal": "Provide step‑by‑step installation and a minimal “hello world” example for each major library, showing how to load a pretrained language model and generate text.",
+            "key_questions": [
+              "What are the differences between PyTorch and TensorFlow for generative tasks?",
+              "How do I install and verify the Hugging Face Transformers library?",
+              "What code is needed to generate a short response from a pretrained model?"
+            ],
+            "estimated_words": 720
+          },
+          {
+            "title": "Version Control, Dependency Management, and Reproducibility",
+            "goal": "Explain best practices for using Git, documenting dependencies, and creating reproducible experiment snapshots to ensure collaborative and maintainable AI development.",
+            "key_questions": [
+              "How should I structure a Git repository for an AI project?",
+              "What is the role of requirements.txt, Pipfile, or poetry.lock in reproducibility?",
+              "How can I capture the exact library versions used to train a model?"
+            ],
+            "estimated_words": 460
+          }
+        ]
+      },
+      {
+        "chapter_number": 2,
+        "title": "Large Language Models: Basics and Capabilities",
+        "chapter_goal": "Introduce the architecture, training principles, and practical usage of large language models, establishing a foundation for later augmentation.",
+        "sections": [
+          {
+            "title": "What Are Large Language Models? Definitions and Core Concepts",
+            "goal": "Provide a clear, beginner-friendly definition of LLMs, explain why they matter, and outline the key concepts such as tokens, context windows, and generative vs. discriminative models.",
+            "key_questions": [
+              "What distinguishes a large language model from smaller or traditional NLP models?",
+              "How do tokens and context windows affect model behavior?",
+              "Why are LLMs central to retrieval-augmented generation?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Transformer Architecture: Building Blocks of LLMs",
+            "goal": "Explain the transformer architecture that underpins modern LLMs, covering attention mechanisms, encoder‑decoder roles, and scaling considerations.",
+            "key_questions": [
+              "What is self‑attention and how does it enable context awareness?",
+              "How do multi‑head attention and positional encoding work together?",
+              "What architectural variations (decoder‑only, encoder‑decoder) are common in LLMs?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Training LLMs: Data, Objectives, and Scaling",
+            "goal": "Describe the data pipelines, loss functions, and scaling laws used to train LLMs, highlighting practical trade‑offs for engineers.",
+            "key_questions": [
+              "What types of data are used to pre‑train LLMs and why?",
+              "How do next‑token prediction and masked language modeling differ?",
+              "What impact do model size, compute, and dataset volume have on performance?"
+            ],
+            "estimated_words": 680
+          },
+          {
+            "title": "Inference and Prompt Engineering for Practical Use",
+            "goal": "Teach how to interact with trained LLMs, covering inference APIs, temperature/beam settings, and effective prompt design for reliable outputs.",
+            "key_questions": [
+              "What are the key parameters that control generation quality and diversity?",
+              "How can prompts be structured to steer model behavior?",
+              "What best practices ensure consistent, reproducible results in production?"
+            ],
+            "estimated_words": 590
+          },
+          {
+            "title": "Evaluating LLM Capabilities: Strengths, Limitations, and Safety",
+            "goal": "Introduce methods for assessing LLM performance, discuss common failure modes, and outline safety considerations relevant to downstream RAG systems.",
+            "key_questions": [
+              "Which benchmarks best measure factual accuracy, reasoning, and creativity?",
+              "What are typical hallucination patterns and how can they be detected?",
+              "How should engineers address bias, toxicity, and other safety concerns?"
+            ],
+            "estimated_words": 560
+          }
+        ]
+      },
+      {
+        "chapter_number": 3,
+        "title": "Embeddings and Vector Spaces",
+        "chapter_goal": "Explain how text is transformed into dense vector embeddings, why vector similarity matters, and how embeddings power retrieval.",
+        "sections": [
+          {
+            "title": "What Are Text Embeddings? Concepts and Types",
+            "goal": "Introduce the notion of dense vector embeddings, differentiate static and contextual embeddings, and explain why they are useful for representing text.",
+            "key_questions": [
+              "What is a vector embedding and how does it differ from a one‑hot representation?",
+              "What are the main categories of embeddings (static vs. contextual)?",
+              "Why do dense vectors capture semantic meaning more effectively?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Embedding Models: From Word2Vec to Sentence Transformers",
+            "goal": "Describe the most common models that generate embeddings, their training objectives, and how they produce vectors for sentences or documents.",
+            "key_questions": [
+              "How do Word2Vec and GloVe create word‑level embeddings?",
+              "What changes when moving to transformer‑based models like BERT?",
+              "How do sentence‑level models (e.g., SBERT) produce embeddings suitable for retrieval?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Vector Spaces and Similarity Metrics",
+            "goal": "Explain the geometry of embedding spaces and why similarity measures such as cosine similarity are central to retrieval.",
+            "key_questions": [
+              "What does it mean for vectors to be close in a high‑dimensional space?",
+              "How is cosine similarity calculated and why is it preferred over Euclidean distance for embeddings?",
+              "What thresholds or ranking strategies are typical in similarity‑based retrieval?"
+            ],
+            "estimated_words": 540
+          },
+          {
+            "title": "Indexing Embeddings for Efficient Search",
+            "goal": "Show how to store large collections of embeddings and build indexes (e.g., FAISS, Annoy) that enable fast nearest‑neighbor queries.",
+            "key_questions": [
+              "What are the challenges of searching over millions of vectors?",
+              "How do approximate nearest‑neighbor (ANN) algorithms work?",
+              "What practical steps are needed to create, update, and query an embedding index?"
+            ],
+            "estimated_words": 660
+          },
+          {
+            "title": "Embedding‑Driven Retrieval in Retrieval‑Augmented Generation",
+            "goal": "Connect embeddings to the RAG workflow, illustrating how similarity search retrieves relevant documents that condition LLM responses.",
+            "key_questions": [
+              "How does a similarity search retrieve the most relevant passages for a query?",
+              "In what ways do retrieved documents improve the factuality and relevance of LLM outputs?",
+              "What are common integration patterns for feeding retrieved text into a generation model?"
+            ],
+            "estimated_words": 720
+          }
+        ]
+      },
+      {
+        "chapter_number": 4,
+        "title": "Fundamentals of Information Retrieval",
+        "chapter_goal": "Cover core IR concepts such as indexing, similarity search, and relevance scoring to prepare readers for integrating retrieval with generation.",
+        "sections": [
+          {
+            "title": "What is Information Retrieval and Why It Matters for RAG",
+            "goal": "Define information retrieval, explain its purpose, and illustrate how it underpins retrieval‑augmented generation pipelines.",
+            "key_questions": [
+              "What is information retrieval and how is it defined?",
+              "How does IR differ from basic keyword lookup?",
+              "Why is IR a critical component in RAG systems?",
+              "What role does retrieval play in improving generated responses?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Building an Inverted Index: From Raw Text to Fast Lookup",
+            "goal": "Teach the construction of an inverted index, covering tokenization, term statistics, posting lists, and index storage for efficient lexical search.",
+            "key_questions": [
+              "How are documents tokenized and normalized for indexing?",
+              "What is an inverted index and how does it map terms to documents?",
+              "What are posting lists and how are they organized?",
+              "How does the inverted index enable rapid retrieval of matching documents?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Vector Representations and Similarity Search",
+            "goal": "Introduce dense text embeddings, similarity metrics, and approximate nearest‑neighbor structures that enable semantic retrieval.",
+            "key_questions": [
+              "How are textual passages transformed into vector embeddings?",
+              "Which distance or similarity measures are commonly used (e.g., cosine, Euclidean)?",
+              "What are approximate nearest‑neighbor (ANN) indexes and why are they needed?",
+              "How does vector similarity search retrieve semantically relevant documents?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Relevance Scoring and Ranking: From Scores to Ranked Results",
+            "goal": "Explain classic lexical scoring (TF‑IDF, BM25) and modern hybrid scoring, showing how to rank retrieved items by relevance.",
+            "key_questions": [
+              "How are relevance scores calculated using TF‑IDF and BM25?",
+              "What factors influence a document's ranking score?",
+              "How can lexical and semantic scores be combined for hybrid ranking?",
+              "What practical considerations affect the final ranked list presented to a generator?"
+            ],
+            "estimated_words": 600
+          }
+        ]
+      },
+      {
+        "chapter_number": 5,
+        "title": "Retrieval‑Augmented Generation: Core Concepts and Architecture",
+        "chapter_goal": "Define RAG, describe its three‑stage pipeline (retrieve, augment, generate), and discuss design trade‑offs.",
+        "sections": [
+          {
+            "title": "What is Retrieval‑Augmented Generation and Why It Matters",
+            "goal": "Introduce the definition of RAG, explain the motivation behind augmenting language models with external knowledge, and outline its advantages over plain generation.",
+            "key_questions": [
+              "What problem does RAG aim to solve?",
+              "How does RAG differ from standard LLM generation?",
+              "What are common scenarios where RAG provides clear benefits?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "The Retrieval Stage: Finding Relevant Documents",
+            "goal": "Explain how relevant information is located, covering document representation, embedding techniques, similarity search, and index structures.",
+            "key_questions": [
+              "How are documents transformed into searchable embeddings?",
+              "What retrieval methods (e.g., vector similarity, BM25) are available?",
+              "How do you choose and configure an index for efficient retrieval?",
+              "What metrics indicate good retrieval relevance?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Augmentation Strategies: Integrating Retrieved Context",
+            "goal": "Describe practical ways to incorporate retrieved passages into prompts, including chunking, ranking, and prompt template design.",
+            "key_questions": [
+              "What are effective formats for presenting retrieved text to the generator?",
+              "How should multiple documents be combined or prioritized?",
+              "What prompt engineering patterns help preserve relevance and reduce noise?"
+            ],
+            "estimated_words": 650
+          },
+          {
+            "title": "Generation Stage: Leveraging LLMs with Augmented Context",
+            "goal": "Detail how large language models consume the augmented prompt, covering generation parameters, token limits, and techniques to control output quality.",
+            "key_questions": [
+              "How does the LLM use the provided context during generation?",
+              "Which model parameters (temperature, top‑p, max tokens) most affect result fidelity?",
+              "What strategies reduce hallucinations when using external context?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Design Trade‑offs in RAG Systems",
+            "goal": "Analyze key trade‑offs such as latency vs relevance, cost, scalability, and data freshness, and provide guidance for balancing them in production.",
+            "key_questions": [
+              "What are the primary performance and cost trade‑offs in a RAG pipeline?",
+              "How can latency be minimized without sacrificing answer quality?",
+              "What monitoring and evaluation practices help maintain an optimal balance?"
+            ],
+            "estimated_words": 650
+          }
+        ]
+      },
+      {
+        "chapter_number": 6,
+        "title": "Building a Simple RAG Pipeline with Open‑Source Tools",
+        "chapter_goal": "Guide readers through a hands‑on implementation using popular libraries (e.g., LangChain, FAISS, Hugging Face) to create a functional RAG prototype.",
+        "sections": [
+          {
+            "title": "Setting Up the Development Environment and Installing Required Libraries",
+            "goal": "Equip readers with a clean Python environment and install all necessary open‑source packages so they can start building the RAG pipeline without configuration issues.",
+            "key_questions": [
+              "How do I create and activate a virtual environment for this project?",
+              "Which versions of Python and the libraries (LangChain, FAISS, Transformers, etc.) are compatible?",
+              "What commands are needed to install each library and verify the installation?"
+            ],
+            "estimated_words": 400
+          },
+          {
+            "title": "Preparing and Indexing a Document Corpus with FAISS",
+            "goal": "Teach readers how to collect, preprocess, chunk, and embed a set of documents, then build and persist a FAISS vector index for efficient similarity search.",
+            "key_questions": [
+              "How should I organize and load raw text documents for processing?",
+              "What chunking strategy balances context length and retrieval relevance?",
+              "How are embeddings generated for each chunk and stored in a FAISS index?",
+              "How do I save and later reload the FAISS index?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Loading an Open‑Source Embedding Model from Hugging Face",
+            "goal": "Demonstrate selecting and loading a suitable transformer model to produce high‑quality embeddings for both documents and user queries.",
+            "key_questions": [
+              "Which pre‑trained models are recommended for embedding generation?",
+              "How do I load the model and tokenizer efficiently in Python?",
+              "What steps convert a text query into the same embedding space as the indexed documents?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Integrating Retrieval and Generation with LangChain",
+            "goal": "Show how to wire the FAISS retriever and a language model together using LangChain’s RetrievalQA chain to produce context‑aware answers.",
+            "key_questions": [
+              "How do I configure LangChain to use the FAISS index as a retriever?",
+              "What prompts or templates should I use to guide the generation model?",
+              "How does the RetrievalQA chain combine retrieved chunks with the LLM to form a response?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Testing the End‑to‑End Pipeline and Troubleshooting Common Issues",
+            "goal": "Enable readers to run queries against their RAG system, evaluate answer relevance, and resolve typical problems such as dimension mismatches or token limits.",
+            "key_questions": [
+              "How do I submit a query and view the retrieved documents and generated answer?",
+              "What metrics or heuristics can I use to assess response quality?",
+              "What are common errors (e.g., embedding size mismatches, index loading failures) and how can they be fixed?"
+            ],
+            "estimated_words": 400
+          }
+        ]
+      },
+      {
+        "chapter_number": 7,
+        "title": "Document Indexing and Storage Strategies",
+        "chapter_goal": "Teach practical techniques for preparing, chunking, embedding, and storing large document collections for efficient retrieval.",
+        "sections": [
+          {
+            "title": "Preparing Documents: Cleaning and Normalization",
+            "goal": "Show how to preprocess raw text, handle diverse file formats, remove noise, and ensure consistent encoding before indexing.",
+            "key_questions": [
+              "What preprocessing steps are essential for different source formats?",
+              "How can I standardize encoding and remove irrelevant content?",
+              "What tools help automate document cleaning for large corpora?"
+            ],
+            "estimated_words": 400
+          },
+          {
+            "title": "Chunking Strategies for Effective Retrieval",
+            "goal": "Explain methods to split documents into optimal chunks, balancing size, overlap, and semantic boundaries to improve retrieval relevance.",
+            "key_questions": [
+              "What chunk sizes work best for typical LLM contexts?",
+              "When should overlapping chunks be used versus fixed-size windows?",
+              "How can I preserve semantic coherence while chunking?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Generating Embeddings: Choosing Models and Parameters",
+            "goal": "Guide selection of embedding models, configure dimensions and batching, and efficiently embed large collections.",
+            "key_questions": [
+              "Which embedding models are most suitable for RAG pipelines?",
+              "How do I balance embedding quality against computational cost?",
+              "What batching techniques speed up embedding of millions of passages?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Designing Scalable Vector Stores: Index Types and Storage Options",
+            "goal": "Compare vector database options, index structures, and storage architectures to support fast, scalable retrieval.",
+            "key_questions": [
+              "What index type (IVF, HNSW, PQ) matches my latency and accuracy needs?",
+              "How do cloud‑managed vector stores differ from self‑hosted solutions?",
+              "What are the trade‑offs between in‑memory and disk‑based storage?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Maintaining and Updating the Document Index",
+            "goal": "Demonstrate how to add, delete, and refresh documents, handle versioning, and monitor index health over time.",
+            "key_questions": [
+              "How can I incrementally add new embeddings without rebuilding the whole index?",
+              "What strategies ensure deletions are reflected accurately in the vector store?",
+              "Which metrics indicate that the index remains performant and relevant?"
+            ],
+            "estimated_words": 450
+          }
+        ]
+      },
+      {
+        "chapter_number": 8,
+        "title": "Prompt Engineering for Effective RAG",
+        "chapter_goal": "Show how to craft prompts that combine retrieved context with LLM generation to produce accurate, relevant responses.",
+        "sections": [
+          {
+            "title": "The Function of Prompts in Retrieval‑Augmented Generation",
+            "goal": "Explain why prompts are the bridge between retrieved documents and the language model, and define the responsibilities of a good RAG prompt.",
+            "key_questions": [
+              "What specific role does a prompt play in a RAG pipeline?",
+              "How does prompt design affect relevance and factuality of the generated answer?",
+              "What are the minimal elements a RAG prompt must contain?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Designing Prompt Structures that Embed Retrieved Context",
+            "goal": "Introduce concrete prompt patterns that safely insert retrieved passages, including delimiters, instruction blocks, and context slots.",
+            "key_questions": [
+              "What are effective ways to separate retrieved text from the instruction part of the prompt?",
+              "How many retrieved snippets should be included before the model’s context window is exceeded?",
+              "Which delimiter styles (e.g., triple quotes, markdown blocks) improve model parsing?"
+            ],
+            "estimated_words": 650
+          },
+          {
+            "title": "Advanced Prompt Techniques: Few‑Shot, Chain‑of‑Thought, and Role‑Playing",
+            "goal": "Show how to enrich RAG prompts with examples, reasoning steps, or persona cues to steer the model toward accurate, step‑by‑step answers.",
+            "key_questions": [
+              "When should few‑shot examples be added to a RAG prompt?",
+              "How does chain‑of‑thought prompting improve factual grounding when using retrieved evidence?",
+              "Can assigning a role (e.g., \"You are a helpful research assistant\") reduce hallucinations?"
+            ],
+            "estimated_words": 720
+          },
+          {
+            "title": "Building Reusable Prompt Templates with Dynamic Variables",
+            "goal": "Teach how to create parameterized templates that automatically inject variable numbers of documents, query text, and metadata at runtime.",
+            "key_questions": [
+              "What placeholder syntax works best across common LLM APIs?",
+              "How can templates handle optional sections such as citations or confidence scores?",
+              "What strategies keep templates maintainable as the RAG system evolves?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Testing, Evaluating, and Iterating Prompt Designs",
+            "goal": "Provide a practical workflow for measuring prompt effectiveness, diagnosing errors, and refining prompts based on relevance and accuracy metrics.",
+            "key_questions": [
+              "Which quantitative metrics (e.g., BLEU, ROUGE, factual recall) are useful for RAG prompt evaluation?",
+              "How can error analysis reveal prompt‑related hallucinations?",
+              "What systematic iteration process helps converge on a high‑performing prompt?"
+            ],
+            "estimated_words": 620
+          }
+        ]
+      },
+      {
+        "chapter_number": 9,
+        "title": "Evaluating and Tuning RAG Performance",
+        "chapter_goal": "Introduce metrics, testing frameworks, and iterative tuning methods to improve relevance, factuality, and latency of RAG systems.",
+        "sections": [
+          {
+            "title": "Defining Core Evaluation Metrics for RAG",
+            "goal": "Explain the essential quantitative and qualitative metrics—relevance, factuality, precision, recall, latency, and cost—that gauge RAG system performance.",
+            "key_questions": [
+              "What metrics capture the relevance of retrieved documents and generated answers?",
+              "How can factual correctness be measured automatically and manually?",
+              "Which latency and resource metrics matter for production RAG deployments?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Constructing a Reproducible Test Harness",
+            "goal": "Guide readers through setting up a modular testing framework using Python, pytest, and evaluation datasets to consistently benchmark RAG pipelines.",
+            "key_questions": [
+              "What components should be isolated for testing (retriever, ranker, generator)?",
+              "How can benchmark datasets be integrated and versioned?",
+              "What practices ensure reproducibility across runs and environments?"
+            ],
+            "estimated_words": 480
+          },
+          {
+            "title": "Automating Relevance and Factuality Scoring",
+            "goal": "Show practical techniques for applying similarity scores, NLI models, and answer verification tools to automatically assess answer quality.",
+            "key_questions": [
+              "How do embedding similarity and BM25 scores reflect relevance?",
+              "Which natural language inference models are effective for factuality checks?",
+              "When should human-in-the-loop validation be added to the pipeline?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Profiling Latency and Throughput Across Retrieval and Generation",
+            "goal": "Teach methods for measuring end‑to‑end response time, component‑wise latency, and scaling characteristics to meet performance SLAs.",
+            "key_questions": [
+              "What profiling tools can capture latency at each stage of a RAG system?",
+              "How do index size, batch size, and model selection impact throughput?",
+              "What trade‑offs exist between latency reduction and answer quality?"
+            ],
+            "estimated_words": 540
+          },
+          {
+            "title": "Iterative Tuning: Prompt Engineering, Retriever Optimization, and Model Selection",
+            "goal": "Provide a step‑by‑step workflow for using evaluation results to refine prompts, adjust retriever parameters, and choose appropriate language models.",
+            "key_questions": [
+              "How can prompt variations be A/B tested using the evaluation framework?",
+              "Which retriever hyperparameters (k, similarity thresholds) most affect relevance?",
+              "When is it beneficial to switch to a larger or more specialized LLM?"
+            ],
+            "estimated_words": 580
+          }
+        ]
+      },
+      {
+        "chapter_number": 10,
+        "title": "Scaling RAG for Production and Cloud Environments",
+        "chapter_goal": "Discuss deployment patterns, scaling vector stores, monitoring, and cost‑effective cloud services for robust, production‑grade RAG applications.",
+        "sections": [
+          {
+            "title": "Designing a Scalable Architecture for Retrieval‑Augmented Generation",
+            "goal": "Provide a clear blueprint of the components, data flow, and architectural patterns that enable RAG systems to scale reliably in production.",
+            "key_questions": [
+              "What are the core building blocks of a RAG pipeline and how do they interact?",
+              "Which architectural patterns (e.g., microservices, event‑driven) best support scalability?",
+              "How should responsibilities be separated to avoid bottlenecks in a production setting?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Choosing and Scaling Vector Stores in Cloud Environments",
+            "goal": "Guide engineers in selecting appropriate vector database solutions and applying scaling techniques such as sharding, replication, and managed services.",
+            "key_questions": [
+              "What are the leading cloud‑native vector store options and their trade‑offs?",
+              "How can horizontal scaling be achieved through sharding or partitioning?",
+              "When should you use managed vector services versus self‑hosted deployments?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Containerizing and Orchestrating RAG Services",
+            "goal": "Teach practical steps to package RAG components with Docker and deploy them using Kubernetes or serverless platforms for elastic scaling.",
+            "key_questions": [
+              "How do you containerize each RAG component (retriever, generator, API layer)?",
+              "What Kubernetes resources (Deployments, Services, Ingress) are needed for a resilient deployment?",
+              "When is a serverless approach (e.g., AWS Lambda, Cloud Run) preferable to container orchestration?"
+            ],
+            "estimated_words": 610
+          },
+          {
+            "title": "Implementing Monitoring, Logging, and Alerting for Production RAG Pipelines",
+            "goal": "Establish observability practices that capture performance, reliability, and quality metrics specific to RAG workloads.",
+            "key_questions": [
+              "Which latency and throughput metrics are most indicative of RAG health?",
+              "How can structured logging and tracing be integrated across retriever and generator services?",
+              "What alerting thresholds and dashboards should be set up to detect degradation early?"
+            ],
+            "estimated_words": 560
+          },
+          {
+            "title": "Cost Management and Autoscaling Strategies for Cloud‑Based RAG",
+            "goal": "Equip engineers with techniques to control cloud spend while maintaining responsiveness through dynamic scaling policies.",
+            "key_questions": [
+              "How can you model and forecast the cost of vector storage, compute, and data transfer?",
+              "What autoscaling policies (CPU, request latency, queue length) work best for RAG workloads?",
+              "Which cost‑optimization features (spot instances, reserved capacity) are applicable without sacrificing reliability?"
+            ],
+            "estimated_words": 590
+          }
+        ]
+      },
+      {
+        "chapter_number": 11,
+        "title": "Real‑World Applications and Future Directions",
+        "chapter_goal": "Explore common use cases (e.g., Q&A bots, knowledge bases, code assistance) and emerging trends, helping readers envision next steps in their RAG journey.",
+        "sections": [
+          {
+            "title": "Building Q&A Bots with Retrieval‑Augmented Generation",
+            "goal": "Teach readers how to design, implement, and evaluate Q&A bots that combine document retrieval with LLM generation to deliver accurate answers.",
+            "key_questions": [
+              "How does a RAG pipeline retrieve relevant passages for a user query?",
+              "What prompting strategies improve answer relevance and factuality?",
+              "Which metrics best assess the performance of a RAG‑based Q&A bot?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Enterprise Knowledge Bases and Document Search",
+            "goal": "Show how to apply RAG to internal knowledge bases, enabling employees to search and synthesize information across large document collections.",
+            "key_questions": [
+              "What are the best practices for indexing heterogeneous corporate documents?",
+              "How can security and access controls be integrated into a RAG system?",
+              "What scaling techniques keep latency low for enterprise‑wide search?"
+            ],
+            "estimated_words": 680
+          },
+          {
+            "title": "Code Assistance and Programming Support Using RAG",
+            "goal": "Explain how RAG can power code completion, debugging help, and documentation lookup for software engineers.",
+            "key_questions": [
+              "How are code snippets embedded and retrieved effectively?",
+              "What prompts guide the LLM to generate correct and safe code suggestions?",
+              "How can feedback loops improve the relevance of code‑related responses over time?"
+            ],
+            "estimated_words": 590
+          },
+          {
+            "title": "Emerging Trends: Multimodal Retrieval and Real‑Time Data",
+            "goal": "Introduce cutting‑edge directions such as image‑text retrieval, streaming data sources, and adaptive knowledge updates in RAG systems.",
+            "key_questions": [
+              "How can visual embeddings be combined with text embeddings in a unified RAG pipeline?",
+              "What architectures support real‑time ingestion of new documents?",
+              "Which emerging research areas are likely to shape the next generation of RAG applications?"
+            ],
+            "estimated_words": 560
+          },
+          {
+            "title": "Roadmap for Scaling RAG in Production Environments",
+            "goal": "Provide a practical guide for moving from prototypes to robust, maintainable RAG services at scale.",
+            "key_questions": [
+              "What monitoring and observability tools are essential for RAG services?",
+              "How can latency, cost, and model updates be balanced in production?",
+              "What continuous learning strategies keep the retrieval index fresh and relevant?"
+            ],
+            "estimated_words": 610
+          }
+        ]
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "chapter_id": "chapter-1-python-foundations-for-ai-development",
+      "chapter_title": "Python Foundations for AI Development",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-2-large-language-models-basics-and-capabilities",
+      "chapter_title": "Large Language Models: Basics and Capabilities",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-3-embeddings-and-vector-spaces",
+      "chapter_title": "Embeddings and Vector Spaces",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-4-fundamentals-of-information-retrieval",
+      "chapter_title": "Fundamentals of Information Retrieval",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-5-retrieval-augmented-generation-core-concepts-and-architecture",
+      "chapter_title": "Retrieval‑Augmented Generation: Core Concepts and Architecture",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-6-building-a-simple-rag-pipeline-with-open-source-tools",
+      "chapter_title": "Building a Simple RAG Pipeline with Open‑Source Tools",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-7-document-indexing-and-storage-strategies",
+      "chapter_title": "Document Indexing and Storage Strategies",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-8-prompt-engineering-for-effective-rag",
+      "chapter_title": "Prompt Engineering for Effective RAG",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-9-evaluating-and-tuning-rag-performance",
+      "chapter_title": "Evaluating and Tuning RAG Performance",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-10-scaling-rag-for-production-and-cloud-environments",
+      "chapter_title": "Scaling RAG for Production and Cloud Environments",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-11-real-world-applications-and-future-directions",
+      "chapter_title": "Real‑World Applications and Future Directions",
+      "section_packets": []
+    }
+  ],
+  "warnings": [],
+  "errors": [
+    "[error] Chapter='Python Foundations for AI Development' Section='Setting Up a Reproducible Python Development Environment': No sources were discovered for section 'chapter-1-section-setting-up-a-reproducible-python-development-environment'.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Setting Up a Reproducible Python Development Environment': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Fundamental Python Syntax and Programming Concepts for AI': No sources were discovered for section 'chapter-1-section-fundamental-python-syntax-and-programming-concepts-for-ai'.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Fundamental Python Syntax and Programming Concepts for AI': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Data Manipulation with NumPy and pandas': No sources were discovered for section 'chapter-1-section-data-manipulation-with-numpy-and-pandas'.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Data Manipulation with NumPy and pandas': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Getting Started with AI Libraries: PyTorch, TensorFlow, and Hugging Face Transformers': No sources were discovered for section 'chapter-1-section-getting-started-with-ai-libraries-pytorch-tensorflow-and-hugging-face-transformers'.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Getting Started with AI Libraries: PyTorch, TensorFlow, and Hugging Face Transformers': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Version Control, Dependency Management, and Reproducibility': No sources were discovered for section 'chapter-1-section-version-control-dependency-management-and-reproducibility'.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Version Control, Dependency Management, and Reproducibility': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='What Are Large Language Models? Definitions and Core Concepts': No sources were discovered for section 'chapter-2-section-what-are-large-language-models-definitions-and-core-concepts'.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='What Are Large Language Models? Definitions and Core Concepts': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Transformer Architecture: Building Blocks of LLMs': No sources were discovered for section 'chapter-2-section-transformer-architecture-building-blocks-of-llms'.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Transformer Architecture: Building Blocks of LLMs': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Training LLMs: Data, Objectives, and Scaling': No sources were discovered for section 'chapter-2-section-training-llms-data-objectives-and-scaling'.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Training LLMs: Data, Objectives, and Scaling': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Inference and Prompt Engineering for Practical Use': No sources were discovered for section 'chapter-2-section-inference-and-prompt-engineering-for-practical-use'.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Inference and Prompt Engineering for Practical Use': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Evaluating LLM Capabilities: Strengths, Limitations, and Safety': No sources were discovered for section 'chapter-2-section-evaluating-llm-capabilities-strengths-limitations-and-safety'.",
+    "[error] Chapter='Large Language Models: Basics and Capabilities' Section='Evaluating LLM Capabilities: Strengths, Limitations, and Safety': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='What Are Text Embeddings? Concepts and Types': No sources were discovered for section 'chapter-3-section-what-are-text-embeddings-concepts-and-types'.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='What Are Text Embeddings? Concepts and Types': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding Models: From Word2Vec to Sentence Transformers': No sources were discovered for section 'chapter-3-section-embedding-models-from-word2vec-to-sentence-transformers'.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding Models: From Word2Vec to Sentence Transformers': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Vector Spaces and Similarity Metrics': No sources were discovered for section 'chapter-3-section-vector-spaces-and-similarity-metrics'.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Vector Spaces and Similarity Metrics': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Indexing Embeddings for Efficient Search': No sources were discovered for section 'chapter-3-section-indexing-embeddings-for-efficient-search'.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Indexing Embeddings for Efficient Search': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding‑Driven Retrieval in Retrieval‑Augmented Generation': No sources were discovered for section 'chapter-3-section-embedding-driven-retrieval-in-retrieval-augmented-generation'.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding‑Driven Retrieval in Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='What is Information Retrieval and Why It Matters for RAG': No sources were discovered for section 'chapter-4-section-what-is-information-retrieval-and-why-it-matters-for-rag'.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='What is Information Retrieval and Why It Matters for RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Building an Inverted Index: From Raw Text to Fast Lookup': No sources were discovered for section 'chapter-4-section-building-an-inverted-index-from-raw-text-to-fast-lookup'.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Building an Inverted Index: From Raw Text to Fast Lookup': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Vector Representations and Similarity Search': No sources were discovered for section 'chapter-4-section-vector-representations-and-similarity-search'.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Vector Representations and Similarity Search': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Relevance Scoring and Ranking: From Scores to Ranked Results': No sources were discovered for section 'chapter-4-section-relevance-scoring-and-ranking-from-scores-to-ranked-results'.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Relevance Scoring and Ranking: From Scores to Ranked Results': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='What is Retrieval‑Augmented Generation and Why It Matters': No sources were discovered for section 'chapter-5-section-what-is-retrieval-augmented-generation-and-why-it-matters'.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='What is Retrieval‑Augmented Generation and Why It Matters': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='The Retrieval Stage: Finding Relevant Documents': No sources were discovered for section 'chapter-5-section-the-retrieval-stage-finding-relevant-documents'.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='The Retrieval Stage: Finding Relevant Documents': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Augmentation Strategies: Integrating Retrieved Context': No sources were discovered for section 'chapter-5-section-augmentation-strategies-integrating-retrieved-context'.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Augmentation Strategies: Integrating Retrieved Context': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Generation Stage: Leveraging LLMs with Augmented Context': No sources were discovered for section 'chapter-5-section-generation-stage-leveraging-llms-with-augmented-context'.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Generation Stage: Leveraging LLMs with Augmented Context': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Design Trade‑offs in RAG Systems': No sources were discovered for section 'chapter-5-section-design-trade-offs-in-rag-systems'.",
+    "[error] Chapter='Retrieval‑Augmented Generation: Core Concepts and Architecture' Section='Design Trade‑offs in RAG Systems': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Setting Up the Development Environment and Installing Required Libraries': No sources were discovered for section 'chapter-6-section-setting-up-the-development-environment-and-installing-required-libraries'.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Setting Up the Development Environment and Installing Required Libraries': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Preparing and Indexing a Document Corpus with FAISS': No sources were discovered for section 'chapter-6-section-preparing-and-indexing-a-document-corpus-with-faiss'.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Preparing and Indexing a Document Corpus with FAISS': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Loading an Open‑Source Embedding Model from Hugging Face': No sources were discovered for section 'chapter-6-section-loading-an-open-source-embedding-model-from-hugging-face'.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Loading an Open‑Source Embedding Model from Hugging Face': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Integrating Retrieval and Generation with LangChain': No sources were discovered for section 'chapter-6-section-integrating-retrieval-and-generation-with-langchain'.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Integrating Retrieval and Generation with LangChain': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Testing the End‑to‑End Pipeline and Troubleshooting Common Issues': No sources were discovered for section 'chapter-6-section-testing-the-end-to-end-pipeline-and-troubleshooting-common-issues'.",
+    "[error] Chapter='Building a Simple RAG Pipeline with Open‑Source Tools' Section='Testing the End‑to‑End Pipeline and Troubleshooting Common Issues': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Preparing Documents: Cleaning and Normalization': No sources were discovered for section 'chapter-7-section-preparing-documents-cleaning-and-normalization'.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Preparing Documents: Cleaning and Normalization': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Chunking Strategies for Effective Retrieval': No sources were discovered for section 'chapter-7-section-chunking-strategies-for-effective-retrieval'.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Chunking Strategies for Effective Retrieval': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Generating Embeddings: Choosing Models and Parameters': No sources were discovered for section 'chapter-7-section-generating-embeddings-choosing-models-and-parameters'.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Generating Embeddings: Choosing Models and Parameters': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Designing Scalable Vector Stores: Index Types and Storage Options': No sources were discovered for section 'chapter-7-section-designing-scalable-vector-stores-index-types-and-storage-options'.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Designing Scalable Vector Stores: Index Types and Storage Options': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Maintaining and Updating the Document Index': No sources were discovered for section 'chapter-7-section-maintaining-and-updating-the-document-index'.",
+    "[error] Chapter='Document Indexing and Storage Strategies' Section='Maintaining and Updating the Document Index': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='The Function of Prompts in Retrieval‑Augmented Generation': No sources were discovered for section 'chapter-8-section-the-function-of-prompts-in-retrieval-augmented-generation'.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='The Function of Prompts in Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Designing Prompt Structures that Embed Retrieved Context': No sources were discovered for section 'chapter-8-section-designing-prompt-structures-that-embed-retrieved-context'.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Designing Prompt Structures that Embed Retrieved Context': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Advanced Prompt Techniques: Few‑Shot, Chain‑of‑Thought, and Role‑Playing': No sources were discovered for section 'chapter-8-section-advanced-prompt-techniques-few-shot-chain-of-thought-and-role-playing'.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Advanced Prompt Techniques: Few‑Shot, Chain‑of‑Thought, and Role‑Playing': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Building Reusable Prompt Templates with Dynamic Variables': No sources were discovered for section 'chapter-8-section-building-reusable-prompt-templates-with-dynamic-variables'.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Building Reusable Prompt Templates with Dynamic Variables': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Testing, Evaluating, and Iterating Prompt Designs': No sources were discovered for section 'chapter-8-section-testing-evaluating-and-iterating-prompt-designs'.",
+    "[error] Chapter='Prompt Engineering for Effective RAG' Section='Testing, Evaluating, and Iterating Prompt Designs': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Defining Core Evaluation Metrics for RAG': No sources were discovered for section 'chapter-9-section-defining-core-evaluation-metrics-for-rag'.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Defining Core Evaluation Metrics for RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Constructing a Reproducible Test Harness': No sources were discovered for section 'chapter-9-section-constructing-a-reproducible-test-harness'.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Constructing a Reproducible Test Harness': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Automating Relevance and Factuality Scoring': No sources were discovered for section 'chapter-9-section-automating-relevance-and-factuality-scoring'.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Automating Relevance and Factuality Scoring': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Profiling Latency and Throughput Across Retrieval and Generation': No sources were discovered for section 'chapter-9-section-profiling-latency-and-throughput-across-retrieval-and-generation'.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Profiling Latency and Throughput Across Retrieval and Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Iterative Tuning: Prompt Engineering, Retriever Optimization, and Model Selection': No sources were discovered for section 'chapter-9-section-iterative-tuning-prompt-engineering-retriever-optimization-and-model-selection'.",
+    "[error] Chapter='Evaluating and Tuning RAG Performance' Section='Iterative Tuning: Prompt Engineering, Retriever Optimization, and Model Selection': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Designing a Scalable Architecture for Retrieval‑Augmented Generation': No sources were discovered for section 'chapter-10-section-designing-a-scalable-architecture-for-retrieval-augmented-generation'.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Designing a Scalable Architecture for Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Choosing and Scaling Vector Stores in Cloud Environments': No sources were discovered for section 'chapter-10-section-choosing-and-scaling-vector-stores-in-cloud-environments'.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Choosing and Scaling Vector Stores in Cloud Environments': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Containerizing and Orchestrating RAG Services': No sources were discovered for section 'chapter-10-section-containerizing-and-orchestrating-rag-services'.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Containerizing and Orchestrating RAG Services': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Implementing Monitoring, Logging, and Alerting for Production RAG Pipelines': No sources were discovered for section 'chapter-10-section-implementing-monitoring-logging-and-alerting-for-production-rag-pipelines'.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Implementing Monitoring, Logging, and Alerting for Production RAG Pipelines': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Cost Management and Autoscaling Strategies for Cloud‑Based RAG': No sources were discovered for section 'chapter-10-section-cost-management-and-autoscaling-strategies-for-cloud-based-rag'.",
+    "[error] Chapter='Scaling RAG for Production and Cloud Environments' Section='Cost Management and Autoscaling Strategies for Cloud‑Based RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Building Q&A Bots with Retrieval‑Augmented Generation': No sources were discovered for section 'chapter-11-section-building-q-a-bots-with-retrieval-augmented-generation'.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Building Q&A Bots with Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Enterprise Knowledge Bases and Document Search': No sources were discovered for section 'chapter-11-section-enterprise-knowledge-bases-and-document-search'.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Enterprise Knowledge Bases and Document Search': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Code Assistance and Programming Support Using RAG': No sources were discovered for section 'chapter-11-section-code-assistance-and-programming-support-using-rag'.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Code Assistance and Programming Support Using RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Emerging Trends: Multimodal Retrieval and Real‑Time Data': No sources were discovered for section 'chapter-11-section-emerging-trends-multimodal-retrieval-and-real-time-data'.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Emerging Trends: Multimodal Retrieval and Real‑Time Data': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Roadmap for Scaling RAG in Production Environments': No sources were discovered for section 'chapter-11-section-roadmap-for-scaling-rag-in-production-environments'.",
+    "[error] Chapter='Real‑World Applications and Future Directions' Section='Roadmap for Scaling RAG in Production Environments': Researcher workflow completed without producing a research packet."
+  ]
+}

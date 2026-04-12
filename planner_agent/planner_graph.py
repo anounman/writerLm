@@ -1,12 +1,12 @@
 from langgraph.graph import START, END, StateGraph
 
-from graph_state import PlannerState
-from search_tools import PlannerSearchTools
-from scope_builder import ScopeBuilder
-from outline_node import ChapterOutlineNode
-from section_node import SectionPlannerNode
-from assembler import BookPlanAssembler
-from validator import validate_book_plan
+from planner_agent.assembler import BookPlanAssembler
+from planner_agent.graph_state import PlannerState
+from planner_agent.outline_node import ChapterOutlineNode
+from planner_agent.scope_builder import ScopeBuilder
+from planner_agent.search_tools import PlannerSearchTools
+from planner_agent.section_node import SectionPlannerNode
+from planner_agent.validator import validate_book_plan
 
 
 search_tools = PlannerSearchTools()

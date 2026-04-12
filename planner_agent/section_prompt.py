@@ -1,8 +1,7 @@
 import json
 
-from schemas import UserBookRequest, PlanningContext
-from outline_schemas import ChapterOutlineItem
-from section_schemas import ChapterSectionPlan
+from planner_agent.outline_schemas import ChapterOutlineItem
+from planner_agent.schemas import PlanningContext, UserBookRequest
 
 
 SECTION_PLANNER_SYSTEM_PROMPT = """

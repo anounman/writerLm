@@ -1,0 +1,750 @@
+{
+  "book_plan": {
+    "title": "Retrieval-Augmented Generation for Software Engineers: A Practical Guide",
+    "audience": "software engineers new to GenAI",
+    "tone": "practical and educational",
+    "depth": "intermediate",
+    "chapters": [
+      {
+        "chapter_number": 1,
+        "title": "Python Foundations for AI Development",
+        "chapter_goal": "Equip readers with the essential Python skills, libraries, and development practices needed to build and experiment with AI models.",
+        "sections": [
+          {
+            "title": "Setting Up a Python Development Environment for AI",
+            "goal": "Guide readers through installing Python, creating isolated virtual environments, and selecting IDEs and tools that streamline AI development.",
+            "key_questions": [
+              "How do I install the appropriate Python version for AI work?",
+              "What are the best practices for creating and managing virtual environments?",
+              "Which IDEs or editors provide the most useful features for AI projects?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Fundamental Python Syntax and Data Structures for AI Workflows",
+            "goal": "Ensure readers master core language constructs, control flow, functions, and essential data structures needed to manipulate model inputs and outputs.",
+            "key_questions": [
+              "What Python syntax elements are most frequently used in AI code?",
+              "How can I efficiently work with lists, dictionaries, sets, and comprehensions?",
+              "When should I use classes versus simple functions in AI projects?"
+            ],
+            "estimated_words": 800
+          },
+          {
+            "title": "Numerical Computing with NumPy and Data Handling with pandas",
+            "goal": "Introduce the basics of NumPy arrays and pandas DataFrames so readers can perform vectorized calculations and preprocess data for models.",
+            "key_questions": [
+              "How do I create and manipulate NumPy arrays for numerical operations?",
+              "What are common vectorized techniques to replace loops?",
+              "How can pandas be used to load, clean, and explore datasets?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Getting Started with PyTorch Essentials",
+            "goal": "Provide a hands‑on introduction to PyTorch tensors, automatic differentiation, and building a simple neural network training loop.",
+            "key_questions": [
+              "What is a PyTorch tensor and how does it differ from a NumPy array?",
+              "How does the autograd system enable gradient computation?",
+              "How can I define, train, and evaluate a basic neural network model?"
+            ],
+            "estimated_words": 900
+          },
+          {
+            "title": "Best Practices: Dependency Management, Testing, and Reproducibility",
+            "goal": "Teach readers how to manage packages, write unit tests, and ensure experiments are reproducible across environments.",
+            "key_questions": [
+              "How should I pin dependencies using pip or conda for stable experiments?",
+              "What simple testing strategies (e.g., pytest) can validate data pipelines and model code?",
+              "How can I control randomness to achieve reproducible results?"
+            ],
+            "estimated_words": 500
+          }
+        ]
+      },
+      {
+        "chapter_number": 2,
+        "title": "Large Language Models: Concepts and Capabilities",
+        "chapter_goal": "Introduce the architecture, training paradigms, and inference behavior of modern LLMs, establishing a baseline for later augmentation.",
+        "sections": [
+          {
+            "title": "Transformer Architecture Fundamentals",
+            "goal": "Explain the core components of the transformer model—self‑attention, feed‑forward layers, positional encoding—and how they enable large language models to process text.",
+            "key_questions": [
+              "What are the main building blocks of a transformer?",
+              "How does self‑attention compute relationships between tokens?",
+              "Why are positional encodings necessary?",
+              "How do these components combine to form a scalable language model?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Scaling Laws and Model Sizes",
+            "goal": "Describe how depth, width, and parameter count influence model capability, performance, and resource requirements, providing engineers with intuition for choosing model scales.",
+            "key_questions": [
+              "What is the relationship between model size and language understanding?",
+              "How do scaling laws predict performance gains?",
+              "What are typical size categories (small, medium, large, giant) and their trade‑offs?",
+              "How does hardware affect feasible model scaling?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Pretraining Objectives and Data",
+            "goal": "Detail the primary pretraining tasks (next‑token prediction, masked language modeling), data collection strategies, and the role of massive corpora in shaping LLM knowledge.",
+            "key_questions": [
+              "What objective functions drive LLM pretraining?",
+              "How is training data sourced, cleaned, and filtered?",
+              "Why is next‑token prediction effective for language modeling?",
+              "What impact does data diversity have on model behavior?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Fine‑tuning and Alignment Techniques",
+            "goal": "Introduce methods for adapting pretrained LLMs to specific tasks and aligning them with human intent, including supervised fine‑tuning, instruction tuning, and reinforcement learning from human feedback (RLHF).",
+            "key_questions": [
+              "How does supervised fine‑tuning specialize a model?",
+              "What is instruction tuning and why is it useful?",
+              "How does RLHF improve safety and usefulness?",
+              "What practical steps are needed to fine‑tune an LLM?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Inference Mechanics and Prompt Engineering",
+            "goal": "Explain how LLMs generate text at inference time, covering token sampling strategies, temperature, top‑k/top‑p, latency considerations, and effective prompt design for reliable outputs.",
+            "key_questions": [
+              "How does token generation proceed during inference?",
+              "What sampling methods control randomness and diversity?",
+              "How do latency and batch size affect deployment?",
+              "What principles make prompts produce accurate and relevant responses?"
+            ],
+            "estimated_words": 650
+          }
+        ]
+      },
+      {
+        "chapter_number": 3,
+        "title": "Embeddings and Vector Spaces",
+        "chapter_goal": "Explain how text is transformed into dense vectors, the role of similarity search, and how embeddings power retrieval components.",
+        "sections": [
+          {
+            "title": "What Are Text Embeddings? Concepts and Types",
+            "goal": "Introduce the fundamental idea of representing text as dense vectors, differentiate between static and contextual embeddings, and explain why embeddings are essential for retrieval.",
+            "key_questions": [
+              "What is a text embedding and how does it differ from a bag-of-words representation?",
+              "What are the main categories of embeddings (static vs. contextual) and their trade‑offs?",
+              "Why do dense vectors enable more effective similarity matching than raw text?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Generating Embeddings with Pre‑trained Models",
+            "goal": "Show how to obtain high‑quality embeddings using popular pre‑trained models and libraries, and discuss practical considerations such as token limits and batching.",
+            "key_questions": [
+              "Which open‑source and commercial models are commonly used for embedding generation?",
+              "How do you call an embedding API or run a model locally in Python?",
+              "What preprocessing steps (tokenization, truncation) are needed before embedding?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Vector Space Geometry and Similarity Metrics",
+            "goal": "Explain the mathematical properties of vector spaces, how similarity is measured, and why cosine similarity is the default for text embeddings.",
+            "key_questions": [
+              "How are vectors positioned in a high‑dimensional space?",
+              "What similarity metrics (cosine, Euclidean, inner product) are appropriate for embeddings?",
+              "How does metric choice affect retrieval quality and performance?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Indexing and Searching Vectors at Scale",
+            "goal": "Teach how to build efficient vector indexes (FAISS, Annoy, Elasticsearch) and perform fast nearest‑neighbor searches for retrieval.",
+            "key_questions": [
+              "What are the main indexing strategies for large vector collections?",
+              "How do you configure and query a FAISS index for approximate nearest neighbors?",
+              "What trade‑offs exist between index size, latency, and recall?"
+            ],
+            "estimated_words": 650
+          },
+          {
+            "title": "Embedding‑Driven Retrieval in RAG Pipelines",
+            "goal": "Demonstrate how embeddings feed into the retrieval component of Retrieval‑Augmented Generation, linking similarity search results to prompt construction.",
+            "key_questions": [
+              "How does a vector search retrieve relevant documents for a given query?",
+              "In what ways are retrieved passages incorporated into a language model prompt?",
+              "What practical tips improve relevance and reduce hallucination in RAG systems?"
+            ],
+            "estimated_words": 700
+          }
+        ]
+      },
+      {
+        "chapter_number": 4,
+        "title": "Fundamentals of Information Retrieval",
+        "chapter_goal": "Cover classic retrieval techniques, indexing, and ranking methods that form the backbone of the retrieval stage in RAG.",
+        "sections": [
+          {
+            "title": "What is Information Retrieval and Its Role in Retrieval‑Augmented Generation",
+            "goal": "Define information retrieval, explain why it is essential for RAG pipelines, and set the conceptual foundation for later indexing and ranking techniques.",
+            "key_questions": [
+              "What problem does information retrieval solve in the context of generative AI?",
+              "How does the retrieval component interact with a large language model in RAG?",
+              "What are the high‑level stages of a typical IR system?"
+            ],
+            "estimated_words": 520
+          },
+          {
+            "title": "Representing Text for Retrieval: Tokens, Terms, and Vector Space Models",
+            "goal": "Introduce the core representations of documents and queries, covering tokenization, term frequency, and the vector space model that underpins classic ranking formulas.",
+            "key_questions": [
+              "How are raw texts transformed into searchable tokens?",
+              "What is the difference between term frequency and document frequency?",
+              "How does the vector space model enable similarity calculations?"
+            ],
+            "estimated_words": 560
+          },
+          {
+            "title": "Building an Inverted Index: Data Structures and Construction Algorithms",
+            "goal": "Explain the inverted index data structure, its components (posting lists, term dictionary), and the algorithmic steps to build and maintain it efficiently.",
+            "key_questions": [
+              "What is an inverted index and why is it the backbone of fast retrieval?",
+              "How are posting lists organized and compressed?",
+              "What are the key steps in constructing an inverted index from a corpus?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Classic Ranking Models: TF‑IDF and BM25",
+            "goal": "Detail the TF‑IDF weighting scheme and the BM25 probabilistic ranking model, including formulas, parameter tuning, and practical considerations.",
+            "key_questions": [
+              "How does TF‑IDF compute a relevance score for a document?",
+              "What are the BM25 parameters (k1, b) and how do they affect ranking?",
+              "When should a practitioner prefer BM25 over TF‑IDF?"
+            ],
+            "estimated_words": 610
+          },
+          {
+            "title": "Evaluating Retrieval Effectiveness: Precision, Recall, MAP, and Beyond",
+            "goal": "Introduce standard evaluation metrics for retrieval systems, explain how to compute them, and discuss their relevance for assessing the retrieval stage in RAG.",
+            "key_questions": [
+              "What do precision and recall measure in a retrieval context?",
+              "How is Mean Average Precision (MAP) calculated and interpreted?",
+              "What evaluation practices help ensure the retrieval component supports high‑quality generation?"
+            ],
+            "estimated_words": 540
+          }
+        ]
+      },
+      {
+        "chapter_number": 5,
+        "title": "Retrieval-Augmented Generation Architecture",
+        "chapter_goal": "Detail the three-stage RAG pipeline—retrieve, augment, generate—and illustrate how components interact.",
+        "sections": [
+          {
+            "title": "High-Level RAG Pipeline Overview",
+            "goal": "Introduce the overall architecture, define the three stages, and explain how data flows between retrieval, augmentation, and generation components.",
+            "key_questions": [
+              "What are the three core stages of a RAG system?",
+              "How does information move from a knowledge base to the final generated response?",
+              "What are the key interfaces between each stage?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Designing the Retrieval Component",
+            "goal": "Explain how to build and query a vector store, choose similarity metrics, and select relevant documents for a given query.",
+            "key_questions": [
+              "Which vector databases are suitable for RAG?",
+              "How are embeddings generated and indexed for efficient similarity search?",
+              "What criteria determine the relevance of retrieved documents?"
+            ],
+            "estimated_words": 650
+          },
+          {
+            "title": "Context Augmentation and Prompt Construction",
+            "goal": "Show how to transform retrieved documents into a structured prompt, handle chunking, ordering, and metadata to guide the language model effectively.",
+            "key_questions": [
+              "How should retrieved text be chunked and ordered for optimal context?",
+              "What prompt templates best combine documents with the user query?",
+              "How can metadata be leveraged to improve relevance and control generation?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Generating Answers with a Language Model",
+            "goal": "Detail how the augmented prompt is fed to an LLM, configure generation parameters, and ensure the output remains faithful to the retrieved evidence.",
+            "key_questions": [
+              "Which generation parameters (temperature, max tokens, etc.) impact answer quality?",
+              "How can we enforce grounding to the retrieved documents?",
+              "What post‑processing steps improve answer clarity and correctness?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Orchestrating the End-to-End RAG Workflow",
+            "goal": "Describe practical integration patterns, latency optimization, caching strategies, and monitoring to build a production‑ready RAG system.",
+            "key_questions": [
+              "What orchestration tools can coordinate retrieval, augmentation, and generation?",
+              "How can caching reduce latency for frequent queries?",
+              "What metrics should be monitored to maintain system reliability and relevance?"
+            ],
+            "estimated_words": 580
+          }
+        ]
+      },
+      {
+        "chapter_number": 6,
+        "title": "Building a Simple RAG Pipeline from Scratch",
+        "chapter_goal": "Guide readers through a hands‑on implementation using open‑source tools, creating a functional end‑to‑end RAG system.",
+        "sections": [
+          {
+            "title": "Setting Up the Development Environment",
+            "goal": "Equip readers with a ready-to-use Python environment, install required open‑source libraries, and verify the setup works before coding.",
+            "key_questions": [
+              "Which Python version and package manager should be used?",
+              "What open‑source libraries are essential for a RAG pipeline?",
+              "How can I confirm that the environment is correctly configured?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Preparing and Indexing a Document Corpus",
+            "goal": "Show how to load, clean, and chunk sample documents, generate embeddings, and build a vector store that supports fast similarity search.",
+            "key_questions": [
+              "How should raw text be pre‑processed for reliable retrieval?",
+              "Which embedding model balances quality and cost for beginners?",
+              "What steps create and persist a searchable vector index?"
+            ],
+            "estimated_words": 800
+          },
+          {
+            "title": "Implementing the Retrieval Component",
+            "goal": "Teach readers to query the vector store, retrieve the most relevant document chunks, and handle pagination or result limits.",
+            "key_questions": [
+              "How does similarity search work with dense vectors?",
+              "What parameters (e.g., top‑k, distance threshold) affect retrieval quality?",
+              "How can I efficiently fetch and format results for downstream use?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Integrating Retrieval with a Language Model for Generation",
+            "goal": "Combine retrieved context with a prompt template, invoke an LLM, and produce accurate, grounded responses.",
+            "key_questions": [
+              "What prompt structure best incorporates retrieved passages?",
+              "Which open‑source or hosted LLMs are suitable for a beginner’s pipeline?",
+              "How do I manage token limits and avoid context overflow?"
+            ],
+            "estimated_words": 800
+          },
+          {
+            "title": "End‑to‑End Testing, Evaluation, and Troubleshooting",
+            "goal": "Run the complete pipeline on sample queries, evaluate response relevance, and diagnose common issues such as poor retrieval or hallucination.",
+            "key_questions": [
+              "What simple tests can verify each pipeline stage?",
+              "Which metrics help assess retrieval relevance and generation accuracy?",
+              "How should typical errors (e.g., empty results, API failures) be resolved?"
+            ],
+            "estimated_words": 600
+          }
+        ]
+      },
+      {
+        "chapter_number": 7,
+        "title": "Prompt Engineering and Context Management",
+        "chapter_goal": "Teach strategies for crafting effective prompts and managing retrieved context to improve generation quality.",
+        "sections": [
+          {
+            "title": "Fundamentals of Prompt Engineering for Retrieval-Augmented Generation",
+            "goal": "Introduce the basic components of prompts, their impact on LLM behavior, and why prompt design matters in RAG pipelines.",
+            "key_questions": [
+              "What are the core elements of a prompt?",
+              "How does prompt phrasing influence model output?",
+              "Why is prompt engineering critical when combining retrieval with generation?"
+            ],
+            "estimated_words": 500
+          },
+          {
+            "title": "Designing Retrieval-Aware Prompts",
+            "goal": "Show how to structure prompts that explicitly incorporate retrieved documents, citations, and relevance cues to guide the model.",
+            "key_questions": [
+              "How can retrieved passages be embedded within a prompt?",
+              "What prompt patterns help the model distinguish between query, context, and instruction?",
+              "When should citations or source markers be included in the prompt?"
+            ],
+            "estimated_words": 600
+          },
+          {
+            "title": "Managing Context Length and Token Budgets",
+            "goal": "Provide techniques for fitting prompts and retrieved content within model token limits while preserving essential information.",
+            "key_questions": [
+              "What is the token budget for typical LLMs used in RAG?",
+              "How can prompts be trimmed or compressed without losing meaning?",
+              "What strategies exist for prioritizing which retrieved snippets to include?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Context Selection, Chunking, and Summarization Strategies",
+            "goal": "Teach methods to select the most relevant documents, chunk them effectively, and optionally summarize to fit context constraints.",
+            "key_questions": [
+              "How to rank retrieved documents for relevance to the query?",
+              "What chunking approaches balance granularity and token usage?",
+              "When and how should automatic summarization be applied to retrieved text?"
+            ],
+            "estimated_words": 650
+          },
+          {
+            "title": "Iterative Prompt Optimization and Evaluation",
+            "goal": "Guide readers through testing, measuring, and refining prompts using metrics and error analysis to improve generation quality.",
+            "key_questions": [
+              "What quantitative metrics can assess prompt effectiveness in RAG?",
+              "How to conduct A/B testing of prompt variants?",
+              "What common failure modes indicate a need to adjust the prompt or context handling?"
+            ],
+            "estimated_words": 500
+          }
+        ]
+      },
+      {
+        "chapter_number": 8,
+        "title": "Evaluating and Optimizing RAG Performance",
+        "chapter_goal": "Introduce metrics, testing frameworks, and optimization techniques to assess relevance, accuracy, and latency.",
+        "sections": [
+          {
+            "title": "Core Evaluation Metrics for Retrieval-Augmented Generation",
+            "goal": "Explain the quantitative measures used to assess relevance, accuracy, and latency of RAG systems, and show how to compute them.",
+            "key_questions": [
+              "What metrics capture relevance and factual correctness in RAG outputs?",
+              "How are precision, recall, F1, nDCG, and BLEU adapted for RAG?",
+              "What latency and throughput indicators matter for production use?",
+              "How can trade‑offs between accuracy and speed be quantified?"
+            ],
+            "estimated_words": 550
+          },
+          {
+            "title": "Designing a Reproducible Test Harness for RAG",
+            "goal": "Provide a step‑by‑step guide to building automated test pipelines, selecting benchmark datasets, and integrating evaluation into CI/CD.",
+            "key_questions": [
+              "Which public and synthetic datasets are suitable for RAG evaluation?",
+              "How to structure unit, integration, and end‑to‑end tests for retrieval and generation components?",
+              "What tools and frameworks (e.g., pytest, EvalAI, LangChain eval) support automated scoring?",
+              "How to ensure test reproducibility across hardware and model versions?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Diagnosing Retrieval Quality and Improving Relevance",
+            "goal": "Teach techniques to analyze and boost the retrieval layer, including embedding evaluation, top‑k analysis, and query reformulation.",
+            "key_questions": [
+              "How to measure embedding similarity and identify low‑quality vectors?",
+              "What diagnostics reveal why relevant documents are missed?",
+              "How can query expansion or hybrid search improve recall?",
+              "When should re‑indexing or vector dimension tuning be applied?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Optimizing Latency and Throughput in RAG Pipelines",
+            "goal": "Present practical strategies to reduce response time and increase scalability without sacrificing answer quality.",
+            "key_questions": [
+              "Which indexing structures (e.g., IVF, HNSW) offer the best speed‑accuracy balance?",
+              "How does caching of embeddings or retrieved passages affect latency?",
+              "What role do model quantization, distillation, and batching play in faster generation?",
+              "How to profile and bottleneck‑track a RAG pipeline end‑to‑end?"
+            ],
+            "estimated_words": 660
+          },
+          {
+            "title": "Continuous Monitoring, A/B Testing, and Feedback Loops",
+            "goal": "Guide readers on setting up production monitoring, running A/B experiments, and using user feedback to iteratively improve RAG performance.",
+            "key_questions": [
+              "What metrics should be logged in real‑time dashboards?",
+              "How to design safe A/B tests for retrieval and generation changes?",
+              "In what ways can human‑in‑the‑loop feedback be incorporated into model updates?",
+              "How to automate alerting for drift in relevance or latency?"
+            ],
+            "estimated_words": 540
+          }
+        ]
+      },
+      {
+        "chapter_number": 9,
+        "title": "Scaling RAG with External Knowledge Bases",
+        "chapter_goal": "Explore integration with vector databases, hybrid search, and cloud services to handle large corpora and production workloads.",
+        "sections": [
+          {
+            "title": "Selecting and Configuring a Vector Database for RAG",
+            "goal": "Guide readers through evaluating popular vector stores, setting up a chosen database, and configuring it for reliable, high‑throughput retrieval.",
+            "key_questions": [
+              "What criteria (e.g., scalability, latency, cost) matter most when choosing a vector database?",
+              "How do you install and configure an open‑source vector store versus a managed service?",
+              "What data schema and metadata practices support efficient RAG pipelines?"
+            ],
+            "estimated_words": 620
+          },
+          {
+            "title": "Indexing Large Document Collections Efficiently",
+            "goal": "Teach practical strategies for chunking, embedding, and indexing massive corpora so that retrieval remains fast and accurate.",
+            "key_questions": [
+              "How should documents be split and pre‑processed for optimal embedding?",
+              "What batch embedding techniques reduce compute cost for billions of vectors?",
+              "How do you build and update indexes without downtime?"
+            ],
+            "estimated_words": 580
+          },
+          {
+            "title": "Hybrid Search: Combining Semantic and Keyword Retrieval",
+            "goal": "Explain how to integrate dense vector similarity with traditional inverted‑index keyword search to improve relevance and recall.",
+            "key_questions": [
+              "When does hybrid search outperform pure semantic or pure keyword search?",
+              "What architectures enable simultaneous vector and term‑based queries?",
+              "How can you tune the weighting between semantic similarity and BM25 scores?"
+            ],
+            "estimated_words": 610
+          },
+          {
+            "title": "Using Cloud‑Native Vector Stores and Managed Services",
+            "goal": "Show how to leverage cloud providers' managed vector databases and serverless functions for scalable, production‑grade RAG systems.",
+            "key_questions": [
+              "Which cloud services (e.g., Pinecone, AWS OpenSearch with k‑NN, Azure Cognitive Search) are best suited for different workloads?",
+              "How do you secure data, manage access, and comply with privacy regulations in a cloud environment?",
+              "What patterns simplify deployment, autoscaling, and disaster recovery?"
+            ],
+            "estimated_words": 640
+          },
+          {
+            "title": "Operationalizing RAG at Scale: Monitoring, Caching, and Cost Management",
+            "goal": "Provide a checklist for productionizing RAG pipelines, including performance monitoring, result caching, and budgeting for vector operations.",
+            "key_questions": [
+              "What metrics (latency, hit rate, token usage) should be tracked for a RAG service?",
+              "How can caching strategies reduce redundant embedding and retrieval calls?",
+              "What cost‑optimization techniques keep vector database expenses under control?"
+            ],
+            "estimated_words": 560
+          }
+        ]
+      },
+      {
+        "chapter_number": 10,
+        "title": "Real‑World Applications and Best Practices",
+        "chapter_goal": "Showcase practical use cases, deployment patterns, security considerations, and maintenance guidelines for sustainable RAG solutions.",
+        "sections": [
+          {
+            "title": "Industry Use Cases for Retrieval‑Augmented Generation",
+            "goal": "Illustrate concrete real‑world scenarios where RAG adds value, helping engineers map the technique to problems in domains such as customer support, knowledge management, and content creation.",
+            "key_questions": [
+              "What specific business problems can RAG address?",
+              "Which industries have successfully adopted RAG and why?",
+              "How are documents and queries structured in typical deployments?",
+              "What measurable benefits (e.g., accuracy, latency, cost) have been reported?"
+            ],
+            "estimated_words": 800
+          },
+          {
+            "title": "Designing Scalable Deployment Architectures for RAG",
+            "goal": "Guide readers through selecting and building deployment patterns—cloud‑native, on‑premises, and hybrid—that support scaling, latency, and cost requirements.",
+            "key_questions": [
+              "What are the core components of a production RAG pipeline?",
+              "How do you choose between managed services and self‑hosted solutions?",
+              "What strategies enable horizontal scaling of retrieval and generation modules?",
+              "How can caching and batch processing improve throughput?"
+            ],
+            "estimated_words": 900
+          },
+          {
+            "title": "Ensuring Data Security and Privacy in RAG Systems",
+            "goal": "Explain security best practices for protecting source documents, embeddings, and generated outputs, including compliance with regulations such as GDPR and HIPAA.",
+            "key_questions": [
+              "What threats are unique to retrieval‑augmented workflows?",
+              "How should sensitive documents be encrypted at rest and in transit?",
+              "What access‑control mechanisms guard embedding stores and LLM endpoints?",
+              "How can audit logging and data lineage be implemented for compliance?"
+            ],
+            "estimated_words": 700
+          },
+          {
+            "title": "Monitoring, Evaluation, and Continuous Improvement of RAG Pipelines",
+            "goal": "Provide a framework for operational monitoring, performance evaluation, and iterative refinement to keep RAG solutions reliable over time.",
+            "key_questions": [
+              "Which metrics best capture retrieval relevance and generation quality?",
+              "How can drift in source data or model behavior be detected early?",
+              "What automated tests and canary deployments help validate updates?",
+              "How should feedback loops be incorporated to retrain embeddings or fine‑tune models?"
+            ],
+            "estimated_words": 800
+          },
+          {
+            "title": "Best Practices and Common Pitfalls in Production RAG",
+            "goal": "Summarize actionable best‑practice guidelines and highlight frequent mistakes that can degrade relevance, increase latency, or cause security issues.",
+            "key_questions": [
+              "What are the most common integration errors between retriever and generator?",
+              "How does improper chunking or indexing affect answer accuracy?",
+              "What pitfalls arise from over‑reliance on static embeddings?",
+              "Which operational habits (e.g., versioning, documentation) prevent future failures?"
+            ],
+            "estimated_words": 600
+          }
+        ]
+      }
+    ]
+  },
+  "chapters": [
+    {
+      "chapter_id": "chapter-1-python-foundations-for-ai-development",
+      "chapter_title": "Python Foundations for AI Development",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-2-large-language-models-concepts-and-capabilities",
+      "chapter_title": "Large Language Models: Concepts and Capabilities",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-3-embeddings-and-vector-spaces",
+      "chapter_title": "Embeddings and Vector Spaces",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-4-fundamentals-of-information-retrieval",
+      "chapter_title": "Fundamentals of Information Retrieval",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-5-retrieval-augmented-generation-architecture",
+      "chapter_title": "Retrieval-Augmented Generation Architecture",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-6-building-a-simple-rag-pipeline-from-scratch",
+      "chapter_title": "Building a Simple RAG Pipeline from Scratch",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-7-prompt-engineering-and-context-management",
+      "chapter_title": "Prompt Engineering and Context Management",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-8-evaluating-and-optimizing-rag-performance",
+      "chapter_title": "Evaluating and Optimizing RAG Performance",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-9-scaling-rag-with-external-knowledge-bases",
+      "chapter_title": "Scaling RAG with External Knowledge Bases",
+      "section_packets": []
+    },
+    {
+      "chapter_id": "chapter-10-real-world-applications-and-best-practices",
+      "chapter_title": "Real‑World Applications and Best Practices",
+      "section_packets": []
+    }
+  ],
+  "warnings": [],
+  "errors": [
+    "[error] Chapter='Python Foundations for AI Development' Section='Setting Up a Python Development Environment for AI': Failed to build research task for section 'chapter-1-section-setting-up-a-python-development-environment-for-ai': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Python Foundations for AI Development' Section='Setting Up a Python Development Environment for AI': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Fundamental Python Syntax and Data Structures for AI Workflows': Failed to build research task for section 'chapter-1-section-fundamental-python-syntax-and-data-structures-for-ai-workflows': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Python Foundations for AI Development' Section='Fundamental Python Syntax and Data Structures for AI Workflows': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Numerical Computing with NumPy and Data Handling with pandas': Failed to build research task for section 'chapter-1-section-numerical-computing-with-numpy-and-data-handling-with-pandas': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Python Foundations for AI Development' Section='Numerical Computing with NumPy and Data Handling with pandas': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Getting Started with PyTorch Essentials': Failed to build research task for section 'chapter-1-section-getting-started-with-pytorch-essentials': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Python Foundations for AI Development' Section='Getting Started with PyTorch Essentials': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Python Foundations for AI Development' Section='Best Practices: Dependency Management, Testing, and Reproducibility': Failed to build research task for section 'chapter-1-section-best-practices-dependency-management-testing-and-reproducibility': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Python Foundations for AI Development' Section='Best Practices: Dependency Management, Testing, and Reproducibility': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Transformer Architecture Fundamentals': Failed to build research task for section 'chapter-2-section-transformer-architecture-fundamentals': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Transformer Architecture Fundamentals': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Scaling Laws and Model Sizes': Failed to build research task for section 'chapter-2-section-scaling-laws-and-model-sizes': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Scaling Laws and Model Sizes': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Pretraining Objectives and Data': Failed to build research task for section 'chapter-2-section-pretraining-objectives-and-data': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Pretraining Objectives and Data': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Fine‑tuning and Alignment Techniques': Failed to build research task for section 'chapter-2-section-fine-tuning-and-alignment-techniques': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Fine‑tuning and Alignment Techniques': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Inference Mechanics and Prompt Engineering': Failed to build research task for section 'chapter-2-section-inference-mechanics-and-prompt-engineering': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Large Language Models: Concepts and Capabilities' Section='Inference Mechanics and Prompt Engineering': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='What Are Text Embeddings? Concepts and Types': Failed to build research task for section 'chapter-3-section-what-are-text-embeddings-concepts-and-types': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='What Are Text Embeddings? Concepts and Types': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Generating Embeddings with Pre‑trained Models': Failed to build research task for section 'chapter-3-section-generating-embeddings-with-pre-trained-models': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Generating Embeddings with Pre‑trained Models': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Vector Space Geometry and Similarity Metrics': Failed to build research task for section 'chapter-3-section-vector-space-geometry-and-similarity-metrics': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Vector Space Geometry and Similarity Metrics': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Indexing and Searching Vectors at Scale': Failed to build research task for section 'chapter-3-section-indexing-and-searching-vectors-at-scale': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Indexing and Searching Vectors at Scale': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding‑Driven Retrieval in RAG Pipelines': Failed to build research task for section 'chapter-3-section-embedding-driven-retrieval-in-rag-pipelines': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Embeddings and Vector Spaces' Section='Embedding‑Driven Retrieval in RAG Pipelines': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='What is Information Retrieval and Its Role in Retrieval‑Augmented Generation': Failed to build research task for section 'chapter-4-section-what-is-information-retrieval-and-its-role-in-retrieval-augmented-generation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='What is Information Retrieval and Its Role in Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Representing Text for Retrieval: Tokens, Terms, and Vector Space Models': Failed to build research task for section 'chapter-4-section-representing-text-for-retrieval-tokens-terms-and-vector-space-models': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Representing Text for Retrieval: Tokens, Terms, and Vector Space Models': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Building an Inverted Index: Data Structures and Construction Algorithms': Failed to build research task for section 'chapter-4-section-building-an-inverted-index-data-structures-and-construction-algorithms': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Building an Inverted Index: Data Structures and Construction Algorithms': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Classic Ranking Models: TF‑IDF and BM25': Failed to build research task for section 'chapter-4-section-classic-ranking-models-tf-idf-and-bm25': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Classic Ranking Models: TF‑IDF and BM25': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Evaluating Retrieval Effectiveness: Precision, Recall, MAP, and Beyond': Failed to build research task for section 'chapter-4-section-evaluating-retrieval-effectiveness-precision-recall-map-and-beyond': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Fundamentals of Information Retrieval' Section='Evaluating Retrieval Effectiveness: Precision, Recall, MAP, and Beyond': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='High-Level RAG Pipeline Overview': Failed to build research task for section 'chapter-5-section-high-level-rag-pipeline-overview': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='High-Level RAG Pipeline Overview': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Designing the Retrieval Component': Failed to build research task for section 'chapter-5-section-designing-the-retrieval-component': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Designing the Retrieval Component': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Context Augmentation and Prompt Construction': Failed to build research task for section 'chapter-5-section-context-augmentation-and-prompt-construction': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Context Augmentation and Prompt Construction': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Generating Answers with a Language Model': Failed to build research task for section 'chapter-5-section-generating-answers-with-a-language-model': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Generating Answers with a Language Model': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Orchestrating the End-to-End RAG Workflow': Failed to build research task for section 'chapter-5-section-orchestrating-the-end-to-end-rag-workflow': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Retrieval-Augmented Generation Architecture' Section='Orchestrating the End-to-End RAG Workflow': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Setting Up the Development Environment': Failed to build research task for section 'chapter-6-section-setting-up-the-development-environment': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Setting Up the Development Environment': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Preparing and Indexing a Document Corpus': Failed to build research task for section 'chapter-6-section-preparing-and-indexing-a-document-corpus': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Preparing and Indexing a Document Corpus': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Implementing the Retrieval Component': Failed to build research task for section 'chapter-6-section-implementing-the-retrieval-component': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Implementing the Retrieval Component': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Integrating Retrieval with a Language Model for Generation': Failed to build research task for section 'chapter-6-section-integrating-retrieval-with-a-language-model-for-generation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='Integrating Retrieval with a Language Model for Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='End‑to‑End Testing, Evaluation, and Troubleshooting': Failed to build research task for section 'chapter-6-section-end-to-end-testing-evaluation-and-troubleshooting': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Building a Simple RAG Pipeline from Scratch' Section='End‑to‑End Testing, Evaluation, and Troubleshooting': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Fundamentals of Prompt Engineering for Retrieval-Augmented Generation': Failed to build research task for section 'chapter-7-section-fundamentals-of-prompt-engineering-for-retrieval-augmented-generation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Fundamentals of Prompt Engineering for Retrieval-Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Designing Retrieval-Aware Prompts': Failed to build research task for section 'chapter-7-section-designing-retrieval-aware-prompts': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Designing Retrieval-Aware Prompts': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Managing Context Length and Token Budgets': Failed to build research task for section 'chapter-7-section-managing-context-length-and-token-budgets': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Managing Context Length and Token Budgets': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Context Selection, Chunking, and Summarization Strategies': Failed to build research task for section 'chapter-7-section-context-selection-chunking-and-summarization-strategies': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Context Selection, Chunking, and Summarization Strategies': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Iterative Prompt Optimization and Evaluation': Failed to build research task for section 'chapter-7-section-iterative-prompt-optimization-and-evaluation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Prompt Engineering and Context Management' Section='Iterative Prompt Optimization and Evaluation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Core Evaluation Metrics for Retrieval-Augmented Generation': Failed to build research task for section 'chapter-8-section-core-evaluation-metrics-for-retrieval-augmented-generation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Core Evaluation Metrics for Retrieval-Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Designing a Reproducible Test Harness for RAG': Failed to build research task for section 'chapter-8-section-designing-a-reproducible-test-harness-for-rag': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Designing a Reproducible Test Harness for RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Diagnosing Retrieval Quality and Improving Relevance': Failed to build research task for section 'chapter-8-section-diagnosing-retrieval-quality-and-improving-relevance': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Diagnosing Retrieval Quality and Improving Relevance': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Optimizing Latency and Throughput in RAG Pipelines': Failed to build research task for section 'chapter-8-section-optimizing-latency-and-throughput-in-rag-pipelines': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Optimizing Latency and Throughput in RAG Pipelines': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Continuous Monitoring, A/B Testing, and Feedback Loops': Failed to build research task for section 'chapter-8-section-continuous-monitoring-a-b-testing-and-feedback-loops': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Evaluating and Optimizing RAG Performance' Section='Continuous Monitoring, A/B Testing, and Feedback Loops': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Selecting and Configuring a Vector Database for RAG': Failed to build research task for section 'chapter-9-section-selecting-and-configuring-a-vector-database-for-rag': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Selecting and Configuring a Vector Database for RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Indexing Large Document Collections Efficiently': Failed to build research task for section 'chapter-9-section-indexing-large-document-collections-efficiently': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Indexing Large Document Collections Efficiently': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Hybrid Search: Combining Semantic and Keyword Retrieval': Failed to build research task for section 'chapter-9-section-hybrid-search-combining-semantic-and-keyword-retrieval': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Hybrid Search: Combining Semantic and Keyword Retrieval': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Using Cloud‑Native Vector Stores and Managed Services': Failed to build research task for section 'chapter-9-section-using-cloud-native-vector-stores-and-managed-services': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Using Cloud‑Native Vector Stores and Managed Services': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Operationalizing RAG at Scale: Monitoring, Caching, and Cost Management': Failed to build research task for section 'chapter-9-section-operationalizing-rag-at-scale-monitoring-caching-and-cost-management': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Scaling RAG with External Knowledge Bases' Section='Operationalizing RAG at Scale: Monitoring, Caching, and Cost Management': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Industry Use Cases for Retrieval‑Augmented Generation': Failed to build research task for section 'chapter-10-section-industry-use-cases-for-retrieval-augmented-generation': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Industry Use Cases for Retrieval‑Augmented Generation': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Designing Scalable Deployment Architectures for RAG': Failed to build research task for section 'chapter-10-section-designing-scalable-deployment-architectures-for-rag': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Designing Scalable Deployment Architectures for RAG': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Ensuring Data Security and Privacy in RAG Systems': Failed to build research task for section 'chapter-10-section-ensuring-data-security-and-privacy-in-rag-systems': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Ensuring Data Security and Privacy in RAG Systems': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Monitoring, Evaluation, and Continuous Improvement of RAG Pipelines': Failed to build research task for section 'chapter-10-section-monitoring-evaluation-and-continuous-improvement-of-rag-pipelines': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Monitoring, Evaluation, and Continuous Improvement of RAG Pipelines': Researcher workflow completed without producing a research packet.",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Best Practices and Common Pitfalls in Production RAG': Failed to build research task for section 'chapter-10-section-best-practices-and-common-pitfalls-in-production-rag': Error code: 404 - {'error': {'message': 'Unknown request URL: POST /openai/v1/openai/v1/chat/completions. Please check the URL for typos, or see the docs at https://console.groq.com/docs/', 'type': 'invalid_request_error', 'code': 'unknown_url'}}",
+    "[error] Chapter='Real‑World Applications and Best Practices' Section='Best Practices and Common Pitfalls in Production RAG': Researcher workflow completed without producing a research packet."
+  ]
+}

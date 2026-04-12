@@ -1,5 +1,5 @@
-from schemas import BookPlan, ChapterPlan, SectionPlan, UserBookRequest
-from section_schemas import ChapterSectionPlan
+from planner_agent.schemas import BookPlan, ChapterPlan, SectionPlan, UserBookRequest
+from planner_agent.section_schemas import ChapterSectionPlan
 
 
 class BookPlanAssembler:

@@ -1,4 +1,4 @@
-from schemas import BookPlan, UserBookRequest
+from planner_agent.schemas import BookPlan, UserBookRequest
 
 
 def validate_book_plan(plan: BookPlan, request: UserBookRequest) -> list[str]:

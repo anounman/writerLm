@@ -1,6 +1,6 @@
 import json 
 from pathlib import Path
-from schemas import UserBookRequest , BookPlan
+from planner_agent.schemas import BookPlan
 
 OUTPUT_DIR = Path("outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)

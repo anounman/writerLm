@@ -1,14 +1,14 @@
 from pydantic import ValidationError
 
-from config import get_client, get_model_name
-from schemas import UserBookRequest, PlanningContext
-from outline_schemas import ChapterOutlineItem
-from section_schemas import ChapterSectionPlan
-from section_prompt import (
+from planner_agent.config import get_client, get_model_name
+from planner_agent.outline_schemas import ChapterOutlineItem
+from planner_agent.schemas import PlanningContext, UserBookRequest
+from planner_agent.section_prompt import (
     SECTION_PLANNER_SYSTEM_PROMPT,
     build_section_planner_prompt,
 )
-from utils import load_json_safe
+from planner_agent.section_schemas import ChapterSectionPlan
+from planner_agent.utils import load_json_safe
 
 
 class SectionPlannerNode:

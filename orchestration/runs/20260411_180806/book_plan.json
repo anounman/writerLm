@@ -1,0 +1,715 @@
+{
+  "title": "Retrieval-Augmented Generation for Software Engineers",
+  "audience": "software engineers new to GenAI",
+  "tone": "practical and educational",
+  "depth": "intermediate",
+  "chapters": [
+    {
+      "chapter_number": 1,
+      "title": "Foundations of Retrieval-Augmented Generation",
+      "chapter_goal": "Introduce the core concepts, motivations, and high‑level benefits of RAG to establish a solid conceptual baseline.",
+      "sections": [
+        {
+          "title": "Defining Retrieval‑Augmented Generation",
+          "goal": "Explain what RAG is, how it differs from pure language‑model generation, and set a clear terminology foundation.",
+          "key_questions": [
+            "What does Retrieval‑Augmented Generation mean?",
+            "How does RAG differ from standard generative AI?",
+            "What are the key terms (retriever, index, augment, etc.)?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Why Augment Generation with Retrieval?",
+          "goal": "Present the motivations for combining retrieval with language models, emphasizing accuracy, freshness, and domain relevance.",
+          "key_questions": [
+            "Why do pure language models hallucinate or become outdated?",
+            "How does external retrieval improve answer correctness?",
+            "What practical problems does RAG solve for engineers?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Core Components of a RAG Architecture",
+          "goal": "Identify and describe the main building blocks—retriever, document store, index, and generator—and their roles within a RAG system.",
+          "key_questions": [
+            "What are the essential components of a RAG pipeline?",
+            "How does each component interact with the others?",
+            "What options exist for each component (e.g., dense vs sparse retrievers)?"
+          ],
+          "estimated_words": 660
+        },
+        {
+          "title": "High‑Level RAG Workflow Explained",
+          "goal": "Walk through the end‑to‑end process from user query to generated response, highlighting each step’s purpose.",
+          "key_questions": [
+            "What are the sequential steps in a RAG request?",
+            "How is the retrieved context incorporated into the language model?",
+            "Where do filtering and ranking occur in the pipeline?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Benefits, Limitations, and Trade‑offs",
+          "goal": "Summarize the primary advantages of RAG while acknowledging practical constraints such as latency, complexity, and data freshness.",
+          "key_questions": [
+            "What measurable benefits does RAG provide (e.g., reduced hallucination, higher relevance)?",
+            "What are the common trade‑offs engineers must consider?",
+            "How do you decide if RAG is appropriate for a given application?"
+          ],
+          "estimated_words": 590
+        }
+      ]
+    },
+    {
+      "chapter_number": 2,
+      "title": "Language Model Primer for Engineers",
+      "chapter_goal": "Review large language model fundamentals, capabilities, and limitations relevant to augmentation.",
+      "sections": [
+        {
+          "title": "Fundamentals of Large Language Models",
+          "goal": "Explain the core architecture, training process, tokenization, and inference mechanisms that define modern LLMs.",
+          "key_questions": [
+            "What is a large language model and how does it differ from traditional NLP models?",
+            "How are LLMs trained on massive text corpora?",
+            "What role do tokens and embeddings play in model operation?",
+            "How does inference generate coherent text from a prompt?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Core Capabilities of LLMs for Generation and Understanding",
+          "goal": "Describe the primary tasks LLMs excel at, including text generation, summarization, translation, and few‑shot learning, and why these matter for engineers.",
+          "key_questions": [
+            "What types of language tasks can LLMs perform out‑of‑the‑box?",
+            "How does zero‑shot and few‑shot prompting work?",
+            "What are the limits of context length and how do they affect output?",
+            "Why are these capabilities useful when building augmented systems?"
+          ],
+          "estimated_words": 540
+        },
+        {
+          "title": "Limitations and Failure Modes of LLMs",
+          "goal": "Identify common weaknesses such as hallucination, bias, outdated knowledge, and computational constraints that impact reliable augmentation.",
+          "key_questions": [
+            "Why do LLMs sometimes generate inaccurate or fabricated information?",
+            "What sources of bias exist in trained models?",
+            "How does the static knowledge cutoff affect retrieval‑augmented workflows?",
+            "What are the cost and latency considerations for real‑time use?"
+          ],
+          "estimated_words": 560
+        },
+        {
+          "title": "Interaction Between LLMs and Retrieval Systems",
+          "goal": "Explain how external retrieval complements LLMs, addressing knowledge gaps and improving factual accuracy in generation.",
+          "key_questions": [
+            "How does retrieval‑augmented generation (RAG) combine search with language modeling?",
+            "What information does the LLM receive from a retrieved document?",
+            "When is retrieval necessary versus relying on the model’s internal knowledge?",
+            "What are the typical data flow patterns in a RAG pipeline?"
+          ],
+          "estimated_words": 420
+        },
+        {
+          "title": "Practical Engineering Considerations for Deploying LLMs",
+          "goal": "Provide actionable guidance on model selection, API vs self‑hosted deployment, token budgeting, and monitoring for production‑ready systems.",
+          "key_questions": [
+            "Which model sizes are appropriate for different use‑cases?",
+            "How do you balance latency, cost, and quality when choosing an API or self‑hosted solution?",
+            "What strategies help manage token limits and avoid truncation?",
+            "How should engineers monitor performance and detect degradation over time?"
+          ],
+          "estimated_words": 500
+        }
+      ]
+    },
+    {
+      "chapter_number": 3,
+      "title": "Information Retrieval Basics",
+      "chapter_goal": "Explain indexing, search, similarity metrics, and relevance scoring that underpin the retrieval component.",
+      "sections": [
+        {
+          "title": "Fundamentals of Text Indexing",
+          "goal": "Introduce the core concepts of tokenization, term dictionaries, and inverted indexes that enable efficient document lookup.",
+          "key_questions": [
+            "What is an inverted index and how does it support fast retrieval?",
+            "How do tokenization and normalization affect index quality?",
+            "What trade‑offs exist between different indexing structures?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Query Processing and Retrieval Algorithms",
+          "goal": "Explain how user queries are parsed, transformed, and matched against the index using Boolean and vector‑space techniques.",
+          "key_questions": [
+            "How are queries tokenized and expanded for matching?",
+            "What are the main retrieval algorithms (Boolean, TF‑IDF, BM25) and when to use each?",
+            "How does the retrieval pipeline move from query to candidate documents?"
+          ],
+          "estimated_words": 560
+        },
+        {
+          "title": "Similarity Metrics for Text Matching",
+          "goal": "Detail the mathematical measures (cosine similarity, BM25, language‑model scores) that quantify relevance between query and documents.",
+          "key_questions": [
+            "How does cosine similarity work in a vector space model?",
+            "What makes BM25 a preferred ranking function for sparse text?",
+            "When should dense embedding similarity be preferred over lexical metrics?"
+          ],
+          "estimated_words": 540
+        },
+        {
+          "title": "Relevance Scoring and Ranking Strategies",
+          "goal": "Describe how similarity scores are combined, normalized, and ordered to produce a ranked list of results.",
+          "key_questions": [
+            "How are raw similarity scores transformed into relevance scores?",
+            "What role do heuristics (e.g., document length normalization) play in ranking?",
+            "How can learning‑to‑rank improve retrieval effectiveness?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Hands‑On Indexing with Open‑Source Tools",
+          "goal": "Provide a practical guide to building and querying an index using popular libraries such as Elasticsearch and FAISS.",
+          "key_questions": [
+            "What are the steps to create an index in Elasticsearch?",
+            "How does FAISS enable fast similarity search over dense vectors?",
+            "How can you evaluate index performance and tune parameters?"
+          ],
+          "estimated_words": 570
+        }
+      ]
+    },
+    {
+      "chapter_number": 4,
+      "title": "The RAG Pipeline Architecture",
+      "chapter_goal": "Detail the three‑stage pipeline—retrieval, augmentation, generation—and how the pieces interact.",
+      "sections": [
+        {
+          "title": "Pipeline Overview: From Query to Answer",
+          "goal": "Introduce the high‑level three‑stage RAG workflow, define each stage, and explain how they connect to form an end‑to‑end system.",
+          "key_questions": [
+            "What are the three core stages of a RAG pipeline?",
+            "How does data move between retrieval, augmentation, and generation?",
+            "Why is a staged architecture beneficial for accuracy and scalability?"
+          ],
+          "estimated_words": 550
+        },
+        {
+          "title": "Designing the Retrieval Engine",
+          "goal": "Explain how to build and configure the retrieval component, covering indexing strategies, similarity metrics, and query formulation for effective document lookup.",
+          "key_questions": [
+            "What types of indexes (e.g., vector, inverted) are suitable for RAG?",
+            "How do you choose a similarity metric for the domain?",
+            "How should a user query be transformed before searching?",
+            "What trade‑offs exist between recall and latency?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Context Augmentation and Re‑ranking",
+          "goal": "Detail techniques for turning raw retrieved chunks into a coherent context, including chunking, relevance scoring, and prompt‑friendly formatting.",
+          "key_questions": [
+            "How should documents be chunked to balance relevance and token limits?",
+            "What methods can re‑rank retrieved results for higher quality context?",
+            "How do you format and concatenate chunks to create a prompt that guides the generator?",
+            "When is it necessary to filter or summarize retrieved content?"
+          ],
+          "estimated_words": 750
+        },
+        {
+          "title": "Generation Module Integration",
+          "goal": "Cover how to select and configure a language model, craft prompts that incorporate augmented context, and control generation parameters for reliable outputs.",
+          "key_questions": [
+            "Which model families are most compatible with RAG?",
+            "How does prompt design differ when using retrieved context?",
+            "What parameters (temperature, max tokens, stop sequences) affect answer fidelity?",
+            "How can you detect and mitigate hallucinations in the generated response?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Orchestrating the End‑to‑End Flow",
+          "goal": "Show how to wire the three stages together in production, addressing latency, error handling, caching, and monitoring for a robust RAG service.",
+          "key_questions": [
+            "What architectural patterns (e.g., microservices, serverless) support RAG pipelines?",
+            "How can caching improve retrieval speed without sacrificing freshness?",
+            "What strategies handle failures in any stage to maintain user experience?",
+            "Which metrics should be monitored to evaluate pipeline health?"
+          ],
+          "estimated_words": 800
+        }
+      ]
+    },
+    {
+      "chapter_number": 5,
+      "title": "Data Preparation and Document Management",
+      "chapter_goal": "Guide engineers through collecting, cleaning, chunking, and organizing documents for effective retrieval.",
+      "sections": [
+        {
+          "title": "Identifying and Sourcing Relevant Documents",
+          "goal": "Help engineers determine which data sources are needed for their RAG system and establish reliable pipelines for acquisition.",
+          "key_questions": [
+            "What types of documents are most valuable for the target use case?",
+            "How can existing internal and external data repositories be accessed programmatically?",
+            "What legal, privacy, and licensing considerations affect data collection?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Cleaning and Normalizing Text for Retrieval",
+          "goal": "Teach practical techniques to preprocess raw text so that it is consistent, searchable, and free of noise that harms retrieval quality.",
+          "key_questions": [
+            "Which common noise patterns (HTML tags, OCR errors, boilerplate) must be removed?",
+            "How should language-specific tokenization and case handling be applied?",
+            "What automated validation checks can ensure cleaning quality before indexing?"
+          ],
+          "estimated_words": 710
+        },
+        {
+          "title": "Chunking Strategies and Choosing Granularity",
+          "goal": "Explain how to split documents into optimal chunks that balance context richness with retrieval efficiency.",
+          "key_questions": [
+            "What are the trade‑offs between fixed‑size versus semantic chunking?",
+            "How does chunk size affect downstream language model prompts?",
+            "Which algorithms or libraries can automate chunk creation while preserving logical boundaries?"
+          ],
+          "estimated_words": 680
+        },
+        {
+          "title": "Building and Managing Retrieval Indexes",
+          "goal": "Guide engineers through selecting, configuring, and maintaining vector or hybrid indexes that support fast and accurate retrieval.",
+          "key_questions": [
+            "When should a dense vector index be used versus a sparse lexical index?",
+            "What parameters (embedding model, dimensionality, distance metric) impact index performance?",
+            "How can indexes be updated incrementally as new documents arrive?"
+          ],
+          "estimated_words": 750
+        },
+        {
+          "title": "Organizing Metadata, Versioning, and Access Controls",
+          "goal": "Provide best practices for enriching documents with metadata, handling version history, and securing access to the retrieval store.",
+          "key_questions": [
+            "Which metadata fields (source, timestamp, tags) improve relevance ranking?",
+            "How should document versioning be tracked to avoid stale information?",
+            "What role‑based access mechanisms protect sensitive data while enabling retrieval?"
+          ],
+          "estimated_words": 640
+        }
+      ]
+    },
+    {
+      "chapter_number": 6,
+      "title": "Embedding Models and Vector Stores",
+      "chapter_goal": "Cover selection of embedding models, creation of vector representations, and setup of vector databases.",
+      "sections": [
+        {
+          "title": "Embedding Model Landscape: Types and Characteristics",
+          "goal": "Introduce the main families of embedding models, their architectural differences, and practical implications for RAG systems.",
+          "key_questions": [
+            "What are the differences between static and contextual embeddings?",
+            "How do open‑source models compare to hosted API models in terms of performance and cost?",
+            "Which model architectures are best suited for short queries versus long documents?"
+          ],
+          "estimated_words": 550
+        },
+        {
+          "title": "Evaluating and Selecting the Right Embedding Model",
+          "goal": "Provide a systematic approach to choose an embedding model that matches the project's domain, latency, and budget constraints.",
+          "key_questions": [
+            "What evaluation metrics (e.g., cosine similarity, recall) should be used for embeddings?",
+            "How does dimensionality affect storage and retrieval speed?",
+            "When should a domain‑specific fine‑tuned model be preferred over a general‑purpose one?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Generating High‑Quality Vector Representations from Text",
+          "goal": "Explain the end‑to‑end process of turning raw documents into vectors, including preprocessing, chunking, and batch inference.",
+          "key_questions": [
+            "What preprocessing steps (tokenization, cleaning) improve embedding quality?",
+            "How should large documents be chunked to balance context and vector size?",
+            "What are best practices for batching requests to embedding APIs?"
+          ],
+          "estimated_words": 680
+        },
+        {
+          "title": "Fundamentals of Vector Stores and Indexing Strategies",
+          "goal": "Describe core concepts of vector databases, similarity metrics, and indexing algorithms that enable fast nearest‑neighbor search.",
+          "key_questions": [
+            "What similarity measures (cosine, Euclidean, inner product) are appropriate for different embedding spaces?",
+            "How do indexing structures like IVF, HNSW, and PQ affect query latency and accuracy?",
+            "When is it necessary to use hybrid indexes that combine metadata filtering with vector search?"
+          ],
+          "estimated_words": 590
+        },
+        {
+          "title": "Deploying and Configuring a Vector Database for Production",
+          "goal": "Guide readers through setting up a vector store, configuring scaling parameters, and monitoring performance in a real‑world RAG pipeline.",
+          "key_questions": [
+            "What are the trade‑offs between self‑hosted vector stores and managed cloud services?",
+            "How should replication, sharding, and persistence be configured for reliability?",
+            "Which monitoring metrics (query latency, index build time, resource usage) are critical for maintaining a healthy vector store?"
+          ],
+          "estimated_words": 710
+        }
+      ]
+    },
+    {
+      "chapter_number": 7,
+      "title": "Implementing Retrieval with Open‑Source Tools",
+      "chapter_goal": "Provide hands‑on instructions using FAISS, Elasticsearch, or Milvus to build a searchable index.",
+      "sections": [
+        {
+          "title": "Preparing Data and Environment for Retrieval Pipelines",
+          "goal": "Guide readers through data cleaning, embedding generation, and installing the required open‑source tools so they have a ready-to‑use foundation.",
+          "key_questions": [
+            "How should raw documents be formatted for indexing?",
+            "Which embedding model is suitable for beginner projects?",
+            "What are the installation steps for FAISS, Elasticsearch, and Milvus on common platforms?",
+            "How can we verify that the environment is correctly set up?"
+          ],
+          "estimated_words": 600
+        },
+        {
+          "title": "Creating a FAISS Vector Index from Embeddings",
+          "goal": "Show step‑by‑step how to generate embeddings, build a FAISS index, add vectors, and perform similarity queries.",
+          "key_questions": [
+            "How do we generate dense embeddings for our text chunks?",
+            "Which FAISS index type (Flat, IVF, HNSW) fits a beginner project?",
+            "What is the process for adding vectors and metadata to the index?",
+            "How can we query the index and interpret similarity scores?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Setting Up Elasticsearch for Hybrid Text‑Vector Retrieval",
+          "goal": "Teach readers to configure Elasticsearch to store both traditional inverted‑index fields and dense vector fields, enabling combined BM25 and vector search.",
+          "key_questions": [
+            "How do we enable the dense_vector field type in Elasticsearch?",
+            "What mapping settings are needed for hybrid search?",
+            "How can we index documents with both raw text and pre‑computed embeddings?",
+            "What query DSL combines BM25 relevance with vector similarity?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Deploying Milvus for Scalable Vector Search",
+          "goal": "Provide a practical guide to installing Milvus, creating collections, loading embeddings, building indexes, and executing high‑performance similarity searches.",
+          "key_questions": [
+            "What are the deployment options for Milvus (Docker, Helm, cloud)?",
+            "How do we design a collection schema for document IDs and vectors?",
+            "Which index type (IVF_FLAT, HNSW, ANNOY) balances speed and accuracy for medium‑scale data?",
+            "How do we perform batch insertion and real‑time queries?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Integrating the Retrieval Index with a Language Model for RAG",
+          "goal": "Demonstrate how to fetch relevant passages from FAISS, Elasticsearch, or Milvus and feed them into a LLM prompt to generate augmented responses.",
+          "key_questions": [
+            "How do we retrieve the top‑k most relevant chunks for a user query?",
+            "What prompt template best incorporates retrieved context?",
+            "How can we handle token limits and chunk concatenation?",
+            "What metrics can we use to evaluate the quality of RAG outputs?"
+          ],
+          "estimated_words": 800
+        }
+      ]
+    },
+    {
+      "chapter_number": 8,
+      "title": "Integrating Retrieval with LLMs",
+      "chapter_goal": "Show how to connect vector stores to language models, craft prompts, and inject retrieved context.",
+      "sections": [
+        {
+          "title": "RAG Architecture Primer: Components and Data Flow",
+          "goal": "Explain the core pieces—vector store, embedding model, LLM, and orchestrator—and how they interact in a retrieval‑augmented generation pipeline.",
+          "key_questions": [
+            "What are the main components of a RAG system?",
+            "How does retrieved information travel to the LLM?",
+            "Where does latency typically arise in the pipeline?"
+          ],
+          "estimated_words": 420
+        },
+        {
+          "title": "Choosing and Populating a Vector Store",
+          "goal": "Guide engineers through selecting a suitable vector database, generating embeddings for their documents, and building an index ready for fast similarity search.",
+          "key_questions": [
+            "Which vector store options balance performance and cost for typical engineering projects?",
+            "How do you generate consistent embeddings for heterogeneous document types?",
+            "What indexing strategies improve recall without sacrificing speed?"
+          ],
+          "estimated_words": 610
+        },
+        {
+          "title": "Runtime Integration: Querying the Vector Store from an LLM",
+          "goal": "Demonstrate how to programmatically retrieve relevant chunks at inference time and feed them into the language model’s context window.",
+          "key_questions": [
+            "How do you construct a similarity query and retrieve top‑k results?",
+            "What formats are best for passing retrieved text to the LLM?",
+            "How can you handle cases where no relevant documents are found?"
+          ],
+          "estimated_words": 540
+        },
+        {
+          "title": "Prompt Engineering for Retrieved Context",
+          "goal": "Teach practical techniques for embedding retrieved passages into prompts to improve relevance and reduce hallucination.",
+          "key_questions": [
+            "What prompt templates effectively combine retrieved snippets with the user query?",
+            "How many documents should be injected given token limits?",
+            "How can you signal the LLM to cite sources or attribute information?"
+          ],
+          "estimated_words": 530
+        },
+        {
+          "title": "End‑to‑End RAG Implementation Walkthrough",
+          "goal": "Provide a concrete, step‑by‑step code example (e.g., Python with LangChain or LlamaIndex) that ties together vector store setup, retrieval, and prompt construction into a working application.",
+          "key_questions": [
+            "What are the sequential coding steps to build a minimal RAG pipeline?",
+            "How do you test and debug each stage of the workflow?",
+            "What best‑practice patterns help move the prototype toward production readiness?"
+          ],
+          "estimated_words": 790
+        }
+      ]
+    },
+    {
+      "chapter_number": 9,
+      "title": "Building a Simple RAG Prototype",
+      "chapter_goal": "Walk through a complete end‑to‑end example that engineers can run and modify.",
+      "sections": [
+        {
+          "title": "Setting Up the Development Environment",
+          "goal": "Equip the reader with a ready-to-use Python environment, required libraries, and API access so they can execute the prototype without obstacles.",
+          "key_questions": [
+            "Which Python version and packages are needed for a basic RAG prototype?",
+            "How do I obtain API keys for the language model and vector store services?",
+            "What are the minimal configuration steps to run the code locally?"
+          ],
+          "estimated_words": 420
+        },
+        {
+          "title": "Preparing and Indexing the Document Corpus",
+          "goal": "Show how to collect, clean, embed, and store a small set of documents in a vector database, creating the retrieval index used by the prototype.",
+          "key_questions": [
+            "What preprocessing steps improve embedding quality for typical text documents?",
+            "How do I generate embeddings using a chosen model and batch them efficiently?",
+            "What is the simplest way to load embeddings into a local vector store like FAISS?"
+          ],
+          "estimated_words": 460
+        },
+        {
+          "title": "Implementing the Retrieval Component",
+          "goal": "Teach the reader to transform a user query into an embedding, perform similarity search, and return the most relevant passages.",
+          "key_questions": [
+            "How is a query embedding created and what parameters affect its relevance?",
+            "What similarity metric should be used for short‑text retrieval?",
+            "How can I retrieve and rank the top‑k documents efficiently?"
+          ],
+          "estimated_words": 440
+        },
+        {
+          "title": "Integrating Retrieval with Language Model Generation",
+          "goal": "Combine the retrieved passages with a prompt template to produce accurate, context‑aware responses from the language model.",
+          "key_questions": [
+            "What prompt structure best injects retrieved context into the LLM?",
+            "How do I handle token limits when concatenating documents and prompts?",
+            "What post‑processing steps improve the readability of generated answers?"
+          ],
+          "estimated_words": 480
+        },
+        {
+          "title": "Extending and Customizing the Prototype",
+          "goal": "Enable readers to adapt the prototype by adding new data sources, tuning retrieval parameters, and preparing the code for simple deployment.",
+          "key_questions": [
+            "How can I add additional document types (e.g., PDFs, CSVs) to the index?",
+            "What knobs (e.g., top‑k, similarity threshold) most affect answer quality?",
+            "What are the minimal steps to containerize the prototype for local testing?"
+          ],
+          "estimated_words": 380
+        }
+      ]
+    },
+    {
+      "chapter_number": 10,
+      "title": "Evaluation Metrics and Debugging RAG Systems",
+      "chapter_goal": "Introduce relevance, accuracy, and latency metrics and techniques for diagnosing common issues.",
+      "sections": [
+        {
+          "title": "Foundations of RAG Evaluation: Relevance, Accuracy, and Latency",
+          "goal": "Establish the three primary dimensions of RAG system performance and explain why each matters for real-world applications.",
+          "key_questions": [
+            "What are the core evaluation dimensions for a Retrieval‑Augmented Generation system?",
+            "How do relevance, accuracy, and latency interact in user experience?",
+            "Why must engineers measure all three rather than focusing on a single metric?"
+          ],
+          "estimated_words": 450
+        },
+        {
+          "title": "Measuring Retrieval Relevance: Precision, Recall, MRR, and nDCG",
+          "goal": "Teach concrete relevance metrics, how to compute them on retrieval results, and when to prefer each metric for RAG pipelines.",
+          "key_questions": [
+            "How is precision@k different from recall@k in a retrieval context?",
+            "What does Mean Reciprocal Rank (MRR) tell us about top‑ranked documents?",
+            "When should Normalized Discounted Cumulative Gain (nDCG) be used for graded relevance?",
+            "How can we set relevance thresholds that align with downstream generation quality?"
+          ],
+          "estimated_words": 620
+        },
+        {
+          "title": "Assessing Generation Accuracy: Exact Match, BLEU/ROUGE, and Factual Correctness",
+          "goal": "Introduce metrics for evaluating the generated answer itself, covering lexical similarity, semantic fidelity, and fact‑checking approaches.",
+          "key_questions": [
+            "What are the strengths and limits of exact‑match and token‑level metrics for RAG outputs?",
+            "How do BLEU, ROUGE, and METEOR capture similarity between generated and reference answers?",
+            "What methods exist to evaluate factual correctness beyond surface similarity?",
+            "When should human evaluation be incorporated alongside automated scores?"
+          ],
+          "estimated_words": 580
+        },
+        {
+          "title": "Latency and Throughput: Instrumenting End‑to‑End Performance",
+          "goal": "Provide a practical guide to measuring response time, breaking down latency by component, and establishing performance targets.",
+          "key_questions": [
+            "Which parts of a RAG pipeline contribute most to overall latency?",
+            "How can we instrument retrieval, reranking, and generation to capture fine‑grained timings?",
+            "What are common latency benchmarks for interactive versus batch RAG use cases?",
+            "How do we balance latency constraints with accuracy improvements?"
+          ],
+          "estimated_words": 500
+        },
+        {
+          "title": "Systematic Debugging of RAG Pipelines: From Retrieval Failures to Generation Hallucinations",
+          "goal": "Present a step‑by‑step debugging workflow that helps engineers identify and resolve common quality and performance issues.",
+          "key_questions": [
+            "What diagnostic signals indicate a retrieval mismatch versus a generation hallucination?",
+            "How can error analysis logs be structured to trace issues back to specific components?",
+            "Which tools (e.g., vector‑store visualizers, prompt sandboxes) aid rapid debugging?",
+            "What iterative process should be followed to validate fixes against the evaluation metrics?"
+          ],
+          "estimated_words": 560
+        }
+      ]
+    },
+    {
+      "chapter_number": 11,
+      "title": "Scaling RAG for Production",
+      "chapter_goal": "Discuss performance optimization, caching, monitoring, and deployment considerations for real‑world use.",
+      "sections": [
+        {
+          "title": "Designing a Scalable Retrieval Architecture",
+          "goal": "Explain how to structure the retrieval component for horizontal scaling, including sharding, replication, and vector index partitioning.",
+          "key_questions": [
+            "What are the common bottlenecks in a retrieval service?",
+            "How does sharding improve query throughput?",
+            "When should replication be used versus partitioning?",
+            "What trade‑offs exist between consistency and latency in a distributed index?"
+          ],
+          "estimated_words": 650
+        },
+        {
+          "title": "Latency Reduction with Caching Strategies",
+          "goal": "Show practical caching techniques—query result caching, embedding caching, and hybrid approaches—to meet low‑latency SLAs.",
+          "key_questions": [
+            "Which parts of the RAG pipeline benefit most from caching?",
+            "How to choose cache keys for dynamic queries?",
+            "What eviction policies work best for vector embeddings?",
+            "How to balance cache freshness with performance?"
+          ],
+          "estimated_words": 560
+        },
+        {
+          "title": "Monitoring, Logging, and Alerting for RAG Pipelines",
+          "goal": "Define metrics, logs, and alerts needed to observe system health, detect drift, and ensure reliability in production.",
+          "key_questions": [
+            "What key performance indicators (KPIs) should be tracked for retrieval and generation?",
+            "How to instrument latency, error rates, and token usage?",
+            "What patterns indicate model drift or data staleness?",
+            "How to set up automated alerts for SLA violations?"
+          ],
+          "estimated_words": 720
+        },
+        {
+          "title": "Containerization and Orchestration of RAG Services",
+          "goal": "Guide the deployment of RAG components using Docker, Kubernetes, and serverless options, emphasizing reproducibility and scaling.",
+          "key_questions": [
+            "How to containerize the retrieval index and language model inference services?",
+            "What Kubernetes resources (Deployments, StatefulSets, Services) are appropriate for each component?",
+            "When is a serverless approach viable for RAG workloads?",
+            "How to manage configuration and secrets securely in orchestration platforms?"
+          ],
+          "estimated_words": 680
+        },
+        {
+          "title": "Cost Management and Autoscaling in Production",
+          "goal": "Teach strategies to control cloud spend while automatically scaling compute and storage based on demand.",
+          "key_questions": [
+            "Which metrics should drive horizontal pod autoscaling for retrieval and generation?",
+            "How to estimate cost per query and set budget alerts?",
+            "What techniques reduce inference cost (quantization, model distillation) without sacrificing accuracy?",
+            "How to implement spot‑instance or preemptible‑node strategies safely?"
+          ],
+          "estimated_words": 590
+        }
+      ]
+    },
+    {
+      "chapter_number": 12,
+      "title": "Real‑World Use Cases and Best Practices",
+      "chapter_goal": "Present practical applications, security considerations, and best‑practice guidelines to inspire further development.",
+      "sections": [
+        {
+          "title": "Industry Use Cases of Retrieval‑Augmented Generation",
+          "goal": "Show how RAG is applied in various sectors, highlighting problem statements, solution architectures, and tangible outcomes.",
+          "key_questions": [
+            "What problems does RAG solve in different industries?",
+            "How are companies structuring their RAG pipelines?",
+            "What measurable benefits have been reported?"
+          ],
+          "estimated_words": 900
+        },
+        {
+          "title": "Securing the Retrieval Component and Data Sources",
+          "goal": "Explain security best practices for protecting proprietary data and preventing leakage through retrieval and generation stages.",
+          "key_questions": [
+            "How can proprietary documents be protected during retrieval?",
+            "What authentication and authorization mechanisms are required?",
+            "How to mitigate data leakage from LLM outputs?"
+          ],
+          "estimated_words": 800
+        },
+        {
+          "title": "Optimizing Performance and Controlling Costs",
+          "goal": "Provide guidelines for achieving low latency, high throughput, and cost‑effective operation of RAG systems.",
+          "key_questions": [
+            "Which vector store and indexing strategies deliver the best speed?",
+            "What caching techniques reduce external API calls?",
+            "How can token usage be monitored and limited?"
+          ],
+          "estimated_words": 750
+        },
+        {
+          "title": "Evaluating RAG Systems and Monitoring Quality",
+          "goal": "Introduce evaluation metrics and continuous monitoring practices to ensure relevance, factuality, and reliability of RAG outputs.",
+          "key_questions": [
+            "Which metrics capture relevance and factual accuracy?",
+            "How to set up automated testing for RAG responses?",
+            "What alerts should be triggered for model or data drift?"
+          ],
+          "estimated_words": 700
+        },
+        {
+          "title": "Production Deployment Patterns and Operational Guidelines",
+          "goal": "Detail robust deployment architectures, versioning strategies, and CI/CD workflows for maintaining RAG services in production.",
+          "key_questions": [
+            "What architecture patterns support scalable RAG services?",
+            "How to handle versioning of knowledge bases and models?",
+            "Which CI/CD practices are applicable to RAG pipelines?"
+          ],
+          "estimated_words": 850
+        }
+      ]
+    }
+  ]
+}
