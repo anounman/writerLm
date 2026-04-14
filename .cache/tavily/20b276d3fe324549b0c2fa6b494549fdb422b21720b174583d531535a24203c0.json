@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-6-section-controlling-output-quality-formatting-constraints-and-model-parameters_1_e2b6db9bdc__src_1",
+    "query_id": "query_chapter-6-section-controlling-output-quality-formatting-constraints-and-model-parameters_1_e2b6db9bdc",
+    "title": "LLM Settings - Prompt Engineering Guide",
+    "url": "https://www.promptingguide.ai/introduction/settings",
+    "snippet": "Max Length - You can manage the number of tokens the model generates by adjusting the `max length`. Specifying a max length helps you prevent long or irrelevant responses and control costs.\n\nStop Sequences - A `stop sequence` is a string that stops the model from generating tokens. Specifying stop sequences is another way to control the length and structure of the model's response. For example, you can tell the model to generate lists that have no more than 10 items by adding \"11\" as a stop sequence.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.6690754
+  },
+  {
+    "source_id": "query_chapter-6-section-controlling-output-quality-formatting-constraints-and-model-parameters_1_e2b6db9bdc__src_2",
+    "query_id": "query_chapter-6-section-controlling-output-quality-formatting-constraints-and-model-parameters_1_e2b6db9bdc",
+    "title": "Mastering LLM Response Quality: Ultimate Guide to API Parameters | Naved Khan posted on the topic | LinkedIn",
+    "url": "https://www.linkedin.com/posts/naved-khan-093167137_agenticai-artificialintelligence-python-activity-7421025058309038081-IcOS",
+    "snippet": "This is why your LLM responses are failing. You spend hours on prompt engineering, but your responses still sound repetitive, go off-rails, or burn through your budget. Most developers treat API parameters like a \"black box\" or leave them on the default. That is a huge mistake. It’s not always your prompt. It’s the Temperature, Top-P, and Penalties you're ignoring. I built this Ultimate Guide to master the 6 critical parameters that determine response quality. I've included side-by-side Python code for both OpenAI (v1.x)and Google Gemini: 🔹 Temperature: Factual Mode vs. Creative Mode. 🔹 Max Tokens: Stopping runaway generation and cost. 🔹 Top-P: Filtering the \"long tail\" of unlikely words. 🔹 Stop Sequences: Adding professional exit logic. 🔹 Seed: Fixing randomness for reproducibility. 🔹 [...] Harshal Chauhan 4w \n\n   Report this comment\n\nThis hits hard. 🔥 Prompt engineering gets all the attention, but parameter tuning is where real control lives. Temperature, Top-P, and penalties decide whether your LLM is usable or just expensive noise. Great reminder that defaults ≠ production-ready. Naved Khan Sir\n\nLikeReply1 Reaction 2 Reactions \n\nImage 11: Rakshita Belwal, graphic\n\nRakshita Belwal 4w \n\n   Report this comment\n\nExactly. Prompting sets direction, parameters control behavior.\n\nLikeReply2 Reactions 3 Reactions \n\nImage 12: Akhil Meesala, graphic\n\nAkhil Meesala 4w \n\n   Report this comment\n\nSpot on. tuning API parameters often makes a bigger difference than tweaking prompts. Mastering them is key to consistent, reliable LLM outputs without wasting time or budget.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.6649108
+  }
+]

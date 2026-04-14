@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-9-section-lessons-learned-and-best-practices-from-real-deployments_1_dad61f4369__src_1",
+    "query_id": "query_chapter-9-section-lessons-learned-and-best-practices-from-real-deployments_1_dad61f4369",
+    "title": "A Guide to Navigating the Challenges of 5G Deployment",
+    "url": "https://www.aldensys.com/a-guide-to-navigating-the-challenges-of-5g-deployment",
+    "snippet": "Companies have to determine precisely where poles are available, which poles are already loaded with attachments, and where new poles may be needed to fill in gaps. They also need to be aware of any possible obstructions in the vicinity that could interfere with 5G signals. [...] Finding a solution acceptable to all parties should be a common goal for all stakeholders. One key to finding that path is acknowledging the challenges so that innovative solutions can be implemented. Let’s take a look at the most pressing challenges for service providers and utilities.\n\nBack to Top\n\n### Chapter 3 – Challenges for Industry Stakeholders\n\nShortage of Skilled Workers and Materials   \n  \nEven in the early stages of deployment, an insufficient workforce prevented 5G small cell deployment from moving at optimal speed, the FCC’s Brendan Carr explained in 2020. Some potential causes for the shortage of labor include: [...] Modern Asset Management Relies on Collaboration\n\nNever before has communication and collaboration mattered so much. That’s because we have never had so many stakeholders with competing priorities working together under increasingly tight timeframes with so many regulatory requirements differing from state to state.\n\nTo say that the deployment of fiber and 5G wireless infrastructure increased the need for collaboration along with opportunities for conflict would be an understatement.\n\nEliminating the “white space,” or gaps in information-sharing is necessary for success.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.598524
+  },
+  {
+    "source_id": "query_chapter-9-section-lessons-learned-and-best-practices-from-real-deployments_1_dad61f4369__src_2",
+    "query_id": "query_chapter-9-section-lessons-learned-and-best-practices-from-real-deployments_1_dad61f4369",
+    "title": "7 practical challenges of 5G network deployment",
+    "url": "https://www.luxcarta.com/blog/5g-network-deployment",
+    "snippet": "### 6. Management of assets\n\nAs telecom companies deploy 5G, they must manage an ever-larger array of hardware and equipment in the field. This must be monitored, maintained, upgraded, and replaced over time. Managing this inventory will be challenging.\n\nFurthermore, since much of this hardware will be in easy-to-access places (such as lampposts), it may be a more likely target for theft, interference or accidental damage than traditional cell towers.\n\n### 7. Shortages of skilled staff\n\nIn certain countries, there is a shortage of skilled technicians, engineers and project managers who are essential for network deployment. Recruiting, training and upskilling staff to support 5G network deployment will be critical.\n\nYou might like: mmWave 5G will disappoint without better planning [...] Different infrastructure requirements: Unlike 4G or 3G, you cannot rely only on existing cell towers to deploy 5G. Instead, many new sites must be found to install equipment and networks. Deploying 5G is not just a case of replacing like-for-like. Additionally, the deployment often involves new types of hardware that must be installed differently than in previous network generations.\n mmWave 5G: For super-fast mmWave 5G, signals attenuate over very short distances. which will, therefore, require receivers and antennas installed around the urban environment - all of which need to be tested and configured.\n\nRelated: The challenges of expanding mmWave 5G\n\n## 7 challenges of 5G network deployment [...] 5G network deployment is significantly more complex than the rollout of earlier generations of mobile networks (such as 4G and 3G).  \n  \nThere are two key reasons for this greater complexity:",
+    "source_type": "blog",
+    "rank": 2,
+    "discovery_score": 0.5843666
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-1-section-generative-ai-fundamentals-and-sampling_1_85862aa35d__src_1",
+    "query_id": "query_chapter-1-section-generative-ai-fundamentals-and-sampling_1_85862aa35d",
+    "title": "Top-K Sampling: The Complete Token Selection Guide",
+    "url": "https://www.dataannotation.tech/blog/top-k-sampling",
+    "snippet": "### Creative generation: k=40 to k=60\n\nTeams push top-k values to 100 or higher to chase variety, then wonder why the output becomes incoherent. The problem isn't the high value itself; it's that high top-k exposes every other weakness in your setup.\n\nExperiments across top-k values from 10 to 200 showed: below k=30, outputs felt the same; above k=80, coherence breaks appeared. The sweet spot sat between k=40 and k=60 for most long-form generation. But creative generation needs temperature adjustment alongside k. With k=50 and temperature=0.7, you get varied but coherent output. Same k=50 with temperature=1.2, and you're pulling too heavily from low-probability regions.\n\n### Domain-specific applications: k=10 to k=30 [...] Top-k sampling imposes a hard constraint on that uncertainty. Keep the k most probable tokens. Zero out everything else. Renormalize probabilities across what remains, then sample.\n\n### How does top-k sampling work?\n\nThe mechanic is simple. The implications are not.\n\nWhen k=10, the model samples only from its top 10 predictions. Token 11, no matter how plausible, is excluded entirely. When k=50, fifty options remain in play. The difference isn't just scale; it determines whether the model can access the edges of what it knows or stays locked to its most confident guesses.\n\nThis matters because probability distributions aren't shaped the same way across prompts. [...] At k=1, you get deterministic outputs (this is actually greedy decoding)\n At k=5, outputs stay remarkably similar across runs\n At k=50, variance explodes\n\nWe measured one customer's summarization endpoint: k=50 produced outputs that varied in length by 40% across identical inputs. Vocabulary spanned from clinical precision to borderline informal. The model occasionally inserted phrases that felt completely off-brand completely.\n\nThe tradeoff isn't just about variety; it's about exposure to the model's uncertainty.\n\n Low top-k values hide the fact that the model might be equally uncertain about five different continuations.\n High top-k values surface that uncertainty, but also give the model enough rope to wander into territory you didn't expect.",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.99986017
+  },
+  {
+    "source_id": "query_chapter-1-section-generative-ai-fundamentals-and-sampling_1_85862aa35d__src_2",
+    "query_id": "query_chapter-1-section-generative-ai-fundamentals-and-sampling_1_85862aa35d",
+    "title": "Top-K Sampling Explained: Optimize Response Generation",
+    "url": "https://simplified.chat/ai-chat-glossary/top-k-sampling",
+    "snippet": "Input Processing: The AI receives user input or query.\n Prediction: The model predicts a probability distribution over all possible words based on the input.\n Selection: The model identifies the top K words with the highest probabilities.\n Sampling: One of these top K words is sampled to generate the response.\n Response Generation: The chosen word(s) are combined with additional predicted words to form a cohesive output.\n\n## Use Cases: Practical Applications of Top-K Sampling\n\nTop-K Sampling plays a vital role in enhancing various AI applications, such as:",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99979013
+  }
+]

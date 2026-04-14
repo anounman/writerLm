@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-7-section-building-an-end-to-end-evaluation-workflow_1_dbf0deab76__src_1",
+    "query_id": "query_chapter-7-section-building-an-end-to-end-evaluation-workflow_1_dbf0deab76",
+    "title": "Evaluating RAG Pipelines | Haystack",
+    "url": "https://haystack.deepset.ai/tutorials/35_evaluating_rag_pipelines",
+    "snippet": "While each evaluator is a component that can be run individually in Haystack, they can also be added into a pipeline. This way, we can construct an `eval_pipeline` that includes all evaluators for the metrics we want to evaluate our pipeline on. [...] ``` [...] ```",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9998876
+  },
+  {
+    "source_id": "query_chapter-7-section-building-an-end-to-end-evaluation-workflow_1_dbf0deab76__src_2",
+    "query_id": "query_chapter-7-section-building-an-end-to-end-evaluation-workflow_1_dbf0deab76",
+    "title": "A Practical Guide to RAG with Haystack and LangChain | DigitalOcean",
+    "url": "https://www.digitalocean.com/community/tutorials/production-ready-rag-pipelines-haystack-langchain",
+    "snippet": "### Technical Example (Haystack Pipeline)\n\nUsing pseudocode (inspired by Haystack 2.0 syntax), a simple RAG pipeline might be constructed as follows: [...] ### Technical Example (LangChain RAG Chain)\n\nLangChain often represents RAG as a RetrievalQA chain. For instance: [...] # Add components with API key if needed (optional)\npipeline.add_component(\"embedder\", OpenAITextEmbedder(model=\"text-embedding-ada-002\"))\npipeline.add_component(\"retriever\", InMemoryEmbeddingRetriever(document_store=doc_store))\npipeline.add_component(\"generator\", OpenAIGenerator(model=\"gpt-3.5-turbo\"))\n# Connect the components\npipeline.connect(\"embedder.embedding\", \"retriever.query_embedding\")\npipeline.connect(\"retriever.documents\", \"generator.documents\")\n# Step 8: Run the pipeline with a query\nquery = \"What is RAG in NLP?\"\nresult = pipeline.run({\"embedder\": {\"text\": query}})\n# Step 9: Print the answer\nprint(\"\\n Answer:\", result[\"generator\"][\"replies\"])`",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.9998746
+  }
+]

@@ -45,7 +45,7 @@ class FirecrawlClient:
         Scrape a webpage through Firecrawl and normalize the result.
         """
         try:
-            response = self.app.scrape(
+            response = self.app.scrape_url(
                 url,
                 formats=["markdown"],
                 only_main_content=self.only_main_content,

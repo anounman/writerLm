@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-6-section-iterative-evaluation-and-refinement-of-rag-prompts_1_42e6d29778__src_1",
+    "query_id": "query_chapter-6-section-iterative-evaluation-and-refinement-of-rag-prompts_1_42e6d29778",
+    "title": "RAG Evaluation Metrics: How Product Teams Can Measure ...",
+    "url": "https://futureagi.com/blog/rag-evaluation-metrics-2025/",
+    "snippet": "Definition and measurement methodology: Tally up the true positives among the top-k results compared to all the relevant documents out there to figure out Precision@k and Recall@k.\n Tools: Use Future AGI’s built-in RAG evaluation templates, which score both retrieval and generation in one pass and expose context-relevance signals via its tracing dashboard.\n Scoring algorithms and thresholds: You’ll often aim for Precision@5 at 0.7 or better in narrow fields, and Recall@20 hitting 0.8 or higher for wider datasets, though you’ll adjust these to fit your specific scenario.\n\nRetrieval Precision and Recall [...] Core retrieval metrics include Precision@k and Recall@k to check result relevance, Mean Reciprocal Rank (MRR) for first-hit speed, and Normalized Discounted Cumulative Gain (NDCG) for rank weighting.\n\nQ3: How do you measure faithfulness in RAG-generated responses?\n\nFaithfulness is assessed by verifying source attribution accuracy and calculating a hallucination rate using methods like named-entity consistency checks or fact-verification models.\n\nQ4: How does Future AGI help in RAG evaluation?\n\nFuture AGI provides built-in RAG evaluation templates, OpenTelemetry-powered tracing, and no-code customization so teams can automate context relevance, groundedness, hallucination risk, and answer quality checks in one platform\n\n## Related Articles\n\n View all",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.99971086
+  },
+  {
+    "source_id": "query_chapter-6-section-iterative-evaluation-and-refinement-of-rag-prompts_1_42e6d29778__src_2",
+    "query_id": "query_chapter-6-section-iterative-evaluation-and-refinement-of-rag-prompts_1_42e6d29778",
+    "title": "Evaluation Metrics for Retrieval-Augmented Generation (RAG ...",
+    "url": "https://www.geeksforgeeks.org/nlp/evaluation-metrics-for-retrieval-augmented-generation-rag-systems/",
+    "snippet": "Python  ````\n import numpy as np def ndcg(y_true, y_pred, k = 5): ndcg_scores =[] for true_docs, pred_docs in zip(y_true, y_pred): pred_docs_k = pred_docs[: k] dcg = sum([1/ np. log2(idx + 2) if doc in true_docs else 0 for idx, doc in enumerate(pred_docs_k)]) ideal_docs_k = true_docs[: k] idcg = sum([1/ np. log2(idx + 2) for idx, _ in enumerate(ideal_docs_k)]) ndcg_scores. append(dcg/ idcg if idcg> 0 else 0) return np. mean(ndcg_scores) y_true = y_pred = print(\"nDCG@5:\", ndcg(y_true, y_pred))\n```` \n\nOutput:\n\n> nDCG@5: 0.3065735963827292\n\n8. Recall@k and Precision@k: Check relevance within the top k retrieved items.\n\n\\text{Recall@k} = \\frac{|\\{\\text{relevant documents in top } k\\}|}{|\\{\\text{total relevant documents}\\}|} [...] | Metric Type | Examples | Strengths | Weaknesses |\n ---  --- |\n| Retrieval Metrics | Hit Rate, MRR, Precision, Recall, nDCG | Simple, interpretable, directly measures relevance and ranking quality | Don’t evaluate answer quality, fluency or coherence |\n| Generation Metrics | BLEU, ROUGE, METEOR, BERTScore, Perplexity | Quantitative, widely used, easy to compute | May miss semantic meaning, context or factual correctness |\n| End-to-End Metrics | Answer Relevance, Groundedness, Hallucination Rate, Coherence | Holistic evaluation of system, includes factual grounding | Harder to compute automatically, may require human evaluation | [...] Output:\n\n> MAP: 0.25\n\n7. Normalized Discounted Cumulative Gain (nDCG): Rewards highly relevant documents appearing earlier in results.\n\n\\text{nDCG}\\_p = \\frac{\\text{DCG}\\_p}{\\text{IDCG}\\_p}\n\n\\text{DCG}\\_p = \\sum\\_{i=1}^{p} \\frac{2^{\\text{rel}\\_i} - 1}{\\log\\_2(i + 1)}\n\n\\text{IDCG}\\_p = \\sum\\_{i=1}^{p} \\frac{2^{\\text{rel}\\_i^\\text{ideal}} - 1}{\\log\\_2(i + 1)}\n\n p: rank position cutoff\n reli: relevance score of the document at rank i\n reliideal: relevance of document at rank i in ideal ordering",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99939287
+  }
+]

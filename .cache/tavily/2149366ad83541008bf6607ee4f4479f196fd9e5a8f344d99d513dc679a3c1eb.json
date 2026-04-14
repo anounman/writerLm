@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-7-section-quantitative-metrics-for-relevance_1_049fafe3ba__src_1",
+    "query_id": "query_chapter-7-section-quantitative-metrics-for-relevance_1_049fafe3ba",
+    "title": "What is Mean Reciprocal Rank (MRR) in the context of retrieval evaluation, and how can it be applied to gauge how well a RAG system’s retriever finds relevant documents?",
+    "url": "https://milvus.io/ai-quick-reference/what-is-mean-reciprocal-rank-mrr-in-the-context-of-retrieval-evaluation-and-how-can-it-be-applied-to-gauge-how-well-a-rag-systems-retriever-finds-relevant-documents",
+    "snippet": "Mean Reciprocal Rank (MRR) is a metric used to evaluate the effectiveness of retrieval systems by measuring how well they rank the first relevant document for a set of queries. It calculates the average of the reciprocal ranks (1 divided by the position of the first relevant result) across all queries. For example, if the first relevant document for a query appears in position 3, the reciprocal rank is 1/3. MRR emphasizes the system’s ability to surface relevant content early in the results, which is critical for applications where users rely on top results, such as search engines or document retrieval in RAG (Retrieval-Augmented Generation) systems. [...] In the context of a RAG system, MRR helps assess the retriever component’s performance. A RAG system retrieves documents to provide context for a language model to generate answers. If the retriever fails to rank relevant documents highly, the generator may produce inaccurate or irrelevant responses. MRR focuses on the position of the first relevant document, which is particularly useful when the generator depends heavily on the top result. For instance, if a user asks, “What causes climate change?” and the retriever returns a relevant document at position 1, the reciprocal rank is 1. If the first relevant document is at position 4, the reciprocal rank drops to 0.25. Averaging these scores across all test queries gives the MRR, reflecting the retriever’s consistency in prioritizing useful",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.8332299
+  },
+  {
+    "source_id": "query_chapter-7-section-quantitative-metrics-for-relevance_1_049fafe3ba__src_2",
+    "query_id": "query_chapter-7-section-quantitative-metrics-for-relevance_1_049fafe3ba",
+    "title": "Mean reciprocal rank — Grokipedia",
+    "url": "https://grokipedia.com/page/Mean_reciprocal_rank",
+    "snippet": "## Mathematical Formulation\n\n### Reciprocal Rank\n\nThe reciprocal rank (RR) for a single query $ q $ in information retrieval is defined as the multiplicative inverse of the rank position of the first relevant document in the system's ranked output list, assuming binary relevance judgments where documents are either relevant or non-relevant. Mathematically, this is expressed as: \n\nRR(q)={k1​0​if the first relevant document is at rank k,otherwise.​ [...] ### Mean Reciprocal Rank\n\nThe Mean Reciprocal Rank (MRR) aggregates the reciprocal ranks across a set of Q queries to assess the overall ranking performance of an information retrieval system. It is formally defined as \n\nMRR=Q1​i=1∑Q​RR(qi​), [...] Mean reciprocal rank (MRR) is a statistical evaluation metric used in information retrieval to assess the ranking performance of systems that produce ordered lists of results in response to queries, such as search engines and question-answering systems.(#ref-1)](#ref-1) It quantifies the average position of the first relevant item by computing the arithmetic mean of the reciprocal ranks across a set of queries, where the reciprocal rank for each query is defined as the inverse of the rank position (1/rank) of the highest-placed relevant result, or 0 if no relevant result is retrieved.(#ref-1)](#ref-1) This metric assumes a user model in which only the top relevant document or answer is of interest, emphasizing how quickly a system surfaces the desired information.(#ref-2)](#ref-2) MRR",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.8058924
+  }
+]

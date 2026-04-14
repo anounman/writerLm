@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from pathlib import Path
 from typing import Any, List, Optional
 
 from pydantic import HttpUrl, TypeAdapter
@@ -9,6 +12,7 @@ from researcher.constants import DEFAULT_TAVILY_RESULTS_PER_QUERY
 from researcher.schemas import DiscoveredSource, SourceType
 
 HTTP_URL_ADAPTER = TypeAdapter(HttpUrl)
+CACHE_DIR = Path(__file__).resolve().parents[2] / ".cache" / "tavily"
 
 
 class TavilySearchError(Exception):
@@ -41,6 +45,7 @@ class TavilySearchClient:
         self.search_depth = search_depth
         self.include_answer = include_answer
         self.include_raw_content = include_raw_content
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
     def _normalize_result(
         self,
@@ -151,11 +156,35 @@ class TavilySearchClient:
         query_id: str,
         max_results: Optional[int] = None,
     ) -> List[DiscoveredSource]:
+        requested_max_results = max_results or self.default_max_results
+        cache_path = self._cache_path(
+            query_text=query_text,
+            max_results=requested_max_results,
+        )
+
+        if cache_path.exists():
+            try:
+                cached_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+                return [
+                    DiscoveredSource.model_validate(
+                        {
+                            **item,
+                            "query_id": query_id,
+                            "source_id": self._build_source_id(
+                                query_id=query_id,
+                                rank=index,
+                            ),
+                        }
+                    )
+                    for index, item in enumerate(cached_payload, start=1)
+                ]
+            except Exception:
+                pass
 
         try:
             response = self.client.search(
                 query=query_text,
-                max_results=max_results or self.default_max_results,
+                max_results=requested_max_results,
                 topic=self.topic,
                 search_depth=self.search_depth,
                 include_answer=self.include_answer,
@@ -163,15 +192,45 @@ class TavilySearchClient:
             )
         except Exception as exc:
             raise TavilySearchError(f"Tavily search failed: {str(exc)}") from exc
-        results = response.get("search_result", [])
+
+        results = response.get("results", [])
         if not isinstance(results, list):
             raise TavilySearchError("Tavily returned an invalid 'results' payload.")
 
-        discover_sources: List[DiscoveredSource] = []
-        for index, result in enumerate(results):
-            normlized = self._normalize_result(
-                result=result, query_id=query_id, rank=index
+        discovered_sources: List[DiscoveredSource] = []
+        for index, result in enumerate(results, start=1):
+            normalized = self._normalize_result(
+                result=result,
+                query_id=query_id,
+                rank=index,
             )
-            if normlized is not None:
-                discover_sources.append(normlized)
-        return discover_sources
+            if normalized is not None:
+                discovered_sources.append(normalized)
+
+        try:
+            cache_path.write_text(
+                json.dumps(
+                    [item.model_dump(mode="json") for item in discovered_sources],
+                    indent=2,
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+        return discovered_sources
+
+    def _cache_path(self, *, query_text: str, max_results: int) -> Path:
+        raw_key = "|".join(
+            [
+                query_text,
+                str(max_results),
+                self.topic,
+                self.search_depth,
+                str(self.include_answer),
+                str(self.include_raw_content),
+            ]
+        )
+        digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
+        return CACHE_DIR / f"{digest}.json"

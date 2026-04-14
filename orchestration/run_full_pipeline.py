@@ -64,7 +64,7 @@ def main() -> None:
     # ---------------------------------------------------------
     llm = GroqStructuredLLM(
         api_key=os.environ["GROQ_API_KEY"],
-        model="llama-3.3-70b-versatile",
+        model=os.environ.get("GROQ_MODEL_NAME", "openai/gpt-oss-120b"),
         base_url=os.environ.get("GROQ_BASE_URL"),
     )
 

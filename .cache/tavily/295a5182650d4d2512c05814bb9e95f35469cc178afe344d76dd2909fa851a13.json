@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-8-section-monitoring-logging-and-alerting-in-production-rag-services_1_c8839c49e4__src_1",
+    "query_id": "query_chapter-8-section-monitoring-logging-and-alerting-in-production-rag-services_1_c8839c49e4",
+    "title": "RAG'S Evaluation Metrics and Standard Industry Pipeline to do ...",
+    "url": "https://medium.com/@ayushigupta9723/rags-evaluation-metrics-and-standard-industrial-pipeline-to-do-evaluation-f37c3791a2f8",
+    "snippet": "### How this maps to RAG design decisions\n\nObservation What to fix\n\nLow precision Better embeddings, reranking, filtering\n\nLow recall Increase k, better chunking, query expansion\n\nBoth low Rebuild retrieval pipeline\n\nBoth high Move to generation evaluation\n— — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — — —\n\n## 2. Mean Average Precision (MAP) and nDCG\n\nWhat they measure: [...] What the score reflects: A high IoU indicates that the retrieved text has a high overlap with the ground-truth answer, meaning that the retriever is capturing the necessary information. However, note that it is a strict metric and may penalize retrievals that include additional relevant context that is not in the ground truth. [...] 📌Evaluation Pipeline\n\nStep 1: Retrieve context for each question\n\nStandard RAG retrieval.\n\nStep 2: Generate answers\n\nUsing your RAG system.\n\n📌Metrics used (THIS IS KEY)\n\nContext-level (before generation)\n\n   Context Relevance\n   Context Precision\n   Context Recall\n\nAnswer-level (after generation)\n\n   Answer Relevance\n   Faithfulness\n\n❌ Do NOT use:\n\n   BLEU / ROUGE\n   Exact match\n   Answer correctness as a hard metric\n\n📌How is correctness handled here?\n\nUsing LLM-as-judge (probabilistic)\n\n   “Is this answer likely correct?”\n   “Does this answer make sense given the context?”\n\nThis is soft correctness, not absolute.\n\n📌What industry uses this scenario for\n\n   Production monitoring\n   CI/CD regression checks\n   Hallucination detection\n   Prompt & retriever tuning\n\n📌 This scenario answers:",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9998104
+  },
+  {
+    "source_id": "query_chapter-8-section-monitoring-logging-and-alerting-in-production-rag-services_1_c8839c49e4__src_2",
+    "query_id": "query_chapter-8-section-monitoring-logging-and-alerting-in-production-rag-services_1_c8839c49e4",
+    "title": "Evaluation Metrics for Retrieval-Augmented Generation (RAG ...",
+    "url": "https://www.geeksforgeeks.org/nlp/evaluation-metrics-for-retrieval-augmented-generation-rag-systems/",
+    "snippet": "| Metric Type | Examples | Strengths | Weaknesses |\n ---  --- |\n| Retrieval Metrics | Hit Rate, MRR, Precision, Recall, nDCG | Simple, interpretable, directly measures relevance and ranking quality | Don’t evaluate answer quality, fluency or coherence |\n| Generation Metrics | BLEU, ROUGE, METEOR, BERTScore, Perplexity | Quantitative, widely used, easy to compute | May miss semantic meaning, context or factual correctness |\n| End-to-End Metrics | Answer Relevance, Groundedness, Hallucination Rate, Coherence | Holistic evaluation of system, includes factual grounding | Harder to compute automatically, may require human evaluation | [...] They are domestic animals known for agility.\"] metrics = response_coherence_readability(responses) print(metrics)",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.9997508
+  }
+]

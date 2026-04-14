@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-4-section-fundamentals-of-vector-stores-in-retrieval-augmented-generation_1_e9cf2aa2c2__src_1",
+    "query_id": "query_chapter-4-section-fundamentals-of-vector-stores-in-retrieval-augmented-generation_1_e9cf2aa2c2",
+    "title": "Best open source vector database software: Top 8 in 2026",
+    "url": "https://www.instaclustr.com/education/vector-database/best-open-source-vector-database-software-top-8-in-2026/",
+    "snippet": "Indexing options: FAISS includes multiple index types like flat (brute-force), inverted files (IVF), product quantization (PQ), optimized PQ, and HNSW. These cover a range of trade-offs between search accuracy, memory usage, and speed.\n Similarity search: Handles datasets that do not fit entirely in RAM by supporting disk-based indexing and compressed vector storage. It can also return the k-nearest neighbors, perform range searches, and batch process multiple queries efficiently.\n Precision–speed trade-offs: Enables approximate nearest neighbor search to significantly accelerate queries. Users can tune the accuracy-performance balance by choosing index configurations and quantization methods suitable for their workloads. [...] Support for multiple distance metrics: Offers more than Euclidean distance. FAISS supports inner product search (for maximum similarity), as well as limited support for L1, Linf, and other distance functions.\n GPU acceleration: Provides GPU implementations for major indexing types, leveraging CUDA for high-throughput, low-latency vector search. GPU support is optimized for batch queries and large-scale workloads. [...] 1. Choose “library vs database” intentionally, then design the boundary: FAISS is a killer retrieval library—but it becomes “a database” only after you wrap persistence, concurrency, replication, backfills, and schema/versioning around it. Decide early whether you want to own that boundary or buy it via a real DB.\n2. Model your data as “chunks + provenance,” not “documents + embeddings”: For RAG/search, store immutable chunk IDs, source doc version, offsets, and extraction pipeline version. This makes re-chunking and re-embedding tractable and prevents “mystery chunks” when content changes.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9997347
+  },
+  {
+    "source_id": "query_chapter-4-section-fundamentals-of-vector-stores-in-retrieval-augmented-generation_1_e9cf2aa2c2__src_2",
+    "query_id": "query_chapter-4-section-fundamentals-of-vector-stores-in-retrieval-augmented-generation_1_e9cf2aa2c2",
+    "title": "Choosing the Right Vector Database: OpenSearch vs Pinecone vs Qdrant vs Weaviate vs Milvus vs Chroma vs pgvector | by Elisheba Builds | Medium",
+    "url": "https://medium.com/@elisheba.t.anderson/choosing-the-right-vector-database-opensearch-vs-pinecone-vs-qdrant-vs-weaviate-vs-milvus-vs-037343926d7e",
+    "snippet": "Scalability demands: Vector DBs can scale to billions of vectors while maintaining sub-100ms search. For example, OpenSearch 3.0 touts a ~9.5× speedup over older versions and can use GPUs to index ~9× faster. Managed services like Pinecone or Zilliz Cloud claim production workloads with billions of vectors. Benchmarks often show cloud offerings (Milvus/Zilliz, Pinecone, Qdrant) leading in raw latency. [...] Trade-offs: Think of pgvector as a starting point or for convenience. It’s simpler to manage (just add to your RDS) but doesn’t scale like a purpose-built vector DB. [...] Trade-offs: Chroma trades raw power for simplicity. It lacks advanced indexing options, so if you need GPU search, millions of writes/second, or shards, a heavier DB might be needed. But for most RAG use cases, it’s often “good enough” and much easier to run.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99939287
+  }
+]

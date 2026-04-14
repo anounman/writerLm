@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-2-section-contrasting-rag-with-plain-generation_1_3ffdf05955__src_1",
+    "query_id": "query_chapter-2-section-contrasting-rag-with-plain-generation_1_3ffdf05955",
+    "title": "A complete guide to RAG evaluation: metrics, testing and best practices",
+    "url": "https://www.evidentlyai.com/llm-guide/rag-evaluation",
+    "snippet": "RAG evaluations help assess how well a Retrieval-Augmented Generation system retrieves relevant context and generates grounded, accurate responses.\n RAG consists of two core parts: retrieval (finding useful info) and generation (producing the final answer). These can be evaluated separately.\n Retrieval evaluation includes ranking metrics like recall@k with ground truth, or manual/LLM-judged relevance scoring of retrieved context.\n Reference-based generation evaluation compares outputs to correct answers using LLM judges or semantic similarity.\n Reference-free generation evaluation can check for response faithfulness, completeness, tone or structural qualities.\n Synthetic test data helps bootstrap evaluations by generating realistic question–answer pairs from the knowledge base.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9998535
+  },
+  {
+    "source_id": "query_chapter-2-section-contrasting-rag-with-plain-generation_1_3ffdf05955__src_2",
+    "query_id": "query_chapter-2-section-contrasting-rag-with-plain-generation_1_3ffdf05955",
+    "title": "Benchmarking retrieval-augmented large language models in biomedical NLP: Application, robustness, and self-awareness - PMC",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12637297/",
+    "snippet": "To investigate how sampling bias affects evaluation, we conducted simulation studies on a two-label classification task. We constructed datasets with different positive-to-negative ratios of 1:1 and 1:5 and reported the results for weighted precision, recall, F1 score, AUROC (area under the receiver operating characteristic curve), and AUPRC (area under the precision–recall curve). In these experiments, we used the best-performing RAL LLaMA2-13B + MedCPT for Ade-corpus-v2 and LLaMA2-13B + Contriever for SemClass, respectively. Table 6 presents performance metrics across different datasets (Ade-corpus-v2 and SemClass) with varying positive-negative ratios (1:1 versus 1:5). The reported metrics include Micro Precision, Micro Recall, Micro F1 score, Weighted Precision, Weighted Recall, [...] ## RESULTS\n\n### Results of RALs and backbone LLMs\n\nWe first benchmark various LLMs and RALs on 11 datasets; the results are shown in Table 1. In the triple extraction task, we observed that RALs outperformed LLMs (specifically RALs without a retriever) on LLaMA2-13B, MedLLaMA-13B, LLaMA3-8B, and phi4 14B, achieving better performance. For example, RALs (MedLLaMA 13B with Contriever) enhanced the original MedLLaMA 13B by 22.37%, in terms of F1 score on the ADE dataset. Another finding is that for Qwen2.5-32B, using different retrievers does not lead to significant performance improvement.\n\n#### Table 1. Micro F1 results for triple extraction, link prediction, and text classification, along with macro-average F1 for question answering and BioNLI, across various approaches on 11 datasets. [...] #### Table 6. Performance metrics for different datasets and positive-negative ratios.\n\n| Dataset | Positive/ Negative ratio | Micro precision | Micro recall | Micro F1 | Weighted precision | Weighted recall | Weighted F1 | AUROC | AUPRC |\n ---  ---  ---  ---  --- |\n| Ade-corpus-v2 | 1:1 | 93.40 | 93.40 | 93.40 | 93.39 | 93.40 | 93.52 | 93.91 | 90.23 |\n| Ade-corpus-v2 | 1:5 | 93.60 | 93.60 | 93.60 | 93.66 | 93.60 | 93.63 | 92.58 | 90.38 |\n| SemClass | 1:1 | 66.50 | 66.50 | 66.50 | 68.86 | 66.50 | 66.08 | 67.40 | 77.47 |\n| SemClass | 1:5 | 48.50 | 48.50 | 48.50 | 63.38 | 48.50 | 35.04 | 51.75 | 66.62 |",
+    "source_type": "news",
+    "rank": 2,
+    "discovery_score": 0.9996923
+  }
+]

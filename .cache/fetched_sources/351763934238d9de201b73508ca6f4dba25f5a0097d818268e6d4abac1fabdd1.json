@@ -1,0 +1,13 @@
+{
+  "source_id": "query_chapter-1-section-what-are-large-language-models_1_dbaf5b027b__src_2",
+  "url": "https://knowledge-centre-translation-interpretation.ec.europa.eu/en/news/what-large-language-model",
+  "title": "What Is a Large Language Model? - Knowledge Centre on Translation and Interpretation - European Commission",
+  "source_type": "news",
+  "extraction_method": "trafilatura",
+  "text": "A large language model (LLM) is a type of artificial intelligence model that has been trained to recognize and generate vast quantities of written human language - eWeek.com\nA large language model (LLM) is a type of artificial intelligence model that has been trained through deep learning algorithms to recognize, generate, translate, and/or summarize vast quantities of written human language and textual data.\nLarge language models are some of the most advanced and accessible natural language processing (NLP) solutions today. As a form of generative AI, large language models can be used to not only assess existing text but to generate original content based on user inputs and queries.\nRead on to learn more about large language models, how they work, and how they compare to other common forms of artificial intelligence.",
+  "metadata": {
+    "final_url": "https://knowledge-centre-translation-interpretation.ec.europa.eu/en/news/what-large-language-model"
+  },
+  "extraction_success": true,
+  "extraction_error": null
+}

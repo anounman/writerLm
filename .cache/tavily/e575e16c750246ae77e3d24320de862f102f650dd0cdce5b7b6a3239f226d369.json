@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-2-section-a-simple-end-to-end-rag-example_1_211a633cac__src_1",
+    "query_id": "query_chapter-2-section-a-simple-end-to-end-rag-example_1_211a633cac",
+    "title": "A Beginner’s Guide to LangChain: Building Chat, RAG, Tools, and Evaluation with HuggingFace",
+    "url": "https://medium.com/@sahana.lp100/a-beginners-guide-to-langchain-building-chat-rag-tools-and-evaluation-with-huggingface-98215c973eb2",
+    "snippet": "Websites or online articles (via web scraping)\n   PDF files like research papers, manuals, reports (using libraries like `pypdf`)\n   Local folders containing `.txt`, `.md`, `.json`\n   Cloud storage such as S3 or GCS\n   Full knowledge bases, wikis, or company documentation\n\nLangChain includes loaders for all of these, allowing you to build large, reliable knowledge systems.\n\nHowever, when learning RAG for the first time, it’s best to start small.\n\n To keep things simple and focused, we’ll begin with a custom-built mini knowledge base about dolphins. This avoids the complexity of parsing PDFs or crawling websites, while still teaching the exact same RAG pipeline you’ll use later for real data. [...] question=RunnablePassthrough()\n\n )\n\n | (lambda x: {\n\n \"context\": combine_docs(x[\"docs\"]),\n\n \"question\": x[\"question\"]\n\n })\n\n | prompt\n\n | chat\n\n)\nInvoke:\n\nrag_chain.invoke(\"How do dolphins sleep?\")\nYou now have a minimal but functional RAG system.\n\n## Loading Documents from the Web\n\nOur earlier RAG example used custom text, which is great for learning. But real RAG systems need real content. LangChain handles this through Document Loaders, which convert data from websites, files, or APIs into `Document` objects the RAG pipeline can use.\n\nFor web content, the key tool is WebBaseLoader. It:\n\n   fetches a webpage\n   parses it with BeautifulSoup\n   extracts clean, readable text\n   returns it as structured Documents [...] chat_with_tools = ChatHuggingFace(\n\n llm=base,\n\n tools=tools,\n\n verbose=True\n\n)\nInvoke:\n\nchat_with_tools.invoke(\"What color is rgb(135, 206, 250)?\")\n\nchat_with_tools.invoke(\"Mix rgb(255, 0, 0) and rgb(0, 0, 255).\")\nThe model automatically decides which tool to call.\n\n This is the foundation of modern agent systems.\n\n## Conclusion\n\n### This tutorial introduced the foundational pieces of LangChain:\n\n   Setting up a HuggingFace chat model\n   Using prompt templates and LCEL\n   Output parsing for structured responses\n   How to build and query a simple RAG system\n   Using LangSmith for debugging and evaluation\n   Implementing basic tool calling",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.99983394
+  },
+  {
+    "source_id": "query_chapter-2-section-a-simple-end-to-end-rag-example_1_211a633cac__src_2",
+    "query_id": "query_chapter-2-section-a-simple-end-to-end-rag-example_1_211a633cac",
+    "title": "15 Best Open-Source RAG Frameworks in 2026",
+    "url": "https://www.firecrawl.dev/blog/best-open-source-rag-frameworks",
+    "snippet": "| FlashRAG | Research | Experimentation, benchmarking | Pre-processed datasets, algorithm implementations, web interface | Medium | 2.1k | [...] Getting started with Haystack is straightforward with installation via `pip install haystack-ai`. The framework provides comprehensive documentation with guides for building your first LLM application in minutes. The installation guide covers multiple methods including Docker, while the get started guide walks through basic pipeline creation. For more advanced use cases, you can explore the cookbook with recipes for various RAG implementations.\n\n`pip install haystack-ai`\n\n### 9. LightRAG - ⭐️14.6k\n\nLightRAG architecture diagram showing the streamlined approach to retrieval-augmented generation with its key components and workflow\n\nLightRAG architecture diagram showing the streamlined approach to retrieval-augmented generation with its key components and workflow [...] FlashRAG provides several key features for research:\n\nGetting started with FlashRAG requires installing the package via pip and exploring its components. The toolkit provides examples in its GitHub repository for using different retrievers and building RAG pipelines. Pre-processed datasets are available through Hugging Face, and a web UI simplifies experimentation without writing code.\n\n## Decision Table For Choosing the Right RAG Framework",
+    "source_type": "blog",
+    "rank": 2,
+    "discovery_score": 0.9997981
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-4-section-optimizing-retrieval-accuracy-and-performance_1_2c489cfc51__src_1",
+    "query_id": "query_chapter-4-section-optimizing-retrieval-accuracy-and-performance_1_2c489cfc51",
+    "title": "The Faiss Library",
+    "url": "https://arxiv.org/html/2401.08281v4",
+    "snippet": "Report issue for preceding element\n\nThe most commonly used distances in Faiss are the L2 distance, the cosine similarity and the inner product similarity (for the latter two, the argmin\\mathrm{argmin} should be replaced with an argmax\\mathrm{argmax}). These measures have useful analytical properties: for example, they are invariant under d d-dimensional rotations.\n\nReport issue for preceding element\n\nIn terms of applications, the Euclidean distance is the default for comparing vectors. When vectors are obtained by metric learning, the cosine similarity is often used to avoid collapsing or exploding embeddings. Maximum inner product search (MIPS) is most often used for recommendation systems that require to compare user and item embeddings.\n\nReport issue for preceding element",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.78294516
+  },
+  {
+    "source_id": "query_chapter-4-section-optimizing-retrieval-accuracy-and-performance_1_2c489cfc51__src_2",
+    "query_id": "query_chapter-4-section-optimizing-retrieval-accuracy-and-performance_1_2c489cfc51",
+    "title": "Cosine Similarity: When It Works and When It Fails | Simrat Hanspal posted on the topic | LinkedIn",
+    "url": "https://www.linkedin.com/posts/simrat-hanspal-37683054_cosine-similarity-works-until-it-doesnt-activity-7388594849064787969-CLHp",
+    "snippet": "They provide features like persistence, filtering, and horizontal scaling, making them ideal for production-ready AI applications. ⸻ Each of these tools brings unique strengths: • FAISS → Speed and efficiency for local or embedded systems. • ScaNN → High recall for large-scale production setups. • Milvus/Qdrant → Cloud-native, scalable, and integrated with real-time APIs. #AI #VectorSearch #MachineLearning #CosineSimilarity [...] • IVF (Inverted File Index): Divides vectors into clusters for faster lookups. • PQ (Product Quantization): Compresses vectors to save memory with minimal accuracy loss. • HNSW (Hierarchical Navigable Small World): Graph-based indexing that accelerates retrieval on large datasets. 🔹 ScaNN (by Google) – Optimized for high recall and low latency, especially when integrated with TensorFlow and large-scale text retrieval. Great for cloud-scale semantic search. 🔹 Annoy (by Spotify) – Uses forest of random projection trees; lightweight and great for memory-constrained environments, though slower than FAISS on massive datasets. 🔹 Milvus / Qdrant – Full-fledged vector databases that handle storage, indexing, and retrieval seamlessly. They provide features like persistence, filtering, and",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.6688159
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-8-section-designing-scalable-vector-stores_1_32a9e00059__src_1",
+    "query_id": "query_chapter-8-section-designing-scalable-vector-stores_1_32a9e00059",
+    "title": "What is a Vector Database & How Does it Work? Use Cases + ...",
+    "url": "https://www.pinecone.io/learn/vector-database/",
+    "snippet": "1. Sharding - partitioning the data across multiple nodes. There are different methods for partitioning the data - for example, it can be partitioned by the similarity of different clusters of data so that similar vectors are stored in the same partition. When a query is made, it is sent to all the shards and the results are retrieved and combined. This is called the “scatter-gather” pattern. [...] Partitioning of the search space\n\nWith these partitions, the search space of a query can focus on just a few parts of a vector index rather than the full search space. Typical search behaviors will show that certain partitions are accessed more frequently than others, allowing us to dial between compute costs and cold startup times to find an optimal balance between cost and latency.\n\nWhen we do this partitioning, we solve the separation of compute and storage problem. However, geometric partitioning is a slower process at index build time. Meaning we can run into freshness problems as we must wait for new data to be correctly stored in the index. [...] These algorithms are assembled into a pipeline that provides fast and accurate retrieval of the neighbors of a queried vector. Since the vector database provides approximate results, the main trade-offs we consider are between accuracy and speed. The more accurate the result, the slower the query will be. However, a good system can provide ultra-fast search with near-perfect accuracy.\n\nHere’s a common pipeline for a vector database:",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.99986756
+  },
+  {
+    "source_id": "query_chapter-8-section-designing-scalable-vector-stores_1_32a9e00059__src_2",
+    "query_id": "query_chapter-8-section-designing-scalable-vector-stores_1_32a9e00059",
+    "title": "Vector Database Performance Compared: pgvector vs Pinecone vs Qdrant vs Weaviate",
+    "url": "https://dev.to/kencho/vector-database-performance-compared-pgvector-vs-pinecone-vs-qdrant-vs-weaviate-2ne6",
+    "snippet": "All of these can be tuned. Higher recall means slower queries. The numbers above are for \"accuracy-first\" configurations, which is what you'd use in production where search quality matters.\n\nPinecone's recall is lower because you can't tune it. Pinecone doesn't expose HNSW parameters. You get whatever configuration they chose. Their docs say \"Pinecone doesn't support the ability to tune your index to control the accuracy performance trade-off.\" For some applications this is fine. For others it's a dealbreaker.\n\npgvector gives you full control. You can set `ef_search` and `m` parameters to trade latency for recall. In production we run with high recall settings because for search quality, getting the right results matters more than shaving 2ms off latency.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99973255
+  }
+]

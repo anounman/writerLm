@@ -5,7 +5,7 @@ import json
 import os
 from typing import Any, Optional, Type, TypeVar, get_args, get_origin
 
-from groq import Groq
+from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 from researcher.schemas import EvidenceType, QueryKind, ReflexionAction
 
@@ -26,13 +26,12 @@ class GroqStructuredLLM:
         max_retries: int = 2,
         base_url: Optional[str] = None,
     ) -> None:
-        normalized_base_url = base_url or os.getenv("GROQ_BASE_URL")
+        
 
-        client_kwargs: dict[str, Any] = {"api_key": api_key}
-        if normalized_base_url is not None:
-            client_kwargs["base_url"] = normalized_base_url
-
-        self.client = Groq(**client_kwargs)
+        self.client = OpenAI(
+            api_key=api_key,
+            base_url=base_url or os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+        )
         self.model = model
         self.temperature = temperature
         self.max_retries = max_retries

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-6-section-design-patterns-for-merging-retrieved-documents-with-instructions_1_ba61ba1152__src_1",
+    "query_id": "query_chapter-6-section-design-patterns-for-merging-retrieved-documents-with-instructions_1_ba61ba1152",
+    "title": "Prompt engineering for RAG - OpenAI Developer Community",
+    "url": "https://community.openai.com/t/prompt-engineering-for-rag/621495",
+    "snippet": "I wonder if people have experimented with putting instructions at beginning, and then repeating instructions at the end, with something like, “Remember, from above, your instructions are as follows: ${INSTRUCTIONS}”. I have a hunch that might improve results.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.99958915
+  },
+  {
+    "source_id": "query_chapter-6-section-design-patterns-for-merging-retrieved-documents-with-instructions_1_ba61ba1152__src_2",
+    "query_id": "query_chapter-6-section-design-patterns-for-merging-retrieved-documents-with-instructions_1_ba61ba1152",
+    "title": "RAG Architecture Patterns: Building Reliable AI Applications",
+    "url": "https://tetrate.io/learn/ai/rag-architecture-patterns",
+    "snippet": "## Context Assembly and Prompt Construction\n\nThe process of assembling retrieved context and constructing effective prompts represents a critical bridge between retrieval and generation in RAG systems. How you structure and present information to the language model significantly impacts response quality, accuracy, and the model’s ability to properly utilize retrieved information. [...] Prompt structure should clearly delineate different components and provide explicit instructions for how to use retrieved context. A well-structured prompt typically includes: system instructions defining the assistant’s role and behavior, the retrieved context clearly marked and potentially with source citations, the user’s question, and specific guidance on how to formulate responses. Instruct the model to base answers on the provided context, acknowledge when information is insufficient, and cite sources when making factual claims. Include examples of desired response formats when appropriate, especially for structured outputs or specific citation styles. [...] Vector Database Internals: Learn about the algorithms and data structures that power vector databases, including detailed exploration of HNSW, IVF, and other indexing approaches, along with their mathematical foundations.\n\nPrompt Engineering for RAG: Explore advanced prompt engineering techniques specific to RAG applications, including few-shot examples, chain-of-thought prompting with retrieved context, and structured output generation.\n\nEvaluation Frameworks for RAG Systems: Study comprehensive evaluation methodologies, including both automated metrics and human evaluation protocols, for assessing retrieval quality, generation accuracy, and end-to-end system performance.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99938333
+  }
+]

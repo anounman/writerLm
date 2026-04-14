@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_221f2d6159__src_1",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_221f2d6159",
+    "title": "A complete guide to RAG evaluation: metrics, testing and ...",
+    "url": "https://www.evidentlyai.com/llm-guide/rag-evaluation",
+    "snippet": "We’ll also introduce Evidently – an open-source library and platform that helps you evaluate and monitor RAG systems, with or without code.\n\n## TL;DR [...] Allocate real time and ownership. Evaluation takes effort – writing test cases, reviewing model outputs, maintaining datasets. If it’s an afterthought, it won’t work. A good idea is to treat it like product infrastructure. Assign owners and make it part of the product release process.\n\n## Using Evidently for RAG evaluation\n\nEvidently is an open-source evaluation framework for LLM applications, with over 25 million downloads.\n\nIt combines a Python library and a web UI – built to help you run, review, and track the full lifecycle of AI system evaluations, including RAG. You can use it for experiments, regression testing, and ongoing monitoring.\n\n1. Generate synthetic data [...] That’s where you need reference-free evaluations.\n\nInstead of comparing the output to a predefined answer, you evaluate the response on its own terms – based on how it’s worded, structured, and whether it uses the context well.\n\nSome checks are purely structural and easy to verify programmatically. For example:\n\n Length: Does the answer stay within a required character limit?\n Link presence: Does it include a link to the source, and is that link valid?\n Exact word match: Does it contain a specific disclaimer?\n\nYou can also find ways to infer the quality of the response itself. Even when you don’t have a “correct” answer, you still have valuable data to work with – the user’s question, the retrieved context, and the generated response. Here are some of the things you can evaluate:",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.48616135
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_221f2d6159__src_2",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_221f2d6159",
+    "title": "The 5 best RAG evaluation tools in 2025 - Articles - Braintrust",
+    "url": "https://www.braintrust.dev/articles/best-rag-evaluation-tools",
+    "snippet": "| DeepEval | 76/100 | Free (open source) | CI/CD-driven testing workflows | Pytest integration treats LLM evaluation as software testing | [...] Pricing\n\nFully open source and free to use.\n\n### 5. DeepEval\n\nRAG Score: 76/100\n\nQuick overview\n\nDeepEval brings a unit testing mindset to LLM evaluation, treating each assessment as a test case with pass/fail criteria. Designed to integrate with pytest, the framework enables developers to write evaluation suites that run in CI/CD pipelines alongside traditional software tests.\n\nThe framework's philosophy aligns with modern software engineering practices: evaluation should be code-defined, version-controlled, and automatically executed on every commit.\n\nScore breakdown\n\nProduction Integration: 78/100 (CI/CD integration via pytest, no production tracing, manual datasets)\n\nEvaluation Quality: 88/100 (50+ metrics, custom criteria support, synthetic data generation)",
+    "source_type": "news",
+    "rank": 2,
+    "discovery_score": 0.47563025
+  }
+]

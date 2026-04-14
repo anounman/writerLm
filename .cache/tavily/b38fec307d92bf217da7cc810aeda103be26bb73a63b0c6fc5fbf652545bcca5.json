@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-5-section-connecting-a-vector-store-to-an-llm-api_1_08e491af62__src_1",
+    "query_id": "query_chapter-5-section-connecting-a-vector-store-to-an-llm-api_1_08e491af62",
+    "title": "Create an index - Pinecone Docs",
+    "url": "https://docs.pinecone.io/guides/index-data/create-an-index",
+    "snippet": "If you want to upsert and search with source text and have Pinecone convert it to dense vectors automatically, create a dense index with integrated embedding as follows:\n\n Provide a `name` for the index.\n Set `cloud` and `region` to the cloud and region where the index should be deployed.\n Set `embed.model` to one of Pinecone’s hosted embedding models.\n Set `embed.field_map` to the name of the field in your source document that contains the data for embedding.\n\nOther parameters are optional. See the API reference for details. [...] Provide a `name` for the index.\n Set `cloud` and `region` to the cloud and region where the index should be deployed.\n Set `embed.model` to one of Pinecone’s hosted sparse embedding models.\n Set `embed.field_map` to the name of the field in your source document that contains the text for embedding.\n If needed, `embed.read_parameters` and `embed.write_parameters` can be used to override the default model embedding behavior.\n\nOther parameters are optional. See the API reference for details. [...] Provide a `name` for the index.\n Set the `vector_type` to `dense`.\n Specify the `dimension` and similarity `metric` of the vectors you’ll store in the index. This should match the dimension and metric supported by your embedding model.\n Set `spec.cloud` and `spec.region` to the cloud and region where the index should be deployed. For Python, you also need to import the `ServerlessSpec` class.\n\nOther parameters are optional. See the API reference for details.",
+    "source_type": "docs",
+    "rank": 1,
+    "discovery_score": 0.99998164
+  },
+  {
+    "source_id": "query_chapter-5-section-connecting-a-vector-store-to-an-llm-api_1_08e491af62__src_2",
+    "query_id": "query_chapter-5-section-connecting-a-vector-store-to-an-llm-api_1_08e491af62",
+    "title": "The Missing WHERE Clause in Vector Search | Pinecone",
+    "url": "https://www.pinecone.io/learn/vector-search-filtering/",
+    "snippet": "#### Creating the Index\n\nNow, all we need to do is build our Pinecone index. We can use the Python client — which we install using `pip install pinecone`.\n\nUsing an API key we can initialize a new index for our SQuAD data with:\n\nIn:\n\n```\nimport \n```\n\nIn:\n\n```\n\n                              pinecone.init(\n    api_key=key,\n    environment='YOUR_ENV'  # find env with API key in console\n)\n                            \n```\n\nIn:\n\n```\n.(='squad-test', = 'euclidean', = 768) \n```\n\nIn:\n\n```\n=.('squad-test') \n```\n\nAnd we’re ready to `upsert` our data! We’ll perform the upload in batches of `100`:\n\nIn:\n\n```\n\n                              from tqdm.auto import tqdm  # for progress bar [...] ```\n\nIn:\n\n```\n \n```\n\nOut:\n\n```\n\n                            Dataset({\n    features: ['__index_level_0__', 'context', 'id', 'metadata', 'vector'],\n    num_rows: 40281\n})\n                          \n```\n\nThe new format we produce includes our sample `id`, `text`, `vector`, and `metadata`, which we can go ahead and `upsert` to Pinecone:\n\n```\n\n                        {\n 'id': '573387acd058e614000b5cb5en',\n 'vector': [0.1, 0.8, 0.2, ..., 0.7],\n 'metadata': {\n 'lang': 'en',\n 'title': 'University_of_Notre_Dame'\n }\n}\n\n                      \n```\n\nWe can add as many `metadata` tags as we’d like. They can even contain numerical values.\n\n#### Creating the Index",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99996495
+  }
+]

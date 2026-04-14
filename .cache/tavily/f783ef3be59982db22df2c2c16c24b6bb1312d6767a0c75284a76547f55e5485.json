@@ -1,0 +1,162 @@
+[
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_1",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Truth Sleuth & Trend Bender AI Agents to fact-check YouTube videos & influence opinions",
+    "url": "https://arxiv.org/html/2507.10577v1",
+    "snippet": "growing importance of Retrieval-Augmented Generation (RAG) techniques in grounding LLM outputs and enhancing their factual accuracy (Lewis et al., 2020), particularly in tasks like fact-checking. Finally, Akhtar et al., 2023 provided a broader overview of multimodal fact-checking techniques that integrate both text and visuals to verify information, refining the fact-checking approach to take into account visual cues. [...] The work by Polat et al., 2024 details several prompt engineering strategies e.g. incorporating a simple instruction accompanied by a task demonstration, and shows how crafting the right prompt can significantly enhance performance when it comes to using LLMs for knowledge extraction. It will provide great inspiration when extracting claims from the video transcripts in our project. On top of this, the work on Data Commons by Guha et al., 2023 and Google’s DataGemma models for fact-checking by Radhakrishnan et al., 2024 have shown a lot of promises and can guide the integration of external data sources in validating a YouTube video’s claims, helping to classify them as true, false, or unsure. These approaches exemplify the growing importance of Retrieval-Augmented Generation (RAG) [...] Truth Sleuth extracts claims from a YouTube video, uses a Retrieval-Augmented Generation (RAG) approach - drawing on sources like Wikipedia, Google Search, Google FactCheck - to accurately assess their veracity and generates a nuanced and comprehensive report. Through rigorous prompt engineering, Trend Bender leverages this report along with a curated corpus of relevant articles to generate insightful and persuasive comments designed to stimulate a productive debate. With a carefully set up self-evaluation loop, this agent is able to iteratively improve its style and refine its output.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9997508
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_2",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "FactCheck: Knowledge Graph Fact Verification Through Retrieval ...",
+    "url": "https://thesis.unipd.it/handle/20.500.12608/83740",
+    "snippet": "Our method uses Retrieval-Augmented Generation (RAG) coupled with multiple language models to verify facts. FactCheck works by generating",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.9996288
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_3",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Journal of Medical Internet Research - Use of Retrieval-Augmented Large Language Model for COVID-19 Fact-Checking: Development and Usability Study",
+    "url": "https://www.jmir.org/2025/1/e66098",
+    "snippet": "#### Conclusion\n\nThis study demonstrates that the integration of RAG systems with LLMs substantially improves the accuracy and contextual relevance of automated fact-checking. By addressing the challenges of LLM inaccuracies and the high costs of traditional fact-checking methods, our RAG-enhanced approach improves the factual correctness of outputs. It provides contextually rich explanations that can be widely applied in combating misinformation during public health crises.\n\n#### Data Availability\n\nAll relevant data and code used in this study are publicly available at GitHub .\n\n#### Authors' Contributions [...] Retrieval-augmented generation (RAG) is a state-of-the-art technique that enhances LLMs by integrating external data retrieval, improving factual accuracy, and reducing costs . By retrieving relevant information from external sources and incorporating it as contextual input, RAG effectively mitigates the issue of hallucinations in LLMs . This method also addresses the need for updated external knowledge without requiring costly training or fine-tuning, making it a practical solution for maintaining the reliability and relevance of LLMs in dynamic information environments . [...] aRAG: retrieval-augmented generation.\n\nbCRAG: corrective retrieval-augmented generation.\n\ncLOTR-RAG: Lord of the Retrievers\n\ndSRAG: self–retrieval-augmented generation .",
+    "source_type": "research_paper",
+    "rank": 3,
+    "discovery_score": 0.9996288
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_4",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Use of Retrieval-Augmented Large Language Model for COVID-19 Fact-Checking: Development and Usability Study - PMC",
+    "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12079058/",
+    "snippet": "Retrieval-augmented generation (RAG) is a state-of-the-art technique that enhances LLMs by integrating external data retrieval, improving factual accuracy, and reducing costs . By retrieving relevant information from external sources and incorporating it as contextual input, RAG effectively mitigates the issue of hallucinations in LLMs . This method also addresses the need for updated external knowledge without requiring costly training or fine-tuning, making it a practical solution for maintaining the reliability and relevance of LLMs in dynamic information environments . [...] Figure 2 shows that the naïve RAG workflow begins with embedding the input query into a vector, followed by a similarity search within the vector store to retrieve the most relevant contexts. The LLM then conducts fact-checking on each COVID-19 claim based on these retrieved contexts, ensuring information retrieval accuracy and simultaneously providing reliable explanations and references.\n\n##### Figure 2.\n\nFigure 2\n\nFigure 2\n\nWorkflow of naïve retrieval-augmented generation. LLM: large language model. [...] aRAG: retrieval-augmented generation.\n\nbCRAG: corrective retrieval-augmented generation.\n\ncLOTR-RAG: Lord of the Retrievers\n\ndSRAG: self–retrieval-augmented generation .",
+    "source_type": "news",
+    "rank": 4,
+    "discovery_score": 0.9995728
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_5",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "[PDF] FIRE: Fact-checking with Iterative Retrieval and Verification",
+    "url": "https://aclanthology.org/2025.findings-naacl.158.pdf",
+    "snippet": "On average, there are 5%-10% false claims in responses of GPT-4 (OpenAI, 2023) and LLaMA-2 (Touvron et al., 2023) on world-2902 knowledge questions (Iqbal et al., 2024). Retrieval-augmented generation (Guu et al., 2020) and post-generation fact-checking are essential for ensur-ing accurate knowledge dissemination. Retrieving highly relevant information plays a pivotal role in both guiding generation as a reference and de-termining verification results in fact-checking sys-tems (Wang et al., 2024a). [...] Broad Impact FIRE has the potential to advance the field of automated fact-checking by enhancing its efficiency and accessibility. Its capability to iteratively retrieve evidence while minimizing com-putational costs will empower a broader range of users—including journalists, researchers, and the general public—to verify factual information with greater ease. Furthermore, FIRE can be applied to large-scale implementations, such as integration into search engines and social media platforms, thereby contributing to efforts to combat the spread of misinformation.\nAcknowledgments We thank our reviewers for their valuable reviews and feedback, which significantly contributed to the improvement of our paper. [...] References Mubashara Akhtar, Michael Schlichtkrull, Zhijiang Guo, Oana Cocarascu, Elena Simperl, and Andreas Vla-chos. 2023. Multimodal automated fact-checking: A survey. In Findings of the Association for Computa-tional Linguistics: EMNLP 2023, pages 5430–5448, Singapore. Association for Computational Linguis-tics.\nAnthropic. 2024. Introducing the next generation of claude.",
+    "source_type": "pdf",
+    "rank": 5,
+    "discovery_score": 0.99953806
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_6",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Use of Retrieval-Augmented Large Language Model for COVID-19 Fact-Checking: Development and Usability Study - PubMed",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/40306628/",
+    "snippet": "Conclusions:  The integration of RAG systems with LLMs substantially improves the accuracy and contextual relevance of automated fact-checking. By reducing hallucinations and enhancing transparency by citing retrieved sources, this method holds significant promise for rapid, reliable information verification to combat misinformation during public health crises.\n\nKeywords:  COVID-19; ChatGPT; SARS-CoV-2; accuracy; artificial intelligence; coronavirus; disinformation; fact-checking; infectious; infodemic; large language model; machine learning; misinformation; natural language processing; pandemic; pulmonary; respiratory; retrieval-augmented generation.\n\n©Hai Li, Jingyi Huang, Mengmeng Ji, Yuyi Yang, Ruopeng An. Originally published in the Journal of Medical Internet Research ( 30.04.2025. [...] Objective:  This study aims to enhance the accuracy and reliability of COVID-19 fact-checking by integrating a retrieval-augmented generation (RAG) system with LLMs, specifically addressing the limitations of hallucination and context inaccuracy inherent in stand-alone LLMs. [...] contextually accurate explanations, further establishing the superiority of agentic RAG frameworks in delivering reliable and precise fact-checking outputs across diverse datasets.",
+    "source_type": "research_paper",
+    "rank": 6,
+    "discovery_score": 0.99926203
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_7",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "AI in Media Optimizing Research and Fact-Checking with RAG for Accurate and Efficient Workflows - Web and Mobile App Development Blog - Technology News & Updates | TAFF Inc - Techaffinity Consulting",
+    "url": "https://www.taffinc.com/blog/ai-in-media-optimizing-research-and-fact-checking-with-rag-for-accurate-and-efficient-workflows/",
+    "snippet": "### What Is Retrieval-Augmented Generation (RAG)?\n\nRetrieval-Augmented Generation (RAG) is a state-of-the-art AI model that combines retrieval-based systems with generative AI models, bringing out the necessity of AI in media through its spectacular visuals. RAG does not just use what an LLM was trained on but instead proactively retrieves more real-time and external information via databases, APIs, or more reliable online sources and then creates a response.\n\nSimply put, RAG operates in two steps:\n\n Retrieve: The model scans through related documents, articles, or sources based on a query.\n Generate: It applies that information to generate a contextually appropriate, source-supported response. [...] Research is the base of every option of media production, and AI is making it easy nowadays. But what to pick and what to embed to concrete the visual takes a lot of time, and that’s why Custom RAG takes the play.\n All journalists, all researchers, and all editors face that same dilemma: How to balance fact and noise without losing any accuracy.  Enter Retrieval-Augmented Generation (RAG) a new AI in the media module is rethinking the way the media industry carries out research and fact-checking. [...] ### Conclusion\n\nRetrieval-Augmented Generation provides the media professional with a potent ally that can combine efficiency and integrity.\n\nUsing RAG guided and customized by experts like Taff.inc to merge research, writing, and fact-checking pipelines, media houses could enter a new era when stories are produced faster and founded on truth.\n\nIn a world where misinformation will go viral quicker than facts, RAG will streamline workflows and preserve credibility, making the truth the foundation on which modern media is built.\n\n AI in Media\n AI services\n RAG",
+    "source_type": "blog",
+    "rank": 7,
+    "discovery_score": 0.99899954
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_8",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Deeper insights into retrieval augmented generation: The role of ...",
+    "url": "https://research.google/blog/deeper-insights-into-retrieval-augmented-generation-the-role-of-sufficient-context/",
+    "snippet": "In “Sufficient Context: A New Lens on Retrieval Augmented Generation Systems”, which appeared at ICLR 2025, we study the idea of \"sufficient context” in RAG systems. We show that it’s possible to know when an LLM has enough information to provide a correct answer to a question. We study the role that context (or lack thereof) plays in factual accuracy, and develop a way to quantify context sufficiency for LLMs. Our approach allows us to investigate the factors that influence the performance of RAG systems and to analyze when and why they succeed or fail. [...] We use two main signals for abstention:\n\n Self-rated confidence: We use two strategies: P(True) and P(Correct). P(True) involves sampling answers multiple times and prompting the model to label each sample as correct or incorrect. P(Correct) is used for models where extensive querying is expensive; it involves obtaining the model's response and its estimated probability of correctness.\n Sufficient context signal: We use the binary label from an autorater model (FLAMe) to indicate whether the context is sufficient. Crucially, we do not need the ground truth answer to determine the sufficient context label, and so we can use this signal when answering the question. [...] To optimize the model’s ability to solve this task, we also improved the prompt with various prompting strategies, such as chain-of-thought prompting and providing a 1-shot example. We then measured classification performance based on how often the LLM’s true/false labels matched the gold standard labels.\n\nSufficientContext3_AutoRater\n\nOur automatic rating method (autorater) for sufficient context. We use a prompted LLM to rate examples consisting of an input query and the retrieved context. The model outputs a binary true/false label that represents sufficient vs. insufficient context.",
+    "source_type": "blog",
+    "rank": 8,
+    "discovery_score": 0.9983125
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_9",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "[PDF] Fake News Detection with Retrieval Augmented Generative Artificial ...",
+    "url": "https://openreview.net/pdf?id=wRCEh8mO57",
+    "snippet": "Retrieval Augmented Generation (RAG) frameworks have emerged as a solution to address these issues . By incorporating external data during the generation process, RAG frameworks help LLMs produce more accurate and reliable outputs. Research indicates that RAG enhances the quality of structured outputs and improves the generalization of LLMs across various domains, significantly reducing the occurrence of misleading information . [...] These techniques collectively enabled more effective prompt engineering, ensuring the LLM produced high-quality, contextually appropriate outputs that met my objectives.\n4.3 LLM After preparing the data through the above steps, we use the LLM to classify the news article as fake or real. The LLM analyzes the fil-tered search results, credibility annotations, and structured prompts to make an informed decision. [...] set uses a low temperature (0.0), a conservative top-p value (0.2), and a higher top-k value (100). These parameters help ensure the model generates highly deterministic and precise outputs by focusing on the most probable tokens.",
+    "source_type": "pdf",
+    "rank": 9,
+    "discovery_score": 0.998147
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_10",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Evaluate the reliability of Retrieval Augmented Generation applications using Amazon Bedrock | Artificial Intelligence",
+    "url": "https://aws.amazon.com/blogs/machine-learning/evaluate-the-reliability-of-retrieval-augmented-generation-applications-using-amazon-bedrock/",
+    "snippet": "be retrieved for a given input. Current research aims to improve these aspects for more reliable and capable knowledge-grounded generation. [...] Evaluating RAG systems at scale requires an automated approach to extract metrics that are quantitative indicators of its reliability. Generally, the metrics to look for are grouped by main RAG components or by domains. Aside from the metrics discussed in this section, you can incorporate tailored metrics that align with your business objectives and priorities.\n\n### Retrieval metrics\n\nYou can use the following retrieval metrics:\n\n### Generation metrics\n\nYou can use the following generation metrics:\n\n### Aspects evaluation\n\nAspects are evaluated as follows: [...] or unconventional formatting.   6. Check for generic email addresses not affiliated with Zappos.   7. Verify the sender’s email address is from cs-noreply@zappos.com or another zappos.com email address.   8. Be wary of forged email addresses.  If you believe you received a phishing email or responded to what may be a phishing email, update your passwords and report the email to the Federal Trade Commission (FTC). | factual | relevant | relevant |",
+    "source_type": "webpage",
+    "rank": 10,
+    "discovery_score": 0.9980122
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_11",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Provenance: A Light-weight Fact-checker for Retrieval Augmented LLM Generation Output - ACL Anthology",
+    "url": "https://aclanthology.org/2024.emnlp-industry.97/",
+    "snippet": "ACL Logo\n\n## Provenance: A Light-weight Fact-checker for Retrieval Augmented LLM Generation Output\n\nHithesh Sankararaman,\nMohammed Nasheed Yasin,\nTanner Sorensen,\nAlessandro Di Bari,\nAndreas Stolcke\n\n##### Correct Metadata for\n\n##### Abstract\n\n##### Export citation\n\n##### Markdown (Informal)\n\nProvenance: A Light-weight Fact-checker for Retrieval Augmented LLM Generation Output (Sankararaman et al., EMNLP 2024)\n\n##### ACL [...] ##### ACL\n\nCreative Commons License\nACL materials are Copyright © 1963–2026 ACL; other materials are copyrighted by their respective copyright holders. Materials prior to 2016 here are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 International License. Permission is granted to make copies for the purposes of teaching and research. Materials published in or after 2016 are licensed on a Creative Commons Attribution 4.0 International License.\n\nCreative Commons License\n\nThe ACL Anthology is managed and built by the ACL Anthology team of volunteers.\n\nSite last built on 03 April 2026 at 13:15 UTC with commit 07ecf93.",
+    "source_type": "webpage",
+    "rank": 11,
+    "discovery_score": 0.99580115
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_12",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "[2411.01022] Provenance: A Light-weight Fact-checker for Retrieval Augmented LLM Generation Output",
+    "url": "https://arxiv.org/abs/2411.01022",
+    "snippet": "Cornell University\narxiv logo\n\nHelp | Advanced Search\n\narXiv logo\nCornell University Logo\n\n## quick links\n\n# Computer Science > Computation and Language\n\n# Title:Provenance: A Light-weight Fact-checker for Retrieval Augmented LLM Generation Output\n\n|  |  |\n --- |\n| Comments: | To appear in Proceedings of EMNLP 2024 Industry Track |\n| Subjects: | Computation and Language (cs.CL) |\n| Cite as: | arXiv:2411.01022 [cs.CL] |\n|  | (or  arXiv:2411.01022v1 [cs.CL] for this version) |\n|  |  Focus to learn more  arXiv-issued DOI via DataCite |\n| Journal reference: | Proc. 2024 Conference on Empirical Methods in Natural Language Processing: Industry Track, pp. 1305-1313 |\n\n## Submission history\n\n## Access Paper:\n\n### References & Citations\n\n## BibTeX formatted citation\n\n### Bookmark [...] ## BibTeX formatted citation\n\n### Bookmark\n\nBibSonomy logo\nReddit logo\n\n# Bibliographic and Citation Tools\n\n# Code, Data and Media Associated with this Article\n\n# Demos\n\n# Recommenders and Search Tools\n\n# arXivLabs: experimental projects with community collaborators\n\narXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website.\n\nBoth individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them.\n\nHave an idea for a project that will add value for arXiv's community? Learn more about arXivLabs.\n\narXiv Operational Status",
+    "source_type": "webpage",
+    "rank": 12,
+    "discovery_score": 0.9952448
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_13",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Faithfulness-Aware Uncertainty Quantification for Fact-Checking the ...",
+    "url": "https://arxiv.org/abs/2505.21072",
+    "snippet": "Cornell University\narxiv logo\n\nHelp | Advanced Search\n\narXiv logo\nCornell University Logo\n\n## quick links\n\n# Computer Science > Computation and Language\n\n# Title:Faithfulness-Aware Uncertainty Quantification for Fact-Checking the Output of Retrieval Augmented Generation\n\n|  |  |\n --- |\n| Subjects: | Computation and Language (cs.CL) |\n| Cite as: | arXiv:2505.21072 [cs.CL] |\n|  | (or  arXiv:2505.21072v3 [cs.CL] for this version) |\n|  |  Focus to learn more  arXiv-issued DOI via DataCite |\n\n## Submission history\n\n## Access Paper:\n\nlicense icon\n\n### References & Citations\n\n## BibTeX formatted citation\n\n### Bookmark\n\nBibSonomy logo\nReddit logo\n\n# Bibliographic and Citation Tools\n\n# Code, Data and Media Associated with this Article\n\n# Demos\n\n# Recommenders and Search Tools [...] # Demos\n\n# Recommenders and Search Tools\n\n# arXivLabs: experimental projects with community collaborators\n\narXivLabs is a framework that allows collaborators to develop and share new arXiv features directly on our website.\n\nBoth individuals and organizations that work with arXivLabs have embraced and accepted our values of openness, community, excellence, and user data privacy. arXiv is committed to these values and only works with partners that adhere to them.\n\nHave an idea for a project that will add value for arXiv's community? Learn more about arXivLabs.\n\narXiv Operational Status",
+    "source_type": "webpage",
+    "rank": 13,
+    "discovery_score": 0.9942697
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_14",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Fact-Checking RAG Without Access to the Pipeline",
+    "url": "https://medium.com/@annabushmakina/trustworthy-rag-answers-without-pipeline-access-f9868c255428",
+    "snippet": "Machine Learning\n\nRetrieval Augmented Gen\n\nLLM\n\nAI\n\nNLP\n\n\n\nImage 13: Generative AI\n\nIn\n\nGenerative AI\n\nby\n\nAdham Khaled\n\n## Stanford Just Killed Prompt Engineering With 8 Words (And I Can’t Believe It Worked) ### ChatGPT keeps giving you the same boring response? This new technique unlocks 2× more creativity from ANY AI model — no training required…\n\nOct 20, 2025\n\n694\n\n\n\nImage 17: Vishal Mysore\n\nVishal Mysore\n\n## What Is PageIndex? How to Build a Vectorless RAG System (No Embeddings, No Vector DB) ### PageIndex is a vectorless, reasoning-based Retrieval-Augmented Generation (RAG) approach that retrieves answers from long documents without…\n\nMar 1\n\n9\n\n[](\n\n[](\n\nImage 18: The Complete Agentic AI System Design Interview Guide 2026\n\nImage 19: TechEon\n\nTechEon [...] Such an approach makes it easy to integrate validation stage into any QA interface — whether you’re working with custom infrastructure or a third-party RAG API — offering transparency and traceability without backend modifications.\n\nTo support this workflow, we’ve developed Lexio — an open-source UI library of lightweight React components that enables lightweight validation by linking answers to supporting evidence in the retrieved sources.\n\n## ✨ How to Link Claims to Supporting Evidence\n\nTo bridge the gap between generated answers and their supporting sources, Lexio introduces claim–evidence alignment — a lightweight, visual explanation layer that brings clarity to RAG outputs.\n\nHere’s how it works in practice:\n\nPress enter or click to view image in full sizeImage 5 [...] ## Get Anna Bushmakina’s stories in your inbox\n\nJoin Medium for free to get updates from this writer.\n\nSubscribe\n\nSubscribe\n\n- [x] \n\nRemember me for faster sign in\n\n \n\n_So how do we keep validation robust without touching the pipeline?_\n\nWe treat the response as _plain text_ and verify it at the output level — a solution explored in the next section.\n\n## ✅ Validating RAG Outputs Outside the Pipeline\n\nTo make RAG output verification more accessible — especially when internal pipeline data isn’t available — we propose an _output‑level_ validation step that runs outside the RAG pipeline. Instead of relying on internal model behaviour, we focus solely on the final answer and its retrieved sources.",
+    "source_type": "webpage",
+    "rank": 14,
+    "discovery_score": 0.99094474
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_15",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Face the Facts! Evaluating RAG-based Pipelines for Professional Fact-Checking - ACL Anthology",
+    "url": "https://aclanthology.org/2025.inlg-main.50/",
+    "snippet": "ACL Logo\n\n## Face the Facts! Evaluating RAG-based Pipelines for Professional Fact-Checking\n\nDaniel Russo,\nStefano Menini,\nJacopo Staiano,\nMarco Guerini\n\n##### Correct Metadata for\n\n##### Abstract\n\n##### Export citation\n\n##### Markdown (Informal)\n\nFace the Facts! Evaluating RAG-based Pipelines for Professional Fact-Checking (Russo et al., INLG 2025)\n\n##### ACL [...] ##### ACL\n\nCreative Commons License\nACL materials are Copyright © 1963–2026 ACL; other materials are copyrighted by their respective copyright holders. Materials prior to 2016 here are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 International License. Permission is granted to make copies for the purposes of teaching and research. Materials published in or after 2016 are licensed on a Creative Commons Attribution 4.0 International License.\n\nCreative Commons License\n\nThe ACL Anthology is managed and built by the ACL Anthology team of volunteers.\n\nSite last built on 13 April 2026 at 16:12 UTC with commit c7694d2.",
+    "source_type": "webpage",
+    "rank": 15,
+    "discovery_score": 0.62429357
+  },
+  {
+    "source_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0__src_16",
+    "query_id": "query_chapter-7-section-assessing-factuality-and-detecting-hallucinations_1_f8f14397c0",
+    "title": "Just a moment...",
+    "url": "https://www.sciencedirect.com/science/article/pii/S0045790625006895",
+    "snippet": "# Just a moment...\n\nImage 1: Elsevier logo\n\n   Help   \n\n# Are you a robot?\n\nPlease confirm you are a human by completing the captcha challenge below.\n\nVerification successful. Waiting for www.sciencedirect.com to respond\n\n   Reference number:9e99dd7e4f2ad694\n   IP Address:34.34.225.234\n   User Agent:Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36\n   Timestamp:2026-04-09 13:30:15 UTC\n\nImage 2: Elsevier logo with wordmark\n\n   About ScienceDirect\n   Remote access\n   Contact and support\n   Terms and conditions\n   Privacy policy\n   Cookie settings [...] All content on this site: Copyright © 2026 Elsevier B.V., its licensors, and contributors. All rights are reserved, including those for text and data mining, AI training, and similar technologies. For all open access content, the relevant licensing terms apply.\n\nImage 3: RELX group home page",
+    "source_type": "news",
+    "rank": 16,
+    "discovery_score": 0.039342504
+  }
+]

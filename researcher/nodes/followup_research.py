@@ -6,6 +6,7 @@ from researcher.constants import (
     ALLOW_PARTIAL_SOURCE_FAILURE,
     ENABLE_FIRECRAWL_FALLBACK,
     FIRECRAWL_FALLBACK_MIN_TEXT_CHARS,
+    MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS,
 )
 from researcher.registry.source_registry import SourceRegistry, SourceRegistryError
 from researcher.schemas import (
@@ -344,7 +345,7 @@ class FollowupResearchNode:
             source_title=document.title,
             source_url=str(document.url),
             source_type=document.source_type.value,
-            source_text=document.text,
+            source_text=self._truncate_source_text(document.text),
         )
 
         llm_output = self.llm.generate_structured(
@@ -452,6 +453,12 @@ class FollowupResearchNode:
         for entry in state.source_registry:
             registry._entries[entry.source_id] = entry
         return registry
+
+    def _truncate_source_text(self, text: str) -> str:
+        """
+        Bound prompt size to keep follow-up evidence extraction fast.
+        """
+        return text[:MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS].strip()
 
     def _build_extract_evidence_user_prompt(
         self,

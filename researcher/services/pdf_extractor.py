@@ -28,7 +28,7 @@ class PDFExtractionResult:
     text: str
     pages: List[PDFPageText] = field(default_factory=list)
     page_count: int = 0
-    metadata: dict[str, str] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     extraction_method: str = "pymupdf"
 
 

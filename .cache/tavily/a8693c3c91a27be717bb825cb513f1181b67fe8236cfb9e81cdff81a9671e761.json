@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-2-section-defining-retrieval-augmented-generation-and-its-motivation_1_c5ed41a99c__src_1",
+    "query_id": "query_chapter-2-section-defining-retrieval-augmented-generation-and-its-motivation_1_c5ed41a99c",
+    "title": "Evaluation Metrics for Retrieval-Augmented Generation (RAG ...",
+    "url": "https://www.geeksforgeeks.org/nlp/evaluation-metrics-for-retrieval-augmented-generation-rag-systems/",
+    "snippet": "Output:\n\n> {'BLEU': np.float64(0.3939917666748808)}\n\n2. Perplexity: Measures how well the model predicts the next word, lower perplexity is better.\n\n\\text{Perplexity}(W) = P(w\\_1, w\\_2, \\dots, w\\_N)^{-\\frac{1}{N}} = \\exp\\Bigg(-\\frac{1}{N} \\sum\\_{i=1}^{N} \\log P(w\\_i \\mid w\\_1, \\dots, w\\_{i-1})\\Bigg)",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.6493346
+  },
+  {
+    "source_id": "query_chapter-2-section-defining-retrieval-augmented-generation-and-its-motivation_1_c5ed41a99c__src_2",
+    "query_id": "query_chapter-2-section-defining-retrieval-augmented-generation-and-its-motivation_1_c5ed41a99c",
+    "title": "[PDF] Comprehensive Comparison of RAG Methods Across Multi-Domain ...",
+    "url": "https://aclanthology.org/2026.eacl-srw.17.pdf",
+    "snippet": "Our evaluation, which accounted for both retriever effectiveness and generator quality, revealed that robust yet straightforward techniques, such as Reranker and Hybrid BM25, consistently outper-form Vanilla RAG across all evaluated domains.\nAmong the advanced techniques studied, the HyDE method proved the most effective for enhancing retrieval performance, whereas the Reranker ap-proach was most successful at improving final answer quality. For future research, the results highlight that performance improvements can be achieved without inflating the computational com-plexity, emphasizing the need to prioritize retrieval strategies over resource-intensive scaling. [...] 5.5 Generator Results Table 2 shows that Hybrid BM25 consistently achieves slightly higher F1 scores than Vanilla RAG across all datasets. Consistent with the retriever re-sults, HyDE emerges as the strongest approach, attaining the highest performance on four of the eight datasets and highlighting its effectiveness for conversational QA. This advantage is particularly evident on TopiOCQA, where HyDE improves the F1 score by 9.6% over Vanilla RAG. In contrast, the performance of Query Rewriting is highly dataset-dependent and falls substantially below No RAG on the INSCIT, QReCC, and TopiOCQA datasets, where MRR scores are also below average. This may point to differences in conversational struc-238 Figure 3: Relationship between retriever (MRR@5) and generator (F1) performance for each",
+    "source_type": "pdf",
+    "rank": 2,
+    "discovery_score": 0.62495816
+  }
+]

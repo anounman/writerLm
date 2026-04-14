@@ -1,0 +1,12 @@
+[
+  {
+    "source_id": "query_chapter-6-section-foundations-of-prompt-engineering-in-retrieval-augmented-generation_2_15d3f4dc32__src_1",
+    "query_id": "query_chapter-6-section-foundations-of-prompt-engineering-in-retrieval-augmented-generation_2_15d3f4dc32",
+    "title": "Top 5 LLM Prompts for Retrieval-Augmented Generation (RAG)",
+    "url": "https://www.scoutos.com/blog/top-5-llm-prompts-for-retrieval-augmented-generation-rag",
+    "snippet": "If you want to launch a new RAG application or refine an existing one, it’s worth exploring a platform that unifies retrieval, prompt design, and workflow orchestration. Scout is built with that simplicity in mind, allowing you to adapt prompts and glean insights from user sessions in one place.\n\nStart small: pick a task, try a prompt style from this post, and see how your LLM-based system responds. By iterating and monitoring improvements, you’ll discover how each strategy refines the user experience. Good prompts aren’t one-size-fits-all, but combining these proven templates with RAG can drastically raise the bar on answer quality.\n\n## Related posts\n\nTools\n\n## The Benefits of RAG [...] 1. Clean and Curate Your RAG Sources: Mismatched or irrelevant documents can lead the model astray. Checking each retrieval result for correctness will save time in drafting prompts.\n2. Balance Token Limits: Summarize or preprocess your chunks so the final prompt does not exceed token limits. Overly large contexts dilute the LLM’s focus, while overly small contexts might leave out crucial data.\n3. Experiment with Format: In some cases, bullet points or Q&A structures work better than long paragraphs. Consider your audience and the type of content you store in your knowledge base.\n4. Include a Review Step: Some organizations run LLM-based outputs through a secondary model or a human reviewer, especially if the stakes are high. This helps preserve consistency and correctness.",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.67192334
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-5-section-implementing-an-end-to-end-rag-pipeline-in-python_1_47f1ba4a16__src_1",
+    "query_id": "query_chapter-5-section-implementing-an-end-to-end-rag-pipeline-in-python_1_47f1ba4a16",
+    "title": "Claude API 429 Error Handling | Production Python Guide",
+    "url": "https://www.sitepoint.com/claude-api-429-error-handling-python/",
+    "snippet": "`execute()`\n`proactive_threshold`\n`Retry-After`\n`retry_count`\n`max_retries=0`\n`MaxRetriesExceeded`\n`None`\n\n### Usage Example: Calling Claude's Messages API\n\n`import os\nimport requests\nANTHROPIC_API_KEY = os.environ.get(\"ANTHROPIC_API_KEY\")\nif not ANTHROPIC_API_KEY:\n raise ValueError(\"Set ANTHROPIC_API_KEY environment variable\")\nAPI_URL = \"\n\ndef send_message() -> requests.Response:\n return requests.post(\n API_URL,\n headers={\n \"x-api-key\": ANTHROPIC_API_KEY,\n \"anthropic-version\": \"2023-06-01\",\n \"content-type\": \"application/json\",\n },\n json={\n \"model\": \"claude-sonnet-4-5\", # Replace with current model ID: \n \"max_tokens\": 1024,\n \"messages\": [{\"role\": \"user\", \"content\": \"Explain rate limiting.\"}],\n },\n timeout=30,\n )",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.79958355
+  },
+  {
+    "source_id": "query_chapter-5-section-implementing-an-end-to-end-rag-pipeline-in-python_1_47f1ba4a16__src_2",
+    "query_id": "query_chapter-5-section-implementing-an-end-to-end-rag-pipeline-in-python_1_47f1ba4a16",
+    "title": "basic openai chat completion example · GitHub",
+    "url": "https://gist.github.com/pszemraj/c643cfe422d3769fd13b97729cf517c5",
+    "snippet": "| :param frequency\\_penalty: The penalty applied based on token frequency. (default: 0.0) |\n| :param file\\_path: The path to a file/directory to include after the prompt. |\n| :param out\\_dir: directory to save outputs. (default: parent directory of input path if provided) |\n| :param save\\_prompt: Save the input prompt in the output files with the generated text. (default: False) |\n| :param markdown: save the generated text as a markdown file. (default: False) |\n| :param verbose: Whether to print the generated text to the console. |\n| \"\"\" |\n| logger = logging.getLogger(\\_\\_name\\_\\_) |\n| openai.api\\_key = api\\_key if api\\_key else os.getenv(\"OPENAI\\_API\\_KEY\") |\n| assert ( |\n| openai.api\\_key is not None |\n| ), \"API key not found - pass as arg or set environment variable OPENAI\\_API\\_KEY\" | [...] |\n| :param prompt: The input prompt for the model. |\n| :param api\\_key: The OpenAI API key. If not provided, checks the environment variable OPENAI\\_API\\_KEY. |\n| :param model: openai model code, defaults to \"gpt-3.5-turbo\" |\n| :param system\\_prompt: The system prompt for the model, defaults to \"You are a helpful assistant.\" |\n| :param temperature: The sampling temperature (creativity) for the model. (default: 0.5) |\n| :param max\\_tokens: The maximum number of tokens in the generated text. (default: 256) |\n| :param n: The number of generated texts. (default: 1) |\n| :param stop: The stopping sequence(s) for the model. (default: None) |\n| :param presence\\_penalty: The penalty applied for new token presence. (default: 0.0) | [...] | :param str model: model to use, defaults to \"gpt-3.5-turbo\" |\n| :param str system\\_prompt: initial prompt for the model, defaults to \"You are a helpful assistant.\" |\n| :param float temperature: \\_description\\_, defaults to 0.5 |\n| :param int max\\_tokens: \\_description\\_, defaults to 256 |\n| :param int n: \\_description\\_, defaults to 1 |\n| :param Optional[Union[str, list]] stop: \\_description\\_, defaults to None |\n| :param float presence\\_penalty: \\_description\\_, defaults to 0 |\n| :param float frequency\\_penalty: \\_description\\_, defaults to 0.1 |\n| :return List[str]: \\_description\\_ |\n| \"\"\" |\n| if openai\\_api\\_key is None: |\n| openai\\_api\\_key = os.environ.get(\"OPENAI\\_API\\_KEY\", None) |\n| assert openai\\_api\\_key is not None, \"OpenAI API key not found.\" |\n|  |",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.7975099
+  }
+]

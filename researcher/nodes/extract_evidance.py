@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from researcher.constants import MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS
 from researcher.schemas import (
     EvidenceItem,
     EvidenceType,
@@ -212,7 +213,7 @@ class ExtractEvidenceNode:
             source_title=document.title,
             source_url=str(document.url),
             source_type=document.source_type.value,
-            source_text=document.text,
+            source_text=self._truncate_source_text(document.text),
         )
 
         llm_output = self.llm.generate_structured(
@@ -273,6 +274,12 @@ class ExtractEvidenceNode:
             )
 
         return normalized_items
+
+    def _truncate_source_text(self, text: str) -> str:
+        """
+        Bound prompt size to keep evidence extraction fast and predictable.
+        """
+        return text[:MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS].strip()
 
     def _clean_text(self, value: str) -> str:
         """

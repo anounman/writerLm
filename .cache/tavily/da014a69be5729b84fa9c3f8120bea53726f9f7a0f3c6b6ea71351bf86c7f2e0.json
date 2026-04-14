@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-3-section-what-are-text-embeddings-intuition-and-foundations_1_211a07bf4c__src_1",
+    "query_id": "query_chapter-3-section-what-are-text-embeddings-intuition-and-foundations_1_211a07bf4c",
+    "title": "[PDF] Part I: Overview of Text Embedding Methods - Yu Meng",
+    "url": "https://yumeng5.github.io/files/kdd20-tutorial/Part1.pdf",
+    "snippet": "❑ Other models’ objectives contain many non-linear operations (Word2Vec & fastText's objectives involve exponential functions; GloVe's objective involves logarithm functions), while JoSE only has linear terms in the objective 26 Experiments 27 Outline ❑Introduction to text embeddings ❑Local context-based word embeddings ❑Joint local and global context-based text embeddings ❑Deep contextualized embeddings via neural language models ❑Extend unsupervised embeddings to incorporate weak supervision From Context-Free Embedding to Contextualized Embedding ❑Previous unsupervised word embeddings like Word2Vec and GloVe learn context-free word embedding ❑Each word has one representation regardless of specific contexts it appears in ❑E.g. “bank” is a polysemy, but only has one representation ❑Deep [...] embedding frameworks: ❑ Although directional similarity has shown effective for various applications, previous embeddings (e.g. Word2Vec, GloVe, fastText) are trained in the Euclidean space ❑ A gap between training space and usage space: Trained in Euclidean space but used on sphere Embedding Training in Euclidean Space Embedding Usage on the Sphere (Similarity, Clustering, etc.) Post-processing (Normalization) 15 Motivation ❑What is the consequence of the inconsistency between word embedding training and usage space? ❑ The objective we optimize during training is not really the one we use ❑ Regardless of the different training objective, Word2Vec, GloVe and fastText all optimize the embedding dot product during training, but cosine similarity is what actually used in applications",
+    "source_type": "pdf",
+    "rank": 1,
+    "discovery_score": 0.7099254
+  },
+  {
+    "source_id": "query_chapter-3-section-what-are-text-embeddings-intuition-and-foundations_1_211a07bf4c__src_2",
+    "query_id": "query_chapter-3-section-what-are-text-embeddings-intuition-and-foundations_1_211a07bf4c",
+    "title": "Transformers in Natural Language Processing — A Brief Survey | George Ho",
+    "url": "https://www.georgeho.org/transformers-in-nlp/",
+    "snippet": "## Some Architectures and Developments\n\nHere’s an (obviously) abbreviated history of Transformer-based models in NLP1 in (roughly) chronological order. I also cover some other non-Transformer-based models, because I think they illuminate the history of NLP.\n\n1. word2vec and GloVe [...] 1. word2vec and GloVe\n\n    These were the first instances of word embeddings pre-trained on large amounts of unlabeled text. These word embeddings generalized well to most other tasks (even with limited amounts of labeled data), and usually led to appreciable improvements in performance.\n    These ideas were immensely influential and have served NLP extraordinarily well. However, they suffer from a major limitation. They are shallow representations that can only be used in the first layer of any network: the remainder of the network must still be trained from scratch.\n    The main appeal is well illustrated below: each word has its own vector representation, and there are linear vector relationships can encode common-sense semantic meanings of words.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.67321366
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_1",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "MuRAG: Multimodal Retrieval-Augmented Generator for ...",
+    "url": "https://aclanthology.org/2022.emnlp-main.375.pdf",
+    "snippet": "tasks. Recently, SimVLM (Wang et al., 2022) and COCA (Yu et al., 2022) proposed end-to-end training for both deep multimodal transformers and unimodal featurization networks and demonstrated strong performance in both multimodal and uni-modal downstream tasks. The multimodal memory encoder of MuRAG is broadly similar to SimVLM and CoCa, but has a different focus to encode and retrieve multimodal knowledge (i.e. images and texts) to augment language generation models. [...] Multimodal Transformers Multimodal trans-formers have demonstrated strong performances in learning cross-modal representation that are gen-erally beneﬁcial on downstream vision and lan-guage tasks, such as image-text retrieval (Karpa-thy and Fei-Fei, 2015), image captioning (Chen et al., 2015), and VQA (Antol et al., 2015). These methods typically learn a joint transformer model on top of unimodal visual and textual backbones, via fusing deep features from each modality. The early version of multimodal transformers (Lu et al., 2019; Chen et al., 2020; Li et al., 2020) usually learns a Transformer on pre-extracted unimodal features for contextualization, which makes it im-possible to adjust those unimodal features to the target tasks. Recently, SimVLM (Wang et al., 2022) and COCA (Yu et [...] Our model is implemented in JAX (Bradbury et al., 2018), based on the T5X codebase (Roberts et al., 2022). During pre-training, we ﬁrst train the model on LAION for 1M steps, and then continue training on CC/PAQ/VQA with 1:1:1 sample ratio for another 200K steps. We optimize the model with Adafactor (Shazeer and Stern, 2018). For both stages, we adopt a constant learning rate of 5e-4 and a batch size of 4096. The models are trained on 64 Cloud v4 TPUs (Jouppi et al., 2020).",
+    "source_type": "pdf",
+    "rank": 1,
+    "discovery_score": 0.99989367
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_2",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multi-Modal RAG: Integrating Text, Image and Video Retrieval into ...",
+    "url": "https://peaklightai.medium.com/multi-modal-rag-integrating-text-image-and-video-retrieval-into-generation-pipelines-8ae7ce8ed824",
+    "snippet": "MuRAG: Multimodal Retrieval-Augmented Generator for Open Question Answering over Images and Text. Proceedings of the 2022 Conference on",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.99984527
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_3",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multi-Modal Retrieval Augmented Visual Understanding ...",
+    "url": "https://dl.acm.org/doi/10.1145/3746027.3756866",
+    "snippet": "This paper presents a doctoral research focusing on integrating Retrieval-Augmented Generation (RAG) into video-related multimodal tasks.",
+    "source_type": "webpage",
+    "rank": 3,
+    "discovery_score": 0.999826
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_4",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "[PDF] Multimodal Retrieval-Augmented Generation: Unified Information ...",
+    "url": "https://aclanthology.org/anthology-files/anthology-files/pdf/magmar/2025.magmar-1.5.pdf",
+    "snippet": "Most existing ap-proaches lack unified frameworks capable of rea-soning across more than two modalities, such as text, tables, images, and videos. Scalability is also limited, as adding new modalities often requires separate training pipelines (Chen et al., 2022). Fur-thermore, current evaluation benchmarks primarily focus on single- or dual-modality tasks, making it difficult to assess systems designed for more com-plex, fully multimodal scenarios (Chen et al., 2024; Es et al., 2024; Krishna et al., 2024).\nThis work addresses these gaps by proposing a unified framework for building and evaluating multimodal RAG systems. [...] Wenhu Chen, Hexiang Hu, Xi Chen, Pat Verga, and William Cohen. 2022. MuRAG: Multimodal retrieval-augmented generator for open question an-swering over images and text. In Proceedings of the 2022 Conference on Empirical Methods in Nat-ural Language Processing, pages 5558–5570, Abu Dhabi, United Arab Emirates. Association for Com-putational Linguistics.\n16 17 Jaymari Chua, Yun Li, Shiyi Yang, Chen Wang, and Lina Yao. 2024.\nAi safety in generative ai large language models: A survey.\nPreprint, arXiv:2407.18369. [...] Multimodal information retrieval (MMIR) aims to bridge the gap between different data types, facil-itating comprehensive searches that span text, im-ages, videos, and other formats (Baltrusaitis et al., 2019). Researchers have successfully applied deep learning techniques for multimodal information re-trieval (Hu et al., 2019).\nRAG systems represent a paradigm shift in com-bining retrieval mechanisms with generative mod-els. Introduced by Lewis et al. (2020), RAG lever-ages LLMs to generate contextually relevant re-sponses by retrieving pertinent information from extensive external knowledge bases. RAG research has rapidly expanded, tackling efficiency bottle-necks (Borgeaud et al., 2021), memory constraints 59 (Qian et al., 2024), and self-reflection strategies (Asai et al., 2023).",
+    "source_type": "pdf",
+    "rank": 4,
+    "discovery_score": 0.9997584
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_5",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal Retrieval Augmented Generation for Instruction ...",
+    "url": "https://cs231n.stanford.edu/2024/papers/multimodal-retrieval-augmented-generation-for-instruction-manual.pdf",
+    "snippet": "described the corresponding image. By combining these NLP augmentation techniques and careful manual validation, we significantly expanded and enriched our dataset, enhancing its robustness and di-versity for retrieval. [...] and recogni-tion of negative samples in the dataset, demonstrating im-proved image understanding with significantly less com-pute. [...] arXiv preprint arXiv:2210.02928, 2022.\n S. Edunov, M. Ott, M. Auli, and D. Grangier. Understanding back-translation at scale. arXiv preprint arXiv:1808.09381, 2018.\n A. El-Nouby, N. Neverova, I. Laptev, and H. J´ egou. Training vision transformers for image retrieval, 2021.\n Y. Gao, Y. Xiong, X. Gao, K. Jia, J. Pan, Y. Bi, Y. Dai, J. Sun, M. Wang, and H. Wang. Retrieval-augmented generation for large language models: A survey, 2024.\n K. He, X. Zhang, S. Ren, and J. Sun. Deep residual learning for image recognition, 2015.\n Z. Hu, A. Iscen, C. Sun, Z. Wang, K.-W. Chang, Y. Sun, C. Schmid, D. A. Ross, and A. Fathi. Reveal: Retrieval-augmented visual-language pre-training with multi-source multimodal knowledge memory.",
+    "source_type": "pdf",
+    "rank": 5,
+    "discovery_score": 0.9997284
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_6",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multi-RAG: A Multimodal Retrieval-Augmented Generation System for Adaptive Video Understanding",
+    "url": "https://arxiv.org/html/2505.23990v2",
+    "snippet": "In general-purpose scenarios characterized by high-frequency transformations of visual content, the utility derived from input-filtering in the pre-processing stage is notably diminished. Consequently, for tasks of this nature, a uniform sampling methodology is employed. For the given video, the frame sampler samples n𝑛nitalic\\_n frames at a constant rate. These frames {F0,F1,…⁢Fn}subscript𝐹0subscript𝐹1…subscript𝐹𝑛\\{F\\_{0},F\\_{1},...F\\_{n}\\}{ italic\\_F start\\_POSTSUBSCRIPT 0 end\\_POSTSUBSCRIPT , italic\\_F start\\_POSTSUBSCRIPT 1 end\\_POSTSUBSCRIPT , … italic\\_F start\\_POSTSUBSCRIPT italic\\_n end\\_POSTSUBSCRIPT } are fed into the Vision Language Model to generate the text descriptions {D0,D1,…⁢Dn}subscript𝐷0subscript𝐷1…subscript𝐷𝑛\\{D\\_{0},D\\_{1},...D\\_{n}\\}{ italic\\_D start\\_POSTSUBSCRIPT 0 [...] account of content progression alongside an initial interpretive framework of the video’s subject matter and structure. [...] video understanding benchmark. Our system achieves superior performance compared to existing open-source video large language models (Video-LLMs) and large vision-language models (LVLMs), while utilizing fewer resources and less input data. The results demonstrate Multi-RAG’s potential as a practical and efficient foundation for future human-robot adaptive assistance systems in dynamic, real-world contexts.",
+    "source_type": "webpage",
+    "rank": 6,
+    "discovery_score": 0.99965405
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_7",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "An Easy Introduction to Multimodal Retrieval-Augmented Generation ...",
+    "url": "https://developer.nvidia.com/blog/an-easy-introduction-to-multimodal-retrieval-augmented-generation-for-video-and-audio/",
+    "snippet": "Specifically, we explore how to build a multimodal RAG pipeline to search information in videos. Building RAG for text, images, and videos.",
+    "source_type": "blog",
+    "rank": 7,
+    "discovery_score": 0.9996513
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_8",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal retrieval-augmented generation framework for visually ...",
+    "url": "https://link.springer.com/article/10.1007/s44223-025-00102-6",
+    "snippet": "MLLM-augmented retrieval systems offer two-way cross-modal search, helping architects and engineers find, compare, and understand complex",
+    "source_type": "news",
+    "rank": 8,
+    "discovery_score": 0.99959236
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_9",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "A Survey on Multimodal Retrieval-Augmented Generation - arXiv",
+    "url": "https://arxiv.org/html/2504.08748v1",
+    "snippet": "This survey systematically reviews the current state of MRAG research, focusing on four key aspects: essential components and technologies, datasets,",
+    "source_type": "research_paper",
+    "rank": 9,
+    "discovery_score": 0.9993487
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_10",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "What is Multimodal RAG? | IBM",
+    "url": "https://www.ibm.com/think/topics/multimodal-rag",
+    "snippet": "Text retrieval with multimodal generation: This more advanced approach still performs retrieval over text embeddings (captions, transcripts, metadata) but during response generation, it allows a multimodal large language model (LLM) to directly access the original nontext data. For example, the retriever might fetch an image by using its caption, but the image itself is passed into the multimodal LLM alongside the query. This hybrid approach improves expressiveness during generation, especially by fine-tuning on domain-specific datasets, though retrieval quality still depends on the initial text representation of the nontext data. [...] Multimodal retrieval: The most advanced approach involves using multimodal embeddings. These embeddings can be mapped for text, images, audio and video into a common vector space for cross-modal retrieval where a textual query will directly retrieve relevant multimodal data. The multimodal evidence retrieved would be submitted to the multimodal LLM for response generation that includes explicit grounding on multiple data sources. The multimodal LLM would avoid the bottlenecks of text translation and offers a maximum degree of contextual grounding. But this remedy can be costly due to the underlying computational demands and advanced modality-specific encoders. It can also benefit from vision language models and can be further optimized by using summarization to condense retrieved content [...] Another study introduced MuRAG (multimodal retrieval augmented transformer) for open-domain question answering over both image and text.3 Unlike many previous models that rely on textual knowledge only, MuRAG evaluates an external (nonparametric) multimodal memory to retrieve relevant images and texts that could augment language generation. MuRAG combines a pretrained T5 model and a pretrained vision transformer (ViT) model to embed multimodal data embeddings in a memory bank. This model leverages a joint contrastive and generative training objective. In large-scale experiments on two open multimodal question answering datasets (WebQA and MultimodalQA), MuRAG outperformed existing baselines by 10–20% on accuracy assessed under different settings.\n\n## Key challenges of multimodal RAG",
+    "source_type": "webpage",
+    "rank": 10,
+    "discovery_score": 0.9992848
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_11",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal Retrieval Augmented Generation (MM-RAG)",
+    "url": "https://medium.com/@bijit211987/multimodal-retrieval-augmented-generation-mm-rag-2e8f6dc59f11",
+    "snippet": "The key idea is to combine a language model like GPT-3 with a multimodal retriever using contrastive learning embeddings.",
+    "source_type": "webpage",
+    "rank": 11,
+    "discovery_score": 0.9992084
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_12",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal Retrieval-Augmented Generation (RAG) | Weaviate",
+    "url": "https://weaviate.io/blog/multimodal-rag",
+    "snippet": "prompt=\"This is an image of my pet, please give me a cute and vivid description.\",  \n image64=SOURCE_IMAGE  \n)` [...] Recently, a group of large generative models, both closed and open source, has emerged that understand both text and images. As a result, we can now support multimodal RAG, where we can retrieve images from our vector database and pass those into the large multimodal model (LMM) to generate with. This simple two-step process, illustrated below, is the main idea behind multimodal RAG.\n\nmmRAG_Dark\nmmRAG_Light\nShows the two-step process of MM-RAG, involving retrieval from a multimodal knowledge base and then generation using a large multimodal model by grounding in the retrieved context.\n\nmmRAG_Dark\nmmRAG_Light [...] `from openai import OpenAI  \ndef generate_image_dalee3(prompt):  \n openai_client = OpenAI()  \n response_oai = openai_client.images.generate(  \n model=\"dall-e-3\",  \n prompt=str(prompt),  \n size=\"1024x1024\",  \n quality=\"standard\",  \n n=1,  \n )  \n result = response_oai.data.url  \n print(f\"Generated image url: {result}\")  \n return result  \nimage_url = generate_image_dalee3(GENERATED_DESCRIPTION)`\n\nGenerated Image:\ngenerated puppy\n\ngenerated puppy\n\n## Recent Advancements in Multimodal RAG​",
+    "source_type": "blog",
+    "rank": 12,
+    "discovery_score": 0.99899167
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_13",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "What is Multimodal RAG? Complete Guide 2026",
+    "url": "https://www.articsledge.com/post/multimodal-retrieval-augmented-generation-rag",
+    "snippet": "RAGFlow's year-end review for 2024 noted that \"multimodal RAG is another area we believe will experience rapid growth in 2025, as key related technologies emerge and start to be applied in 2024\" (RAGFlow Blog, December 2024). The review cited the rise of Vision-Language Models capable of \"comprehensively analysing enterprise-level multimodal documents\" rather than just recognizing everyday objects.\n\nBy 2025, multimodal RAG transitioned from experimental technique to production reality. A survey from Signity Solutions in July 2025 identified it as one of the top trends shaping retrieval-augmented generation, stating that \"multimodal RAG will include a variety of data formats, such as audio, video, and image, into AI-powered systems\" (Signity Solutions, July 2025). [...] The breakthrough came with vision-language models. In 2023, OpenAI released GPT-4V (GPT-4 with vision), enabling language models to actually see and interpret images. Concurrently, open-source projects like LLaVA (Large Language and Vision Assistant) demonstrated that smaller models could achieve strong multimodal understanding through efficient training strategies.\n\nBy mid-2024, the infrastructure converged. Vision transformers could encode images into the same semantic space as text. Multimodal embedding models like CLIP and updated frameworks like LangChain and LlamaIndex added native support for mixed-media retrieval. Vector databases expanded to handle image embeddings alongside text vectors. [...] GPT-4V from OpenAI processes images and text together, handling tasks from visual question answering to diagram interpretation. Google's Gemini models offer similar capabilities with particular strength in handling long contexts. Anthropic's Claude models support image inputs alongside text.\n\nOpen-source alternatives expanded rapidly in 2024-2025. LLaVA (Large Language and Vision Assistant) combines a CLIP vision encoder with the Vicuna language model through a trained projection layer. According to a technical deep-dive published in October 2025, LLaVA uses \"a frozen CLIP vision encoder that preserves strong generalization capabilities\" while the Vicuna language model provides \"conversational fluency and strong instruction-following behavior\" (Learn OpenCV, October 2025).",
+    "source_type": "webpage",
+    "rank": 13,
+    "discovery_score": 0.9984145
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_14",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "The Rise and Evolution of RAG in 2024 A Year in Review | RAGFlow",
+    "url": "https://ragflow.io/blog/the-rise-and-evolution-of-rag-in-2024-a-year-in-review",
+    "snippet": "Returning to RAG itself, if we can use RAG to find images and text containing answers within a large number of PDFs based on user queries, we can then generate the final answer using VLMs. This is the significance of multimodal RAG; it goes beyond simple image searches for everyday items.\n\nTo achieve this, one approach, as previously mentioned, involves using models to convert multimodal documents into text before indexing for retrieval. Another approach, leveraging advancements in VLMs, directly generates vectors, bypassing the complex OCR process. A pioneering example of this is ColPali [Reference 44], which emerged in the summer of 2024. ColPali treats an image as 1024 image patches and generates embeddings for each patch, effectively representing a single image as a tensor. [...] ## Multimodal RAG\n\nMultimodal RAG is another area we believe will experience rapid growth in 2025, as key related technologies emerge and start to be applied in 2024.\n\nFirstly, the rise of Vision-Language Models (VLMs) has been notable. As shown in the diagram, VLMs, which previously focused primarily on simple image searches, have evolved rapidly by mid-2024.\n\nThis means that VLMs have achieved a deeper understanding of images, moving beyond merely recognising everyday objects to comprehensively analysing enterprise-level multimodal documents. For instance, the open-source 3B model PaliGemma [Reference 43] exemplifies this capability. [...] to traditional visual models. Another advantage of using multimodal models for document intelligence is the ability to incorporate textual information into document layouts. A representative work this year, M2Doc [Reference 23], integrates BERT into a vision-based Encoder-Decoder architecture, enhancing the identification of semantic boundaries for text and paragraphs.",
+    "source_type": "blog",
+    "rank": 14,
+    "discovery_score": 0.9967013
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_15",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal Retrieval-Augmented Generation: Unified Information Processing Across Text, Image, Table, and Video Modalities - ACL Anthology",
+    "url": "https://aclanthology.org/2025.magmar-1.5/",
+    "snippet": "##### ACL\n\nCreative Commons License\nACL materials are Copyright © 1963–2026 ACL; other materials are copyrighted by their respective copyright holders. Materials prior to 2016 here are licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 3.0 International License. Permission is granted to make copies for the purposes of teaching and research. Materials published in or after 2016 are licensed on a Creative Commons Attribution 4.0 International License.\n\nCreative Commons License\n\nThe ACL Anthology is managed and built by the ACL Anthology team of volunteers.\n\nSite last built on 13 April 2026 at 16:12 UTC with commit c7694d2. [...] ACL Logo\n\n## Multimodal Retrieval-Augmented Generation: Unified Information Processing Across Text, Image, Table, and Video Modalities\n\nNazarii Drushchak,\nNataliya Polyakovska,\nMaryna Bautina,\nTaras Semenchenko,\nJakub Koscielecki,\nWojciech Sykala,\nMichal Wegrzynowski\n\n##### Correct Metadata for\n\n##### Abstract\n\n##### Export citation\n\n##### Markdown (Informal)\n\nMultimodal Retrieval-Augmented Generation: Unified Information Processing Across Text, Image, Table, and Video Modalities (Drushchak et al., MAGMaR 2025)\n\n##### ACL",
+    "source_type": "webpage",
+    "rank": 15,
+    "discovery_score": 0.9956006
+  },
+  {
+    "source_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540__src_16",
+    "query_id": "query_chapter-10-section-emerging-trends-in-retrieval-augmented-generation_1_a3616a4540",
+    "title": "Multimodal RAG Explained: From Text to Images and Beyond",
+    "url": "https://www.usaii.org/ai-insights/multimodal-rag-explained-from-text-to-images-and-beyond",
+    "snippet": "Unlike traditional RAG, multimodal systems create embeddings in a unified space: CNNs process images, transformers handle text, and specialized audio models manage sound. The rapid adoption of this technology is evident, with the global retrieval-augmented generation market projected to increase from USD 1.85 billion in 2025 to approximately USD 13.63 billion by 2030 (Precedence Research). In this blog, we’ll dive into multimodal RAG’s frameworks, real-world applications, and its transformative impact on the future of AI.\n\nThe Evolution of RAG [...] United States Artificial Intelligence Institute\n\n# Multimodal RAG Explained: From Text to Images and Beyond\n\nOct 20, 2025\n\nFacebook\nX\nLinkedin\nMultimodal RAG Explained: From Text to Images and Beyond\n\nBy Editorial Desk\n\nAI is evolving beyond just text, and multimodal retrieval-augmented generation (RAG) is at the forefront of this shift. But what exactly is multimodal RAG, and why is it becoming a key part of modern AI? Simply put, it allows AI models to seamlessly integrate and understand multiple types of data like text, images, audio, and more, so they can provide richer, context-aware outputs. [...] Traditional multimodal RAG pipelines use frameworks such as LangChain to execute queries, retrieve relevant data that can be summarized, and transform the relevant data to prepare it for the generative stage.\n\n3. Context Building and Generation\n\nUpon retrieval, the system fuses the related inputs. In early fusion, different inputs would have been merged into one representation, while in late fusion, each input type would remain its own representation until the very end of the process.\n\nAfterwards, the multimodal LLM generated the response, which could be in the form of text, an image with text captioning, or an audio piece. This method also minimizes errors and maximizes the quality of the output.\n\nContext Building and Generation\n\nContext Building and Generation",
+    "source_type": "webpage",
+    "rank": 16,
+    "discovery_score": 0.9953904
+  }
+]

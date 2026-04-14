@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-10-section-ethical-legal-and-societal-implications-for-future-rag-systems_1_008c6aa9af__src_1",
+    "query_id": "query_chapter-10-section-ethical-legal-and-societal-implications-for-future-rag-systems_1_008c6aa9af",
+    "title": "RAGTrace: Understanding and Refining Retrieval-Generation Dynamics in Retrieval-Augmented Generation",
+    "url": "https://arxiv.org/html/2508.06056v1",
+    "snippet": "#### 3.2.2. Transparency and Evaluation Challenges in RAG Systems.\n\nThe “black box” nature of current RAG systems creates substantial barriers to effective assessment and improvement. [...] Visual Exploration of Transparency and Attribution. [...] A comprehensive evaluation of retrieval quality and evidence traceability is crucial for assessing the reliability of generated responses, going beyond mere parameter metrics and statistical data.\nThis component fulfills the requirements in DG3 by implementing comprehensive transparency and attribution mechanisms through both retrieval flow visualization and evidence traceability analysis, enabling clear mapping of outputs to their retrieval sources and systematic tracking of information provenance throughout the generation process. The features are fulfilled by adopting efficient comparative analysis of original, optimized, and reference retrievals.\n\n#### 5.2.1. Chunk-Relink Graph for Retrieval Flow Analysis.",
+    "source_type": "webpage",
+    "rank": 1,
+    "discovery_score": 0.9999615
+  },
+  {
+    "source_id": "query_chapter-10-section-ethical-legal-and-societal-implications-for-future-rag-systems_1_008c6aa9af__src_2",
+    "query_id": "query_chapter-10-section-ethical-legal-and-societal-implications-for-future-rag-systems_1_008c6aa9af",
+    "title": "RAG evaluation: Metrics, methodologies, best practices & more",
+    "url": "https://www.meilisearch.com/blog/rag-evaluation",
+    "snippet": "Reduces hallucination risk: Evaluation highlights the generation based on weak retrieval, allowing you to correct it immediately.\n Improves user trust: This evaluation helps make your RAG system fact-based and transparent, improving user confidence.\n Enables faster iteration: With regular evaluation, you can measure impact across changes and optimize performance quickly.\n\nNext, let’s look at the methods used in RAG evaluation.\n\n## What methods are used in RAG evaluation?\n\nThe different methods used in RAG evaluation are shown in the image below:\n\nThese approaches evaluate both the retriever and generator, ensuring no compromise on high-quality outputs at any step.\n\n### End-to-end evaluation\n\nFirst up is the end-to-end evaluation. It focuses on the overall output of the RAG system.",
+    "source_type": "blog",
+    "rank": 2,
+    "discovery_score": 0.9999125
+  }
+]

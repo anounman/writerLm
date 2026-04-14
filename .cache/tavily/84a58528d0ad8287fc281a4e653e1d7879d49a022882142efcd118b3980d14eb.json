@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-8-section-latency-and-throughput-optimization-for-retrieval_1_ef3decd0c1__src_1",
+    "query_id": "query_chapter-8-section-latency-and-throughput-optimization-for-retrieval_1_ef3decd0c1",
+    "title": "Vector Database Challenges: What Breaks in Production",
+    "url": "https://redis.io/blog/common-challenges-working-with-vector-databases/",
+    "snippet": "Redis combines vector search, caching, and operational data in a single real-time data platform with sub-millisecond latency. In internal benchmarks, the Redis Query Engine delivers 90% recall at approximately 200ms median latency under concurrent load, while sustaining 66,000 insertions per second in configurations targeting at least 95% recall. Native keyword+vector hybrid queries with metadata filtering, support for incremental updates (adds and changes), and tunable HNSW parameters give you control over the cost-accuracy-performance trade-offs that matter for your workload.\n\nIf you're already using Redis for caching or session management, you might not need a separate vector database at all.",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.99971753
+  },
+  {
+    "source_id": "query_chapter-8-section-latency-and-throughput-optimization-for-retrieval_1_ef3decd0c1__src_2",
+    "query_id": "query_chapter-8-section-latency-and-throughput-optimization-for-retrieval_1_ef3decd0c1",
+    "title": "Redis vs Memcached: 5 Benchmarks Show a Clear Winner [2026]",
+    "url": "https://tech-insider.org/redis-vs-memcached-2026/",
+    "snippet": "### Latency Comparison\n\nBoth Redis and Memcached deliver sub-millisecond latency for the vast majority of operations. In the 2026 benchmarks, Redis averaged 0.12ms p50 latency for GET operations compared to Memcached’s 0.09ms. At the p99 level, Redis showed 0.45ms versus Memcached’s 0.35ms. The p99.9 tail latency tells a more nuanced story: Redis measured 1.2ms compared to Memcached’s 0.8ms, reflecting Redis’s occasional pauses for internal housekeeping operations like lazy key expiration and memory defragmentation. [...] ### 4. Machine Learning Feature Store Cache — Choose Redis\n\nAn AI platform serving real-time inference at 100,000 requests per second uses Redis hashes to cache feature vectors for recommendation models. Each user’s feature set contains 200+ fields that are frequently updated individually. Redis hashes allow the platform to update individual fields (HSET) without reading and rewriting the entire feature vector, reducing write amplification by 94% compared to the Memcached approach of serializing and storing the full vector as a single string. The platform reports inference latency improved from 23ms to 8ms after migrating from Memcached to Redis.\n\n### 5. Database Query Cache for Read-Heavy API — Choose Memcached [...] For applications where tail latency matters — such as real-time bidding platforms, high-frequency trading systems, or latency-sensitive gaming backends — Memcached’s more predictable latency profile gives it a meaningful advantage. For the vast majority of web applications, APIs, and backend services, the difference between 0.12ms and 0.09ms is imperceptible to end users.",
+    "source_type": "webpage",
+    "rank": 2,
+    "discovery_score": 0.9994684
+  }
+]

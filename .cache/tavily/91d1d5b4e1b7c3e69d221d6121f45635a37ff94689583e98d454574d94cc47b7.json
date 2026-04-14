@@ -1,0 +1,12 @@
+[
+  {
+    "source_id": "query_chapter-5-section-managing-context-windows-and-prompt-construction_2_a178749231__src_1",
+    "query_id": "query_chapter-5-section-managing-context-windows-and-prompt-construction_2_a178749231",
+    "title": "Chunking Strategies for AI and RAG Applications | DataCamp",
+    "url": "https://www.datacamp.com/blog/chunking-strategies",
+    "snippet": "The biggest advantage is precision—semantic chunking creates chunks that align closely with user intent during retrieval. The main drawback is computational cost, since it requires embedding text during preprocessing. I use semantic chunking when accuracy is more important than speed, such as in domain-specific RAG systems for legal or medical domains.\n\n### Sliding-window chunking\n\nIn contrast to semantic chunking, which emphasizes semantic coherence, sliding-window chunking emphasizes continuity by overlapping chunks, shifting a window across the text. For example, if I use a chunk size (window) of 500 tokens with a stride of 250, each chunk overlaps halfway with the previous one.",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.9995234
+  }
+]

@@ -1,0 +1,22 @@
+[
+  {
+    "source_id": "query_chapter-9-section-e-commerce-product-recommendation-chatbot_1_8ea9e22427__src_1",
+    "query_id": "query_chapter-9-section-e-commerce-product-recommendation-chatbot_1_8ea9e22427",
+    "title": "RAG Time Journey 2: Data ingestion and search techniques for the ultimate RAG retrieval system with Azure AI Search",
+    "url": "https://techcommunity.microsoft.com/blog/azure-ai-foundry-blog/rag-time-journey-2-data-ingestion-and-search-practices-for-the-ultimate-rag-retr/4392157",
+    "snippet": "## Vector Search [...] Using integrated vectorization, you lay a solid foundation for a highly effective RAG system that not only understands your data but leverages it to deliver precise, context-rich search results [...] # Continue your RAG Journey: Wrapping Up & Looking Ahead",
+    "source_type": "blog",
+    "rank": 1,
+    "discovery_score": 0.9997241
+  },
+  {
+    "source_id": "query_chapter-9-section-e-commerce-product-recommendation-chatbot_1_8ea9e22427__src_2",
+    "query_id": "query_chapter-9-section-e-commerce-product-recommendation-chatbot_1_8ea9e22427",
+    "title": "LLM RAG Tutorial: Examples and Best Practices | LaunchDarkly",
+    "url": "https://launchdarkly.com/blog/llm-rag-tutorial/",
+    "snippet": "| Concept | Description |\n --- |\n| Retrieval Augmented Generation (RAG) | Integrates information from external data sources into the input prompt, allowing LLMs to answer queries that require information not available in their training process. |\n| Data loading & chunking | RAG requires data from various sources, including PDF documents, databases, webpages, CSV files, and JSON files. Documents are loaded and split into smaller, overlapping chunks to preserve context and improve retrieval. |\n| Vector database & embeddings | A database designed to store and search data as vectors (numerical arrays), enabling efficient similarity search.  Numerical representations of data in vector form capture their meaning or features. | [...] ## Building a RAG pipeline\n\nThe image below illustrates a basic RAG pipeline, showing two main stages:\n\n1. Data indexing: Data is loaded, split, converted into embeddings using an embedding model, and stored.\n2. Data retrieval and generation: A user query is converted to vector embeddings using the same embedding model, relevant data chunks are retrieved using vector similarity techniques, and an AI model generates a response using the retrieved text.\n\n### Step 1: Load your data\n\nOur model derives context from external data sources, such as raw .txt files, PDFs, or data scraped from the internet. [...] metadata for metadata, text in zip(metadata_list, texts): metadata[\"text\"] = text # Create embeddings for all texts embeddings = embedding_model.embed_documents(texts) # Prepare data for upload: list of (id, embedding, metadata) tuples data_to_upload = [ (id_, embedding, metadata) for id_, embedding, metadata in zip(ids, embeddings, metadata_list) ]",
+    "source_type": "blog",
+    "rank": 2,
+    "discovery_score": 0.99903023
+  }
+]
