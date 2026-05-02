@@ -1,0 +1,120 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+
+ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl"]
+Provider = Literal["google", "groq"]
+Density = Literal["high", "medium", "low"]
+LatexEngine = Literal["pdflatex", "xelatex", "lualatex"]
+
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+
+class ApiKeyUpsert(BaseModel):
+    provider: ApiKeyProvider
+    value: str = Field(..., min_length=3)
+
+
+class ApiKeyOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    provider: ApiKeyProvider
+    key_hint: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class PipelineConfig(BaseModel):
+    llm_provider: Provider = "google"
+    planner_google_model: str = "gemini-2.5-flash-lite"
+    researcher_google_model: str = "gemini-2.5-flash-lite"
+    notes_google_model: str = "gemini-2.5-flash-lite"
+    writer_google_model: str = "gemma-3-27b-it"
+    reviewer_google_model: str = "gemini-2.5-flash-lite"
+    planner_groq_model: str = "openai/gpt-oss-120b"
+    researcher_groq_model: str = "openai/gpt-oss-120b"
+    notes_groq_model: str = "llama-3.3-70b-versatile"
+    writer_groq_model: str = "llama-3.3-70b-versatile"
+    reviewer_groq_model: str = "openai/gpt-oss-120b"
+    parallel_section_pipeline: bool = True
+    section_pipeline_concurrency: int = Field(default=2, ge=1, le=12)
+    compile_latex: bool = True
+    strict_latex_compile: bool = False
+    latex_engine: LatexEngine = "pdflatex"
+    research_execution_profile: Literal["budget", "debug", "full"] = "budget"
+    token_budget: int | None = Field(default=None, ge=1000)
+    max_completion_tokens: int | None = Field(default=None, ge=256)
+
+
+class BookRequest(BaseModel):
+    topic: str = Field(..., min_length=3)
+    audience: str = Field(..., min_length=3)
+    tone: str = "practical step by step guide"
+    goals: list[str] = Field(default_factory=list)
+    project_based: bool = True
+    running_project_description: str | None = None
+    code_density: Density = "high"
+    example_density: Density = "high"
+    diagram_density: Density = "medium"
+    max_section_words: int | None = Field(default=None, ge=150, le=2000)
+
+
+class JobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    status: str
+    current_stage: str
+    request_payload: dict
+    config_snapshot: dict
+    stages: dict
+    summary: dict
+    warnings: dict
+    error_message: str | None
+    run_dir: str | None
+    process_id: int | None
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+
+
+class GeneratedBookOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    job_id: int
+    title: str
+    topic: str
+    status: str
+    run_dir: str
+    latex_path: str | None
+    pdf_path: str | None
+    summary_metrics: dict
+    artifact_paths: dict
+    created_at: datetime

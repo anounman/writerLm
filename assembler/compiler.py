@@ -14,6 +14,43 @@ DEFAULT_BUILD_DIR_NAME = "latex_build"
 LATEXMK_COMMAND = "latexmk"
 ENGINE_COMMANDS = ("pdflatex", "xelatex", "lualatex")
 
+# Mapping of Unicode characters that pdflatex cannot handle to safe ASCII
+# equivalents.  This table mirrors the one in assembler/latex.py so that even
+# .tex files produced by old runs (before latex.py was fixed) can be compiled.
+_UNICODE_SAFE_MAP: dict[str, str] = {
+    "\u00a0": " ",
+    "\u2010": "-", "\u2011": "-", "\u2012": "-",
+    "\u2013": "--", "\u2014": "---",
+    "\u2018": "'", "\u2019": "'",
+    "\u201c": "``", "\u201d": "''",
+    "\u2026": "...",
+    "\u2212": "-",
+    "\u221a": "sqrt",
+    # Box-drawing characters (directory trees, ASCII art)
+    "\u2500": "-",  "\u2501": "=",
+    "\u2502": "|",  "\u2503": "|",
+    "\u250c": "+",  "\u2510": "+",
+    "\u2514": "+",  "\u2518": "+",
+    "\u251c": "+",  "\u2524": "+",
+    "\u252c": "+",  "\u2534": "+",
+    "\u253c": "+",
+    "\u2550": "=",  "\u2551": "|",
+    "\u255a": "+",  "\u2560": "+",
+    "\u2566": "+",  "\u256c": "+",
+    # Arrows
+    "\u2192": "->", "\u2190": "<-", "\u2194": "<->",
+    "\u21d2": "=>", "\u21d4": "<=>",
+    # Misc symbols
+    "\u2022": "*",  "\u25cf": "*",  "\u25cb": "o",
+    "\u25a0": "[]", "\u25a1": "[]",
+    "\u2713": "OK", "\u2717": "X",
+    "\u00b7": ".",  "\u00d7": "x",  "\u00f7": "/",
+    "\u00b1": "+/-",
+    "\u2248": "~=", "\u2260": "!=",
+    "\u2264": "<=", "\u2265": ">=",
+    "\u00ae": "(R)", "\u2122": "(TM)", "\u00a9": "(C)",
+}
+
 
 @dataclass(frozen=True)
 class LatexIssue:
@@ -109,9 +146,20 @@ class LatexCompiler:
                 ],
             )
 
+        # Sanitize the .tex source: replace Unicode characters that pdflatex
+        # cannot handle, writing a clean copy into the build dir.  The original
+        # source file is never modified.
+        sanitized_path = _sanitize_tex_file(source_path, output_dir)
+
+        # Rewrite the command to point at the sanitized copy.
+        command = [
+            arg if arg != str(source_path) else str(sanitized_path)
+            for arg in command
+        ]
+
         return self._run_command(
             command=command,
-            source_path=source_path,
+            source_path=sanitized_path,
             output_dir=output_dir,
         )
 
@@ -394,3 +442,44 @@ def _dedupe_issues(issues: list[LatexIssue]) -> list[LatexIssue]:
         seen.add(key)
         deduped.append(issue)
     return deduped
+
+
+def _sanitize_tex_file(source_path: Path, output_dir: Path) -> Path:
+    """Return a path to a Unicode-sanitized copy of *source_path*.
+
+    pdflatex (and latexmk driving it) fatally crashes when it encounters
+    Unicode characters outside its supported range – most commonly box-drawing
+    characters (├, │, └, ─ …) that LLMs generate in directory-tree diagrams.
+
+    This function:
+    1. Reads the source .tex file.
+    2. Replaces every character listed in ``_UNICODE_SAFE_MAP`` with its ASCII
+       equivalent.
+    3. Replaces any remaining non-ASCII character with ``?`` as a last-resort
+       safety net.
+    4. Writes the sanitized content to ``<output_dir>/<stem>_sanitized.tex``
+       and returns that path.
+
+    The original source file is **never modified**.
+    """
+    raw = _read_text(source_path)
+
+    # Apply the explicit replacement table first.
+    for unicode_char, ascii_replacement in _UNICODE_SAFE_MAP.items():
+        raw = raw.replace(unicode_char, ascii_replacement)
+
+    # Final safety pass: replace any remaining non-ASCII characters.
+    sanitized = "".join(
+        char if ord(char) <= 127 else "?" for char in raw
+    )
+
+    sanitized_path = output_dir / f"{source_path.stem}_sanitized.tex"
+    try:
+        sanitized_path.write_text(sanitized, encoding="utf-8")
+    except OSError:
+        # If we can't write to the build dir for some reason, fall back to the
+        # original file (compilation will likely still fail, but at least we
+        # don't swallow the error silently).
+        return source_path
+
+    return sanitized_path

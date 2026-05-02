@@ -8,3 +8,6 @@ outputs/
 .cache/
 tmp_pdf_eval/*
 outputs/*
+
+
+web/frontend/node_modules/*

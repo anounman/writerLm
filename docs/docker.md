@@ -50,6 +50,36 @@ Expected outputs:
 - `outputs/latex_compile_result.json`
 - `outputs/latex_build/book.pdf` when compilation succeeds
 
+## Run The Web Studio
+
+The browser UI runs the same pipeline through a FastAPI backend. The backend
+uses `DATABASE_URL` for Neon Postgres, encrypts user API keys, and launches
+book-generation jobs with per-user environment variables.
+
+Set these in `.env`:
+
+```env
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+JWT_SECRET=replace-with-long-random-secret
+APP_ENCRYPTION_KEY=replace-with-fernet-key
+APP_CORS_ORIGINS=http://localhost:8080,http://localhost:5173
+```
+
+Then start the web app:
+
+```powershell
+docker compose up --build backend frontend
+```
+
+Open:
+
+- Frontend: `http://localhost:8080`
+- Backend API: `http://localhost:8000`
+
+The backend container is built from the main WriterLM image, so it includes the
+pipeline code and LaTeX binaries. Completed web jobs save artifacts in
+`runs/web_job_<job_id>_<timestamp>/` and persist metadata in Postgres.
+
 ## Compile Only
 
 Use this when `outputs/book.tex` already exists and you only want to make the
