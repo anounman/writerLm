@@ -68,6 +68,7 @@ def _render_preamble() -> str:
             "\\usepackage{microtype}",
             "\\usepackage[a4paper,margin=1in]{geometry}",
             "\\usepackage{hyperref}",
+            "\\usepackage{url}",
             "\\usepackage{bookmark}",
             "\\usepackage{enumitem}",
             "\\usepackage{listings}",
@@ -75,17 +76,32 @@ def _render_preamble() -> str:
             "\\usepackage{graphicx}",
             "\\usepackage{float}",
             "\\usepackage{tikz}",
+            "\\usetikzlibrary{arrows.meta,positioning,shapes.geometric,backgrounds,fit}",
             "\\usepackage{pgfplots}",
             "\\pgfplotsset{compat=1.18}",
             "\\usepackage{tcolorbox}",
             "\\tcbuselibrary{listings,skins}",
             "",
+            "% NCERT-inspired learning palette",
+            "\\definecolor{brandblue}{RGB}{25,83,157}",
+            "\\definecolor{brandteal}{RGB}{0,122,128}",
+            "\\definecolor{brandgreen}{RGB}{46,125,50}",
+            "\\definecolor{brandorange}{RGB}{239,124,0}",
+            "\\definecolor{softblue}{RGB}{232,242,255}",
+            "\\definecolor{softgreen}{RGB}{235,248,236}",
+            "\\definecolor{softyellow}{RGB}{255,248,225}",
+            "\\definecolor{softred}{RGB}{255,235,238}",
+            "\\addtokomafont{chapter}{\\color{brandblue}}",
+            "\\addtokomafont{section}{\\color{brandteal}}",
+            "\\addtokomafont{subsection}{\\color{brandorange}}",
+            "\\hypersetup{colorlinks=true,linkcolor=brandblue,urlcolor=brandteal,citecolor=brandgreen}",
+            "",
             "% Code listing style",
-            "\\definecolor{codebg}{RGB}{245,245,245}",
-            "\\definecolor{codeframe}{RGB}{200,200,200}",
+            "\\definecolor{codebg}{RGB}{248,250,252}",
+            "\\definecolor{codeframe}{RGB}{156,178,204}",
             "\\definecolor{codecomment}{RGB}{106,153,85}",
             "\\definecolor{codestring}{RGB}{163,21,21}",
-            "\\definecolor{codekeyword}{RGB}{0,0,200}",
+            "\\definecolor{codekeyword}{RGB}{25,83,157}",
             "",
             "\\lstdefinestyle{bookcode}{",
             "  backgroundcolor=\\color{codebg},",
@@ -110,17 +126,31 @@ def _render_preamble() -> str:
             "",
             "% Diagram placeholder box",
             "\\newtcolorbox{diagramplaceholder}[2][]{",
-            "  colback=blue!5!white,",
-            "  colframe=blue!40!white,",
+            "  colback=softblue,",
+            "  colframe=brandblue,",
             "  title={#2},",
+            "  fonttitle=\\bfseries,",
+            "  #1",
+            "}",
+            "\\newtcolorbox{conceptbox}[1][]{",
+            "  colback=softyellow,",
+            "  colframe=brandorange,",
+            "  title={Key Idea},",
+            "  fonttitle=\\bfseries,",
+            "  #1",
+            "}",
+            "\\newtcolorbox{checkpointbox}[1][]{",
+            "  colback=softblue,",
+            "  colframe=brandteal,",
+            "  title={Checkpoint},",
             "  fonttitle=\\bfseries,",
             "  #1",
             "}",
             "",
             "% Exercise box",
             "\\newtcolorbox{exercisebox}[1][]{",
-            "  colback=green!5!white,",
-            "  colframe=green!40!white,",
+            "  colback=softgreen,",
+            "  colframe=brandgreen,",
             "  title={Try It Yourself},",
             "  fonttitle=\\bfseries,",
             "  #1",
@@ -128,8 +158,8 @@ def _render_preamble() -> str:
             "",
             "% Common mistakes box",
             "\\newtcolorbox{gotchabox}[1][]{",
-            "  colback=red!5!white,",
-            "  colframe=red!40!white,",
+            "  colback=softred,",
+            "  colframe=red!65!black,",
             "  title={Common Mistakes},",
             "  fonttitle=\\bfseries,",
             "  #1",
@@ -210,13 +240,39 @@ def _render_content_blocks(text: str) -> str:
             rendered_blocks.append(segment_content)
         else:
             blocks = _split_blocks(segment_content)
-            for block in blocks:
-                if _is_bullet_list(block):
+            index = 0
+            while index < len(blocks):
+                block = blocks[index]
+                leading_heading, remaining_block = _split_leading_heading(block)
+                if leading_heading and remaining_block:
+                    if _is_callout_heading(leading_heading):
+                        rendered_blocks.append(
+                            _render_callout_block(leading_heading, remaining_block)
+                        )
+                    else:
+                        rendered_blocks.append(_render_heading(leading_heading))
+                        rendered_blocks.append(_render_plain_block(remaining_block))
+                    index += 1
+                    continue
+
+                heading = _extract_standalone_heading(block)
+
+                if heading and _is_callout_heading(heading) and index + 1 < len(blocks):
+                    rendered_blocks.append(
+                        _render_callout_block(heading, blocks[index + 1])
+                    )
+                    index += 2
+                    continue
+
+                if heading:
+                    rendered_blocks.append(_render_heading(heading))
+                elif _is_bullet_list(block):
                     rendered_blocks.append(_render_itemize(block))
                 elif _is_enumerated_list(block):
                     rendered_blocks.append(_render_enumerate(block))
                 else:
                     rendered_blocks.append(_render_paragraph(block))
+                index += 1
 
     return "\n\n".join(block for block in rendered_blocks if block.strip())
 
@@ -263,21 +319,16 @@ def _split_code_and_text(text: str) -> list[tuple[str, str]]:
                 segments.append(("text", "\n".join(current_text_lines)))
                 current_text_lines = []
 
-            diagram_title = line.strip()[len("DIAGRAM:"):].strip()
+            diagram_hint = line.strip()[len("DIAGRAM:"):].strip()
             desc_lines: list[str] = []
             i += 1
             while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith("DIAGRAM:") and not lines[i].strip().startswith("```"):
                 desc_lines.append(lines[i].strip())
                 i += 1
 
-            description = " ".join(desc_lines) if desc_lines else diagram_title
-            safe_title = _escape_latex(diagram_title) if diagram_title else "Diagram"
-            safe_desc = _escape_latex(description)
-
-            latex_diagram = (
-                f"\\begin{{diagramplaceholder}}{{{safe_title}}}\n"
-                f"{safe_desc}\n"
-                f"\\end{{diagramplaceholder}}"
+            latex_diagram = _render_diagram_hint(
+                diagram_hint=diagram_hint,
+                desc_lines=desc_lines,
             )
             segments.append(("diagram", latex_diagram))
             continue
@@ -289,6 +340,103 @@ def _split_code_and_text(text: str) -> list[tuple[str, str]]:
         segments.append(("text", "\n".join(current_text_lines)))
 
     return segments
+
+
+def _render_diagram_hint(*, diagram_hint: str, desc_lines: list[str]) -> str:
+    diagram_type, title = _parse_diagram_title(diagram_hint)
+    description_lines = [
+        line
+        for line in desc_lines
+        if not line.lower().startswith("elements:")
+    ]
+    elements = _parse_diagram_elements(desc_lines)
+    description = " ".join(description_lines).strip() or title or "Diagram"
+
+    safe_title = _escape_latex(title or "Diagram")
+    safe_desc = _escape_latex_with_urls(description)
+    tikz = _render_tikz_diagram(elements, diagram_type=diagram_type)
+
+    return "\n".join(
+        [
+            "\\begin{figure}[H]",
+            "\\centering",
+            f"\\begin{{diagramplaceholder}}{{{safe_title}}}",
+            tikz,
+            "\\vspace{0.35em}",
+            safe_desc,
+            "\\end{diagramplaceholder}",
+            f"\\caption{{{safe_title}}}",
+            "\\end{figure}",
+        ]
+    )
+
+
+def _parse_diagram_title(diagram_hint: str) -> tuple[str, str]:
+    cleaned = diagram_hint.strip()
+    match = re.match(r"^\[([^\]]+)\]\s*-\s*(.+)$", cleaned)
+    if match:
+        return match.group(1).strip(), match.group(2).strip()
+
+    match = re.match(r"^([^:-]+)\s*[-:]\s*(.+)$", cleaned)
+    if match:
+        return match.group(1).strip(), match.group(2).strip()
+
+    return "flowchart", cleaned or "Diagram"
+
+
+def _parse_diagram_elements(desc_lines: list[str]) -> list[str]:
+    for line in desc_lines:
+        if not line.lower().startswith("elements:"):
+            continue
+        raw = line.split(":", 1)[1]
+        elements = [
+            item.strip(" .;")
+            for item in raw.split(",")
+            if item.strip(" .;")
+        ]
+        if elements:
+            return elements[:9]
+    return []
+
+
+def _render_tikz_diagram(elements: list[str], *, diagram_type: str) -> str:
+    if not elements:
+        elements = ["Idea", "Example", "Implementation", "Result"]
+
+    style = (
+        "draw=brandblue, fill=white, rounded corners=4pt, "
+        "align=center, text width=3.1cm, minimum height=1cm, font=\\small"
+    )
+    lines = [
+        "\\begin{tikzpicture}[>=Stealth, node distance=0.8cm]",
+    ]
+
+    for index, element in enumerate(elements[:9]):
+        row = index // 3
+        col = index % 3
+        x_pos = col * 4.0
+        y_pos = -row * 1.6
+        safe_element = _escape_latex(element)
+        lines.append(
+            f"\\node[{style}] (n{index}) at ({x_pos},{y_pos}) {{{safe_element}}};"
+        )
+
+    for index in range(min(len(elements[:9]) - 1, 8)):
+        lines.append(f"\\draw[->, thick, brandteal] (n{index}) -- (n{index + 1});")
+
+    safe_type = _escape_latex(diagram_type or "flowchart")
+    lines.extend(
+        [
+            "\\begin{scope}[on background layer]",
+            "\\node[fill=softblue, rounded corners=6pt, fit=(n0) (n"
+            + str(min(len(elements[:9]) - 1, 8))
+            + "), inner sep=8pt] {};",
+            "\\end{scope}",
+            f"\\node[above=0.25cm of n0, text=brandblue, font=\\bfseries\\small] {{{safe_type}}};",
+            "\\end{tikzpicture}",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _map_language_to_lstlisting(lang_hint: str) -> str:
@@ -311,18 +459,111 @@ def _map_language_to_lstlisting(lang_hint: str) -> str:
 
 
 def _render_itemize(lines: list[str]) -> str:
-    items = ["\\item " + _escape_latex(_strip_list_marker(line)) for line in lines]
+    items = ["\\item " + _escape_latex_with_urls(_strip_list_marker(line)) for line in lines]
     return "\n".join(["\\begin{itemize}", *items, "\\end{itemize}"])
 
 
 def _render_enumerate(lines: list[str]) -> str:
-    items = ["\\item " + _escape_latex(_strip_enum_marker(line)) for line in lines]
+    items = ["\\item " + _escape_latex_with_urls(_strip_enum_marker(line)) for line in lines]
     return "\n".join(["\\begin{enumerate}", *items, "\\end{enumerate}"])
 
 
 def _render_paragraph(lines: list[str]) -> str:
     paragraph = " ".join(line.strip() for line in lines if line.strip())
-    return _escape_latex(paragraph)
+    return _escape_latex_with_urls(paragraph)
+
+
+def _render_plain_block(block: list[str]) -> str:
+    if _is_bullet_list(block):
+        return _render_itemize(block)
+    if _is_enumerated_list(block):
+        return _render_enumerate(block)
+    return _render_paragraph(block)
+
+
+def _render_heading(heading: str) -> str:
+    return "\\subsection*{" + _escape_latex(heading) + "}"
+
+
+def _render_callout_block(heading: str, block: list[str]) -> str:
+    normalized = heading.lower()
+    content = (
+        _render_itemize(block)
+        if _is_bullet_list(block)
+        else _render_enumerate(block)
+        if _is_enumerated_list(block)
+        else _render_paragraph(block)
+    )
+
+    if "mistake" in normalized or "gotcha" in normalized:
+        return "\n".join(["\\begin{gotchabox}", content, "\\end{gotchabox}"])
+    if "exercise" in normalized or "try" in normalized or "activity" in normalized:
+        return "\n".join(["\\begin{exercisebox}", content, "\\end{exercisebox}"])
+    if "checkpoint" in normalized:
+        return "\n".join(["\\begin{checkpointbox}", content, "\\end{checkpointbox}"])
+    return "\n".join(["\\begin{conceptbox}", content, "\\end{conceptbox}"])
+
+
+def _extract_standalone_heading(lines: list[str]) -> str | None:
+    if len(lines) != 1:
+        return None
+
+    line = lines[0].strip()
+    heading = _strip_heading_markup(line)
+    if not heading:
+        return None
+
+    known_headings = {
+        "concept",
+        "intuition",
+        "code example",
+        "step-by-step implementation",
+        "step by step implementation",
+        "output",
+        "expected result",
+        "output / expected result",
+        "common mistakes",
+        "mini exercise",
+        "try it yourself",
+        "further reading",
+        "activity",
+        "checkpoint",
+        "key idea",
+    }
+    normalized = heading.lower().strip(":")
+    if normalized in known_headings:
+        return heading.strip(":")
+
+    if line.startswith(("#", "##", "###")) and len(heading) <= 80:
+        return heading.strip(":")
+
+    return None
+
+
+def _split_leading_heading(lines: list[str]) -> tuple[str | None, list[str]]:
+    if len(lines) < 2:
+        return None, lines
+    heading = _extract_standalone_heading([lines[0]])
+    if heading:
+        return heading, lines[1:]
+    return None, lines
+
+
+def _strip_heading_markup(line: str) -> str:
+    stripped = line.strip()
+    stripped = re.sub(r"^#{1,6}\s*", "", stripped)
+    stripped = stripped.strip("*_ ")
+    if stripped.startswith("**") and stripped.endswith("**"):
+        stripped = stripped[2:-2]
+    return stripped.strip()
+
+
+def _is_callout_heading(heading: str) -> bool:
+    normalized = heading.lower()
+    return any(
+        token in normalized
+        for token in ("mistake", "gotcha", "exercise", "try", "activity", "checkpoint", "key idea")
+    )
 
 
 def _split_blocks(text: str) -> list[list[str]]:
@@ -366,6 +607,27 @@ def _prepare_text(text: str) -> str:
     normalized = normalized.replace("\r\n", "\n").replace("\r", "\n")
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)
     return normalized.strip()
+
+
+def _escape_latex_with_urls(text: str) -> str:
+    url_pattern = re.compile(r"(https?://[^\s\]\)>,]+)")
+    parts: list[str] = []
+    last_index = 0
+
+    for match in url_pattern.finditer(text):
+        if match.start() > last_index:
+            parts.append(_escape_latex(text[last_index : match.start()]))
+        url = match.group(1).rstrip(".,;")
+        trailing = match.group(1)[len(url) :]
+        parts.append("\\url{" + url.replace("\\", "/") + "}")
+        if trailing:
+            parts.append(_escape_latex(trailing))
+        last_index = match.end()
+
+    if last_index < len(text):
+        parts.append(_escape_latex(text[last_index:]))
+
+    return "".join(parts)
 
 
 def _escape_latex(text: str) -> str:

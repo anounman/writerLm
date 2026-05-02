@@ -6,6 +6,7 @@ from pathlib import Path
 from planner_agent.schemas import BookPlan
 from reviewer.schemas import ReviewBundle
 
+from .compiler import LatexCompileResult
 from .schemas import AssemblyBundle, LatexManuscript
 
 
@@ -42,5 +43,14 @@ def save_latex_manuscript(manuscript: LatexManuscript, path: str | Path) -> None
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         manuscript.content,
+        encoding="utf-8",
+    )
+
+
+def save_latex_compile_result(result: LatexCompileResult, path: str | Path) -> None:
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(result.model_dump(), indent=2, ensure_ascii=False),
         encoding="utf-8",
     )

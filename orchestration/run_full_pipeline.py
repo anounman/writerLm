@@ -15,9 +15,19 @@ if str(REPO_ROOT) not in sys.path:
 
 load_dotenv(REPO_ROOT / ".env")
 
-from assembler.io import save_assembly_bundle, save_book_plan, save_latex_manuscript
+from assembler.compiler import compile_latex_file
+from assembler.io import (
+    save_assembly_bundle,
+    save_book_plan,
+    save_latex_compile_result,
+    save_latex_manuscript,
+)
 from assembler.orchestrator import run_assembler
-from llm_provider import resolve_openai_compatible_config
+from llm_provider import (
+    get_default_models_for_layer,
+    get_legacy_model_env_names_by_provider,
+    resolve_openai_compatible_config,
+)
 from llm_metrics import configure_llm_metrics, get_llm_metrics_summary
 from notes_synthesizer.graph import build_notes_synthesizer_graph, initialize_state
 from notes_synthesizer.llm import GroqStructuredLLM as NotesGroqStructuredLLM
@@ -77,16 +87,15 @@ REVIEW_BUNDLE_OUTPUT_PATH = OUTPUTS_DIR / "review_bundle.json"
 SECTION_PIPELINE_SUMMARY_OUTPUT_PATH = OUTPUTS_DIR / "section_pipeline_summary.json"
 ASSEMBLY_BUNDLE_OUTPUT_PATH = OUTPUTS_DIR / "assembly_bundle.json"
 LATEX_OUTPUT_PATH = OUTPUTS_DIR / "book.tex"
+LATEX_BUILD_DIR = OUTPUTS_DIR / "latex_build"
+LATEX_COMPILE_RESULT_OUTPUT_PATH = OUTPUTS_DIR / "latex_compile_result.json"
 SUMMARY_OUTPUT_PATH = OUTPUTS_DIR / "run_summary.json"
 
-RESEARCH_DEFAULT_MODELS = {
-    "groq": "openai/gpt-oss-120b",
-    "google": "gemini-2.5-flash",
-}
-GENERATION_DEFAULT_MODELS = {
-    "groq": "llama-3.3-70b-versatile",
-    "google": "gemini-2.5-flash",
-}
+RESEARCH_DEFAULT_MODELS = get_default_models_for_layer("researcher")
+NOTES_DEFAULT_MODELS = get_default_models_for_layer("notes")
+WRITER_DEFAULT_MODELS = get_default_models_for_layer("writer")
+PLANNER_DEFAULT_MODELS = get_default_models_for_layer("planner")
+REVIEWER_DEFAULT_MODELS = get_default_models_for_layer("reviewer")
 
 
 def ensure_dir(path: Path) -> None:
@@ -117,14 +126,40 @@ def save_json_to_run_and_outputs(
     write_json(output_path, data)
 
 
+def resolve_run_llm_config_summary() -> dict[str, dict[str, str]]:
+    """
+    Resolve every layer once before the expensive run starts.
+
+    This catches mistakes such as LLM_PROVIDER=google with a Groq/Qwen reviewer
+    model before planner/research spends time and tokens.
+    """
+    layer_defaults = {
+        "planner": PLANNER_DEFAULT_MODELS,
+        "researcher": RESEARCH_DEFAULT_MODELS,
+        "notes": NOTES_DEFAULT_MODELS,
+        "writer": WRITER_DEFAULT_MODELS,
+        "reviewer": REVIEWER_DEFAULT_MODELS,
+    }
+    summary: dict[str, dict[str, str]] = {}
+    for layer, defaults in layer_defaults.items():
+        config = resolve_openai_compatible_config(
+            layer=layer,
+            default_models=defaults,
+            legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
+        )
+        summary[layer] = {
+            "provider": config.provider,
+            "model": config.model,
+            "base_url": config.base_url,
+        }
+    return summary
+
+
 def build_researcher_workflow() -> ResearcherWorkflow:
     llm_config = resolve_openai_compatible_config(
         layer="researcher",
         default_models=RESEARCH_DEFAULT_MODELS,
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
-            "google": ("GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
-        },
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
 
     llm = ResearchGroqStructuredLLM(
@@ -161,11 +196,8 @@ def run_notes_layer(*, research_bundle_payload: dict[str, Any], book_title: str,
 
     llm_config = resolve_openai_compatible_config(
         layer="notes",
-        default_models=GENERATION_DEFAULT_MODELS,
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-        },
+        default_models=NOTES_DEFAULT_MODELS,
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
 
     llm = NotesGroqStructuredLLM(
@@ -198,11 +230,8 @@ def run_writer_layer(*, notes_bundle_payload: dict[str, Any], book_title: str, r
 
     llm_config = resolve_openai_compatible_config(
         layer="writer",
-        default_models=GENERATION_DEFAULT_MODELS,
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-        },
+        default_models=WRITER_DEFAULT_MODELS,
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
 
     llm = WriterGroqStructuredLLM(
@@ -241,6 +270,7 @@ def build_summary(
     preparation_note: str | None,
     elapsed_seconds: float,
     llm_metrics: dict[str, Any],
+    llm_config_summary: dict[str, dict[str, str]],
     stage_timings: dict[str, float],
     section_pipeline_summary: dict[str, Any],
 ) -> dict[str, Any]:
@@ -308,9 +338,11 @@ def build_summary(
             "section_pipeline_summary": str(SECTION_PIPELINE_SUMMARY_OUTPUT_PATH),
             "assembly_bundle": str(ASSEMBLY_BUNDLE_OUTPUT_PATH),
             "latex_manuscript": str(LATEX_OUTPUT_PATH),
+            "latex_compile_result": str(LATEX_COMPILE_RESULT_OUTPUT_PATH),
             "llm_metrics": llm_metrics.get("metrics_path"),
         },
         "llm_usage": llm_metrics,
+        "llm_config": llm_config_summary,
         "stage_timings": stage_timings,
         "section_pipeline": section_pipeline_summary,
         "elapsed_seconds": round(elapsed_seconds, 2),
@@ -322,12 +354,23 @@ def parallel_section_pipeline_enabled() -> bool:
     return value not in {"0", "false", "no", "off"}
 
 
+def latex_compile_enabled() -> bool:
+    value = os.getenv("WRITERLM_COMPILE_LATEX", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
+def strict_latex_compile_enabled() -> bool:
+    value = os.getenv("WRITERLM_STRICT_LATEX_COMPILE", "0").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
 def main() -> None:
     start_time = time.time()
     ensure_dir(OUTPUTS_DIR)
     run_dir = build_run_dir()
     configure_llm_metrics(path=run_dir / "llm_metrics.jsonl", reset=True)
     stage_timings: dict[str, float] = {}
+    llm_config_summary = resolve_run_llm_config_summary()
 
     planner_input = DEFAULT_PLANNER_INPUT
 
@@ -358,19 +401,13 @@ def main() -> None:
     if parallel_section_pipeline_enabled():
         notes_llm_config = resolve_openai_compatible_config(
             layer="notes",
-            default_models=GENERATION_DEFAULT_MODELS,
-            legacy_env_names_by_provider={
-                "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-                "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-            },
+            default_models=NOTES_DEFAULT_MODELS,
+            legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
         )
         writer_llm_config = resolve_openai_compatible_config(
             layer="writer",
-            default_models=GENERATION_DEFAULT_MODELS,
-            legacy_env_names_by_provider={
-                "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-                "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-            },
+            default_models=WRITER_DEFAULT_MODELS,
+            legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
         )
         stage_start = time.perf_counter()
         section_pipeline_result = run_parallel_section_pipeline(
@@ -498,6 +535,30 @@ def main() -> None:
     save_latex_manuscript(assembly_artifacts.latex_manuscript, run_dir / "book.tex")
     save_latex_manuscript(assembly_artifacts.latex_manuscript, LATEX_OUTPUT_PATH)
 
+    latex_compile_result = None
+    if latex_compile_enabled():
+        stage_start = time.perf_counter()
+        latex_compile_result = compile_latex_file(
+            LATEX_OUTPUT_PATH,
+            build_dir=LATEX_BUILD_DIR,
+        )
+        stage_timings["latex_compile"] = round(time.perf_counter() - stage_start, 2)
+        save_latex_compile_result(
+            latex_compile_result,
+            run_dir / "latex_compile_result.json",
+        )
+        save_latex_compile_result(
+            latex_compile_result,
+            LATEX_COMPILE_RESULT_OUTPUT_PATH,
+        )
+        if strict_latex_compile_enabled() and not latex_compile_result.succeeded:
+            first_issue = (
+                latex_compile_result.issues[0].message
+                if latex_compile_result.issues
+                else "Unknown LaTeX compile failure."
+            )
+            raise RuntimeError(f"LaTeX compilation failed: {first_issue}")
+
     elapsed_seconds = time.time() - start_time
     summary = build_summary(
         planner_input=planner_input,
@@ -511,6 +572,7 @@ def main() -> None:
         preparation_note=preparation_note,
         elapsed_seconds=elapsed_seconds,
         llm_metrics=get_llm_metrics_summary(),
+        llm_config_summary=llm_config_summary,
         stage_timings=stage_timings,
         section_pipeline_summary=section_pipeline_summary,
     )
@@ -565,7 +627,19 @@ def main() -> None:
     print(f"Review bundle: {REVIEW_BUNDLE_OUTPUT_PATH}")
     print(f"Assembly bundle: {ASSEMBLY_BUNDLE_OUTPUT_PATH}")
     print(f"LaTeX manuscript: {LATEX_OUTPUT_PATH}")
+    if latex_compile_result is not None:
+        print(f"LaTeX compile status: {latex_compile_result.status}")
+        if latex_compile_result.pdf_path:
+            print(f"Compiled PDF: {latex_compile_result.pdf_path}")
+        print(f"LaTeX compile result: {LATEX_COMPILE_RESULT_OUTPUT_PATH}")
     print(f"LLM metrics: {summary['artifacts']['llm_metrics']}")
+    print(
+        "LLM config: "
+        + ", ".join(
+            f"{layer}={config['provider']}:{config['model']}"
+            for layer, config in llm_config_summary.items()
+        )
+    )
     print(f"Research warnings: {len(research_bundle.warnings)}")
     print(f"Research errors: {len(research_bundle.errors)}")
     print(f"Notes READY/PARTIAL/BLOCKED: {notes_ready}/{notes_partial}/{notes_blocked}")

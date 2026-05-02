@@ -25,7 +25,10 @@ def validate_section_notes_node(
         return state
 
     try:
-        normalized = normalize_section_note(task.synthesized_note)
+        normalized = normalize_section_note(
+            task.synthesized_note,
+            task.synthesis_input,
+        )
         task.synthesized_note = normalized
 
         state.completed_tasks.append(task)

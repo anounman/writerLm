@@ -1,5 +1,5 @@
 {
-  "title": "Build a Retrieval-Augmented Generation System from Scratch",
+  "title": "Build Your First Retrieval-Augmented Generation (RAG) System",
   "audience": "beginner to intermediate developers who understand basic Python but are new to RAG systems",
   "tone": "practical step by step guide",
   "depth": "introductory",
@@ -7,15 +7,92 @@
     {
       "chapter_number": 1,
       "title": "Set Up Your RAG Development Environment",
-      "chapter_goal": "Install dependencies and create a minimal working RAG pipeline with dummy data",
+      "chapter_goal": "Install necessary Python libraries and set up a basic project structure to begin building the RAG system.",
       "sections": [
         {
-          "title": "Install Core Dependencies and Set Up Virtual Environment",
-          "goal": "Prepare the Python environment with essential libraries for RAG development",
+          "title": "Understanding the RAG Architecture: A High-Level Overview",
+          "goal": "Introduce the core components of a RAG system and how they interact, providing a mental model for the project.",
           "key_questions": [
-            "Which Python packages are required for a basic RAG system?",
-            "How do I create an isolated development environment?",
-            "What are the minimal versions needed for compatibility?"
+            "What are the main components of a RAG system?",
+            "How do these components work together to answer a question?",
+            "What is the role of each component in our project?"
+          ],
+          "estimated_words": 400,
+          "content_requirements": {
+            "must_include_code": false,
+            "must_include_example": true,
+            "must_include_diagram": true,
+            "suggested_diagram_type": "architecture"
+          },
+          "builds_on": null
+        },
+        {
+          "title": "Installing Core Python Libraries",
+          "goal": "Install the essential Python packages required for building the RAG system, including LangChain and an LLM client.",
+          "key_questions": [
+            "What Python packages do we need for RAG?",
+            "How do we install these packages using pip?",
+            "What are the potential issues during installation and how to resolve them?"
+          ],
+          "estimated_words": 300,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Understanding the RAG Architecture: A High-Level Overview"
+        },
+        {
+          "title": "Setting Up Your LLM API Key and Environment Variables",
+          "goal": "Configure access to a Large Language Model (LLM) by setting up API keys securely using environment variables.",
+          "key_questions": [
+            "Why do we need an API key for LLMs?",
+            "How can we securely manage API keys?",
+            "How do we load environment variables in Python?"
+          ],
+          "estimated_words": 350,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Installing Core Python Libraries"
+        },
+        {
+          "title": "Creating Your First RAG Script: A Minimal Example",
+          "goal": "Write a basic Python script that demonstrates the initial setup and readiness to integrate RAG components.",
+          "key_questions": [
+            "What does a minimal RAG script look like?",
+            "How can we test our environment setup with a simple script?",
+            "What are the next steps to add functionality?"
+          ],
+          "estimated_words": 450,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Setting Up Your LLM API Key and Environment Variables"
+        }
+      ],
+      "project_milestone": "A Python project with essential libraries (e.g., LangChain, OpenAI/Hugging Face client) installed and a basic script ready to run."
+    },
+    {
+      "chapter_number": 2,
+      "title": "Ingest and Chunk Your Documents",
+      "chapter_goal": "Implement the document loading and text splitting logic to prepare your documents for the RAG system.",
+      "sections": [
+        {
+          "title": "Loading Documents from Files",
+          "goal": "Learn how to load text content from various file types into a format suitable for processing.",
+          "key_questions": [
+            "What are common document formats for RAG systems?",
+            "How can we programmatically load text from files in Python?",
+            "What libraries are available for document loading?",
+            "How do we handle potential errors during file loading?"
           ],
           "estimated_words": 400,
           "content_requirements": {
@@ -27,88 +104,13 @@
           "builds_on": null
         },
         {
-          "title": "Create Dummy Document Dataset for Testing",
-          "goal": "Generate synthetic documents to test the RAG pipeline",
+          "title": "Understanding Text Chunking Strategies",
+          "goal": "Explore different methods for splitting large documents into smaller, semantically meaningful chunks.",
           "key_questions": [
-            "What format should test documents follow?",
-            "How can I create reproducible sample data?",
-            "What makes a good test document for RAG systems?"
-          ],
-          "estimated_words": 300,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Install Core Dependencies and Set Up Virtual Environment"
-        },
-        {
-          "title": "Design the RAG Pipeline Architecture",
-          "goal": "Map out the data flow and component interactions",
-          "key_questions": [
-            "What are the essential components of a RAG system?",
-            "How do components connect in a basic pipeline?",
-            "What's the sequence of operations from question to answer?"
-          ],
-          "estimated_words": 500,
-          "content_requirements": {
-            "must_include_code": false,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "flowchart"
-          },
-          "builds_on": "Create Dummy Document Dataset for Testing"
-        },
-        {
-          "title": "Implement Basic Retrieval with Vector Storage",
-          "goal": "Store documents as vectors and enable similarity search",
-          "key_questions": [
-            "How do we convert text to vectors for retrieval?",
-            "What's the simplest way to store and search vectors?",
-            "How do we measure similarity between vectors?"
-          ],
-          "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Design the RAG Pipeline Architecture"
-        },
-        {
-          "title": "Build the Question-Answering Interface",
-          "goal": "Combine retrieval with a basic answer generation component",
-          "key_questions": [
-            "How do we chain retrieval and generation components?",
-            "What's the simplest way to format retrieved context for answers?",
-            "How can we test the complete pipeline with sample questions?"
-          ],
-          "estimated_words": 500,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Implement Basic Retrieval with Vector Storage"
-        }
-      ],
-      "project_milestone": "Basic question-answering system that returns hardcoded responses"
-    },
-    {
-      "chapter_number": 2,
-      "title": "Ingest and Chunk Your Documents",
-      "chapter_goal": "Implement document loading, text splitting, and metadata handling",
-      "sections": [
-        {
-          "title": "Load Documents from Different Sources",
-          "goal": "Implement code to read text, PDFs, and CSVs into a unified format",
-          "key_questions": [
-            "How do I load different document types into memory?",
-            "What libraries are needed for PDF and CSV handling?",
-            "How to handle file paths and encoding errors?"
+            "Why is chunking necessary for RAG systems?",
+            "What are the trade-offs between fixed-size chunking and recursive chunking?",
+            "How can we preserve context across chunks?",
+            "What are common chunk sizes and why?"
           ],
           "estimated_words": 500,
           "content_requirements": {
@@ -117,15 +119,16 @@
             "must_include_diagram": true,
             "suggested_diagram_type": "data_flow"
           },
-          "builds_on": null
+          "builds_on": "Loading Documents from Files"
         },
         {
-          "title": "Split Text into Manageable Chunks",
-          "goal": "Implement text splitting with fixed-size windows and overlap",
+          "title": "Implementing Recursive Character Text Splitting",
+          "goal": "Write Python code to implement a recursive character text splitter, a common and effective chunking technique.",
           "key_questions": [
-            "How to split long documents into smaller chunks?",
-            "What chunk size and overlap values work best?",
-            "How to preserve document structure during splitting?"
+            "How does recursive character splitting work in practice?",
+            "What are the key parameters for a recursive splitter (e.g., chunk size, overlap)?",
+            "How can we use libraries like LangChain to simplify this process?",
+            "How do we ensure chunks are not too small or too large?"
           ],
           "estimated_words": 600,
           "content_requirements": {
@@ -134,57 +137,60 @@
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": "Load Documents from Different Sources"
+          "builds_on": "Understanding Text Chunking Strategies"
         },
         {
-          "title": "Attach Metadata to Text Chunks",
-          "goal": "Implement metadata extraction and association with document chunks",
+          "title": "Putting It All Together: A Document Ingestion Script",
+          "goal": "Combine document loading and chunking into a single script that prepares documents for the next stage of the RAG pipeline.",
           "key_questions": [
-            "How to extract metadata from documents?",
-            "What metadata fields are most useful for retrieval?",
-            "How to store metadata with text chunks?"
+            "How do we integrate the document loading and chunking functions?",
+            "What is the expected output of this script?",
+            "How can we test our script with sample documents?",
+            "What are common errors encountered during this stage and how to debug them?"
           ],
           "estimated_words": 500,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "architecture"
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
           },
-          "builds_on": "Split Text into Manageable Chunks"
-        },
-        {
-          "title": "Build the Ingestion Pipeline",
-          "goal": "Combine loading, splitting, and metadata handling into a working pipeline",
-          "key_questions": [
-            "How to chain document processing steps together?",
-            "What validation should happen at each stage?",
-            "How to test the pipeline with sample documents?"
-          ],
-          "estimated_words": 700,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "flowchart"
-          },
-          "builds_on": null
+          "builds_on": "Implementing Recursive Character Text Splitting"
         }
       ],
-      "project_milestone": "System that converts raw documents into structured text chunks"
+      "project_milestone": "A script that can load text files and split them into manageable chunks, ready for embedding."
     },
     {
       "chapter_number": 3,
-      "title": "Generate Embeddings and Store Vectors",
-      "chapter_goal": "Create document embeddings and store them in a vector database",
+      "title": "Create Document Embeddings and a Vector Store",
+      "chapter_goal": "Generate vector embeddings for document chunks and store them in a simple in-memory or local vector database.",
       "sections": [
         {
-          "title": "Generating Document Embeddings with Transformers",
-          "goal": "Teach how to use pre-trained models to convert text into numerical embeddings",
+          "title": "Understanding Embeddings: Turning Text into Numbers",
+          "goal": "Explain what text embeddings are, why they are necessary for RAG, and how they represent semantic meaning.",
           "key_questions": [
-            "How do pre-trained transformer models generate document embeddings?",
-            "What Python libraries are needed for embedding generation?",
-            "How to process text chunks into fixed-size embeddings?"
+            "What is a text embedding?",
+            "Why do we need embeddings for RAG?",
+            "How do embedding models capture semantic similarity?",
+            "What are the trade-offs between different embedding models (e.g., size, performance, cost)?"
+          ],
+          "estimated_words": 400,
+          "content_requirements": {
+            "must_include_code": false,
+            "must_include_example": true,
+            "must_include_diagram": true,
+            "suggested_diagram_type": "conceptual"
+          },
+          "builds_on": null
+        },
+        {
+          "title": "Generating Embeddings with an Open-Source Model",
+          "goal": "Implement code to generate vector embeddings for text chunks using a pre-trained, open-source embedding model.",
+          "key_questions": [
+            "How can we load and use an embedding model in Python?",
+            "What is the input and output of an embedding model?",
+            "How do we process multiple text chunks efficiently?",
+            "What are common parameters to consider when generating embeddings?"
           ],
           "estimated_words": 600,
           "content_requirements": {
@@ -193,142 +199,34 @@
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": null
+          "builds_on": "Understanding Embeddings: Turning Text into Numbers"
         },
         {
-          "title": "Setting Up a Vector Database with FAISS",
-          "goal": "Configure a vector store and add embeddings for efficient similarity search",
+          "title": "Choosing and Setting Up a Vector Store",
+          "goal": "Introduce the concept of a vector store and set up a simple, in-memory or local file-based vector store for our embeddings.",
           "key_questions": [
-            "What are the key features of FAISS as a vector store?",
-            "How to initialize and configure a FAISS index?",
-            "What data structures are needed for embedding storage?"
+            "What is a vector store and why is it different from a traditional database?",
+            "What are the options for vector stores (in-memory, local, cloud)?",
+            "How do we choose a vector store for a beginner project?",
+            "How do we initialize and configure a basic vector store?"
           ],
-          "estimated_words": 700,
+          "estimated_words": 500,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": true,
             "suggested_diagram_type": "architecture"
           },
-          "builds_on": "Generating Document Embeddings with Transformers"
+          "builds_on": "Generating Embeddings with an Open-Source Model"
         },
         {
           "title": "Storing and Indexing Embeddings",
-          "goal": "Batch-process document embeddings and optimize vector store indexing",
+          "goal": "Write code to add the generated document embeddings to the chosen vector store and ensure they are indexed for efficient retrieval.",
           "key_questions": [
-            "How to batch add embeddings to the vector store?",
-            "What normalization techniques improve search accuracy?",
-            "How to verify successful embedding storage?"
-          ],
-          "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Setting Up a Vector Database with FAISS"
-        },
-        {
-          "title": "Validating Embedding Quality with Similarity Searches",
-          "goal": "Verify embeddings by querying the vector store and evaluating results",
-          "key_questions": [
-            "How to perform similarity searches in the vector store?",
-            "What metrics indicate good embedding quality?",
-            "How to debug failed similarity queries?"
-          ],
-          "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "sequence_diagram"
-          },
-          "builds_on": "Storing and Indexing Embeddings"
-        }
-      ],
-      "project_milestone": "Working vector store with embedded document representations"
-    },
-    {
-      "chapter_number": 4,
-      "title": "Implement Retrieval and Prompting",
-      "chapter_goal": "Build semantic search and integrate with a language model for answers",
-      "sections": [
-        {
-          "title": "Set Up Vector Store for Semantic Search",
-          "goal": "Implement a vector database to store document embeddings for efficient retrieval",
-          "key_questions": [
-            "How do vector databases enable semantic similarity search?",
-            "What are the minimal steps to initialize a vector store with our document embeddings?",
-            "How can we verify the vector store is correctly storing document chunks?"
-          ],
-          "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": null
-        },
-        {
-          "title": "Implement Semantic Search with Similarity Thresholds",
-          "goal": "Query the vector store with user questions and retrieve relevant document chunks",
-          "key_questions": [
-            "How do we translate user questions into vector queries?",
-            "What similarity threshold ensures relevant context retrieval?",
-            "How can we test the retrieval accuracy with sample questions?"
-          ],
-          "estimated_words": 700,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "data_flow"
-          },
-          "builds_on": "Set Up Vector Store for Semantic Search"
-        },
-        {
-          "title": "Integrate Language Model for Answer Generation",
-          "goal": "Combine retrieved context with a language model to generate answers",
-          "key_questions": [
-            "How do we format retrieved context into effective prompts?",
-            "What are common pitfalls in prompt engineering for RAG systems?",
-            "How can we validate the language model is using retrieved context correctly?"
-          ],
-          "estimated_words": 650,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Implement Semantic Search with Similarity Thresholds"
-        },
-        {
-          "title": "Build End-to-End RAG Pipeline",
-          "goal": "Chain retrieval and generation components into a working system",
-          "key_questions": [
-            "How do we sequence retrieval and generation in a production-ready pipeline?",
-            "What error handling is needed for missing or irrelevant context?",
-            "How can we test the complete pipeline with real user questions?"
-          ],
-          "estimated_words": 800,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "architecture"
-          },
-          "builds_on": "Integrate Language Model for Answer Generation"
-        },
-        {
-          "title": "Test and Debug Common Pipeline Failures",
-          "goal": "Identify and fix common issues in retrieval and generation integration",
-          "key_questions": [
-            "Why might retrieved context fail to produce accurate answers?",
-            "How do we debug prompt formatting issues in the RAG pipeline?",
-            "What metrics can we use to evaluate retrieval quality?"
+            "How do we add embeddings and their associated text to the vector store?",
+            "What metadata should we store alongside embeddings?",
+            "How does the vector store index embeddings for fast searching?",
+            "What are the common methods for adding data to a vector store?"
           ],
           "estimated_words": 500,
           "content_requirements": {
@@ -337,25 +235,25 @@
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": "Build End-to-End RAG Pipeline"
+          "builds_on": "Choosing and Setting Up a Vector Store"
         }
       ],
-      "project_milestone": "Functional RAG pipeline that retrieves and generates answers"
+      "project_milestone": "A working RAG component that converts text chunks into numerical embeddings and stores them in a searchable vector store."
     },
     {
-      "chapter_number": 5,
-      "title": "Enhance Accuracy with Reranking and Filtering",
-      "chapter_goal": "Add post-retrieval filters and relevance reranking",
+      "chapter_number": 4,
+      "title": "Implement the Retrieval Component",
+      "chapter_goal": "Build the retriever that queries the vector store using a user's question to find the most relevant document chunks.",
       "sections": [
         {
-          "title": "Understanding Reranking and Filtering in RAG Pipelines",
-          "goal": "Explain how reranking and filtering improve retrieval accuracy",
+          "title": "Understanding the Retriever's Role",
+          "goal": "Explain the purpose and function of the retriever component within a RAG system, emphasizing its role in finding relevant information.",
           "key_questions": [
-            "What is the difference between reranking and filtering in RAG systems?",
-            "How do these techniques improve answer accuracy?",
-            "What are common metrics for measuring retrieval quality?"
+            "What is a retriever in the context of RAG?",
+            "Why is effective retrieval crucial for RAG performance?",
+            "How does the retriever bridge the gap between a user's question and the document corpus?"
           ],
-          "estimated_words": 600,
+          "estimated_words": 300,
           "content_requirements": {
             "must_include_code": false,
             "must_include_example": true,
@@ -365,198 +263,110 @@
           "builds_on": null
         },
         {
-          "title": "Implementing a Semantic Reranker with Sentence Similarity",
-          "goal": "Add reranking using semantic similarity scores",
+          "title": "Embedding the User's Query",
+          "goal": "Implement the process of converting a user's natural language question into a vector embedding using the same model used for document embeddings.",
           "key_questions": [
-            "How do we calculate semantic similarity between query and documents?",
-            "What libraries can we use for reranking (e.g., sentence-transformers)?",
-            "How does reranking change the retrieval results?"
+            "How do we represent a user's question in a way the vector database can understand?",
+            "Which embedding model should be used for the query, and why?",
+            "What are the steps to generate an embedding for a given text string?"
           ],
-          "estimated_words": 800,
+          "estimated_words": 400,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": "Understanding Reranking and Filtering in RAG Pipelines"
+          "builds_on": "Understanding the Retriever's Role"
         },
         {
-          "title": "Adding Metadata Filters for Contextual Relevance",
-          "goal": "Implement filters based on document metadata",
+          "title": "Querying the Vector Store",
+          "goal": "Write the code to query the vector database using the query embedding and retrieve the top K most similar document chunks.",
           "key_questions": [
-            "What metadata can help filter irrelevant documents?",
-            "How do we implement date-range or source-type filters?",
-            "What are common pitfalls in metadata filtering?"
+            "How do we connect to the vector database?",
+            "What is the specific query command to find nearest neighbors?",
+            "How do we specify the number of results (K) to retrieve?",
+            "What information do we get back from the vector store query?"
           ],
-          "estimated_words": 700,
+          "estimated_words": 500,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": "Implementing a Semantic Reranker with Sentence Similarity"
+          "builds_on": "Embedding the User's Query"
         },
         {
-          "title": "Combining Reranking and Filtering for Final Context Selection",
-          "goal": "Integrate both techniques into the RAG pipeline",
+          "title": "Putting it Together: The Retriever Class",
+          "goal": "Encapsulate the query embedding and vector store querying logic into a reusable Python class.",
           "key_questions": [
-            "What order should reranking and filtering be applied?",
-            "How do we validate the combined system's effectiveness?",
-            "What tradeoffs exist between accuracy and performance?"
+            "How can we organize the retriever logic into a clean, object-oriented structure?",
+            "What parameters should the Retriever class accept (e.g., embedding model, vector store client)?",
+            "How does the `retrieve` method orchestrate the embedding and querying steps?",
+            "How can we test this retriever class with sample questions?"
           ],
-          "estimated_words": 900,
+          "estimated_words": 600,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": true,
             "suggested_diagram_type": "sequence_diagram"
           },
-          "builds_on": "Adding Metadata Filters for Contextual Relevance"
-        }
-      ],
-      "project_milestone": "Improved system with better context selection and filtering"
-    },
-    {
-      "chapter_number": 6,
-      "title": "Debug and Evaluate Your RAG System",
-      "chapter_goal": "Implement testing strategies and common debugging techniques",
-      "sections": [
+          "builds_on": "Querying the Vector Store"
+        },
         {
-          "title": "Implement Basic Evaluation Metrics",
-          "goal": "Add accuracy and relevance metrics to measure system performance",
+          "title": "Debugging Common Retrieval Issues",
+          "goal": "Identify and troubleshoot common problems encountered during the retrieval phase, such as irrelevant results or no results found.",
           "key_questions": [
-            "How do you measure answer accuracy against ground truth?",
-            "What metrics quantify retrieval relevance?",
-            "How can you track retrieval performance over time?"
+            "What are the signs of a poorly performing retriever?",
+            "How can we inspect the quality of retrieved chunks?",
+            "What are common causes for poor retrieval (e.g., embedding model mismatch, incorrect K value, poor chunking)?",
+            "How can we adjust parameters or data to improve retrieval accuracy?"
           ],
-          "estimated_words": 500,
+          "estimated_words": 400,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": null
-        },
+          "builds_on": "Putting it Together: The Retriever Class"
+        }
+      ],
+      "project_milestone": "A functional retriever that takes a question, generates its embedding, and returns the top N most similar document chunks from the vector store."
+    },
+    {
+      "chapter_number": 5,
+      "title": "Integrate a Language Model for Generation",
+      "chapter_goal": "Connect a generative language model (LLM) to the retriever to generate answers based on the retrieved document chunks and the user's question.",
+      "sections": [
         {
-          "title": "Debug Retrieval Failures",
-          "goal": "Identify and fix common retrieval issues like irrelevant chunks",
+          "title": "Choosing and Setting Up Your Language Model",
+          "goal": "Introduce the concept of a generative language model (LLM) and guide the reader in selecting and setting up a suitable LLM for their RAG system.",
           "key_questions": [
-            "Why might relevant documents fail to retrieve?",
-            "How do you diagnose similarity threshold problems?",
-            "What patterns indicate poor chunking quality?"
+            "What is an LLM and how does it function as the 'generator' in RAG?",
+            "What are the different types of LLMs available (e.g., OpenAI, Hugging Face, local models)?",
+            "How do we set up API access or load a local model for use in our Python script?",
+            "What are the basic parameters to consider when interacting with an LLM (e.g., temperature, max tokens)?"
           ],
           "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Implement Basic Evaluation Metrics"
-        },
-        {
-          "title": "Analyze Generation Errors",
-          "goal": "Detect when the model misuses retrieved context",
-          "key_questions": [
-            "How do you identify hallucinations in generated answers?",
-            "What patterns show the model ignores retrieved context?",
-            "How can you trace errors back to specific pipeline stages?"
-          ],
-          "estimated_words": 500,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": "Debug Retrieval Failures"
-        },
-        {
-          "title": "Build an Error Analysis Dashboard",
-          "goal": "Create visualizations to track system weaknesses",
-          "key_questions": [
-            "What types of errors occur most frequently?",
-            "How can you categorize errors by pipeline stage?",
-            "What visualizations help prioritize fixes?"
-          ],
-          "estimated_words": 700,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "flowchart"
-          },
-          "builds_on": "Analyze Generation Errors"
-        }
-      ],
-      "project_milestone": "Instrumented system with evaluation metrics and error analysis"
-    },
-    {
-      "chapter_number": 7,
-      "title": "Polish and Extend Your RAG Application",
-      "chapter_goal": "Add user interface elements and plan production extensions",
-      "sections": [
-        {
-          "title": "Add a Command-Line Interface for User Interaction",
-          "goal": "Enable basic user interaction via terminal commands",
-          "key_questions": [
-            "How do you create a CLI for your RAG system?",
-            "What input validation patterns should you implement?",
-            "How can you format query results for terminal display?"
-          ],
-          "estimated_words": 500,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": false,
-            "suggested_diagram_type": null
-          },
-          "builds_on": null
-        },
-        {
-          "title": "Implement a Simple Web Interface with Flask",
-          "goal": "Create a web API for the RAG system",
-          "key_questions": [
-            "How do you structure a minimal Flask application?",
-            "What endpoints are needed for query and status?",
-            "How can you test the web interface locally?"
-          ],
-          "estimated_words": 700,
           "content_requirements": {
             "must_include_code": true,
             "must_include_example": true,
             "must_include_diagram": true,
             "suggested_diagram_type": "architecture"
           },
-          "builds_on": "Add a Command-Line Interface for User Interaction"
+          "builds_on": null
         },
         {
-          "title": "Document the System and Create an Extension Roadmap",
-          "goal": "Write user documentation and plan future improvements",
+          "title": "Crafting the Prompt for Contextual Answers",
+          "goal": "Teach the reader how to construct effective prompts that combine the user's question with the retrieved document context to guide the LLM's generation.",
           "key_questions": [
-            "What documentation should accompany a RAG system?",
-            "How do you structure API reference documentation?",
-            "What are common next steps for production deployment?"
-          ],
-          "estimated_words": 600,
-          "content_requirements": {
-            "must_include_code": true,
-            "must_include_example": true,
-            "must_include_diagram": true,
-            "suggested_diagram_type": "comparison_table"
-          },
-          "builds_on": "Implement a Simple Web Interface with Flask"
-        },
-        {
-          "title": "Test and Validate the Extended System",
-          "goal": "Ensure reliability through structured testing",
-          "key_questions": [
-            "How do you write unit tests for RAG components?",
-            "What integration tests should you implement?",
-            "How can you validate retrieval accuracy?"
+            "Why is prompt engineering crucial for RAG systems?",
+            "How do we format the prompt to include both the user's question and the retrieved document chunks?",
+            "What are common prompt patterns for RAG (e.g., 'Answer the following question based on the provided context:')?",
+            "How can we instruct the LLM to only use the provided context and to state if it doesn't know the answer?"
           ],
           "estimated_words": 500,
           "content_requirements": {
@@ -565,11 +375,127 @@
             "must_include_diagram": false,
             "suggested_diagram_type": null
           },
-          "builds_on": "Document the System and Create an Extension Roadmap"
+          "builds_on": "Choosing and Setting Up Your Language Model"
+        },
+        {
+          "title": "Generating Answers with the LLM",
+          "goal": "Implement the core logic to pass the crafted prompt to the LLM and receive the generated answer, integrating it with the retrieval component.",
+          "key_questions": [
+            "How do we call the LLM API or model with our constructed prompt?",
+            "How do we parse the LLM's response to extract the generated answer?",
+            "What are potential issues when generating answers (e.g., hallucinations, irrelevant information)?",
+            "How can we handle errors or empty responses from the LLM?"
+          ],
+          "estimated_words": 700,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Crafting the Prompt for Contextual Answers"
+        },
+        {
+          "title": "Putting It All Together: The Complete RAG Pipeline",
+          "goal": "Integrate all previously built components (ingestion, chunking, embeddings, retrieval, LLM generation) into a single, runnable RAG pipeline.",
+          "key_questions": [
+            "How do the retriever and generator components interact in the final pipeline?",
+            "How can we structure the code for a clear and modular RAG system?",
+            "What are the end-to-end steps from user question to final answer?",
+            "How can we test the complete pipeline with a sample question?"
+          ],
+          "estimated_words": 800,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": true,
+            "suggested_diagram_type": "sequence_diagram"
+          },
+          "builds_on": "Generating Answers with the LLM"
         }
       ],
-      "project_milestone": "Complete working RAG system with documentation and extension roadmap"
+      "project_milestone": "A complete, albeit basic, RAG pipeline that takes a question, retrieves relevant context, and generates an answer using an LLM."
+    },
+    {
+      "chapter_number": 6,
+      "title": "Refine Prompts and Evaluate Basic Performance",
+      "chapter_goal": "Learn to craft effective prompts for the LLM and perform simple qualitative evaluations of the RAG system's answers.",
+      "sections": [
+        {
+          "title": "Understanding Prompt Engineering for RAG",
+          "goal": "Introduce the fundamental concepts of prompt engineering and explain why it's crucial for RAG systems.",
+          "key_questions": [
+            "What is prompt engineering?",
+            "Why is prompt engineering important for RAG?",
+            "What are the key elements of a good RAG prompt?",
+            "How can prompt structure influence LLM output?"
+          ],
+          "estimated_words": 400,
+          "content_requirements": {
+            "must_include_code": false,
+            "must_include_example": true,
+            "must_include_diagram": true,
+            "suggested_diagram_type": "flowchart"
+          },
+          "builds_on": null
+        },
+        {
+          "title": "Crafting a Dynamic Prompt Template",
+          "goal": "Develop a flexible prompt template that incorporates retrieved context and the user's question, enabling the LLM to generate informed answers.",
+          "key_questions": [
+            "How can we dynamically insert retrieved documents and the user's question into a prompt?",
+            "What are common placeholders or variables used in prompt templates?",
+            "How do we instruct the LLM to use the provided context to answer the question?",
+            "What are some best practices for structuring the prompt for clarity and effectiveness?"
+          ],
+          "estimated_words": 600,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Understanding Prompt Engineering for RAG"
+        },
+        {
+          "title": "Implementing Basic Qualitative Evaluation",
+          "goal": "Establish a simple, manual process for evaluating the quality of the RAG system's answers, focusing on relevance, accuracy, and completeness.",
+          "key_questions": [
+            "What are the key criteria for evaluating RAG output?",
+            "How can we systematically test our RAG system with a set of questions?",
+            "What does a good evaluation checklist look like?",
+            "How do we compare the LLM's answer against the retrieved context and the expected answer?"
+          ],
+          "estimated_words": 500,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Crafting a Dynamic Prompt Template"
+        },
+        {
+          "title": "Iterative Refinement: Prompt and Evaluation Loop",
+          "goal": "Demonstrate how to use evaluation results to iteratively improve the prompt template and enhance the RAG system's performance.",
+          "key_questions": [
+            "How do we analyze the results of our qualitative evaluation?",
+            "What common issues arise from poor prompts or retrieval?",
+            "How can we adjust the prompt template to address identified weaknesses?",
+            "What is the feedback loop between evaluation and prompt refinement?"
+          ],
+          "estimated_words": 400,
+          "content_requirements": {
+            "must_include_code": true,
+            "must_include_example": true,
+            "must_include_diagram": false,
+            "suggested_diagram_type": null
+          },
+          "builds_on": "Implementing Basic Qualitative Evaluation"
+        }
+      ],
+      "project_milestone": "An improved RAG system with a more sophisticated prompt template, and a method for manually assessing the quality of its responses."
     }
   ],
-  "running_project": "A minimal RAG system that answers questions using custom document collections"
+  "running_project": "A functional RAG system that can answer questions based on a small set of your own documents."
 }

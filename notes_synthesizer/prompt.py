@@ -93,6 +93,8 @@ Source-grounding rules:
 - source_trace may only reference source IDs from allowed_citation_source_ids.
 - Every supporting_fact SHOULD have at least one source_id when possible.
 - If support is unclear, leave source_ids empty instead of inventing.
+- reference_links must be chosen only from the provided Source References.
+- Prefer 2-5 reference_links that are useful for readers who want to read more.
 
 ---
 
@@ -165,6 +167,13 @@ def build_notes_synthesizer_user_prompt(section_input: SectionSynthesisInput) ->
         else "None"
     )
 
+    source_references = "- None"
+    if section_input.source_references:
+        source_references = "\n".join(
+            f"- {item.source_id}: {item.title or item.source_id} | {item.url or 'no url'}"
+            for item in section_input.source_references
+        )
+
     must_code = getattr(section_input, "must_include_code", False)
     must_diagram = getattr(section_input, "must_include_diagram", False)
     suggested_diagram = getattr(section_input, "suggested_diagram_type", None)
@@ -201,6 +210,9 @@ Open Questions:
 Allowed Citation Source IDs:
 {allowed_source_ids}
 
+Source References:
+{source_references}
+
 Task:
 Create a compact, writer-ready section note artifact.
 
@@ -214,6 +226,7 @@ Instructions:
 - Preserve unresolved gaps when support is partial or weak.
 - Recommend a practical flow for the downstream Writer.
 - Keep source usage restricted to the allowed citation source IDs only.
+- Include 2-5 useful reference_links from Source References when URLs are available.
 - Be conservative when evidence is incomplete.
 
 PRACTICAL CONTENT INSTRUCTIONS:

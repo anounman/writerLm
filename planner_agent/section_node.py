@@ -8,6 +8,7 @@ from llm_metrics import (
     reserve_llm_call_budget,
 )
 from llm_retry import call_with_rate_limit_retries
+from llm_provider import build_chat_messages, json_response_format_kwargs
 from pydantic import ValidationError
 
 from planner_agent.config import get_client, get_model_name
@@ -32,17 +33,15 @@ class SectionPlannerNode:
         context: PlanningContext,
         chapter: ChapterOutlineItem,
     ) -> str:
-        messages = [
-            {"role": "system", "content": SECTION_PLANNER_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": build_section_planner_prompt(
-                    request=request,
-                    context=context,
-                    chapter=chapter,
-                ),
-            },
-        ]
+        messages = build_chat_messages(
+            model=self.model_name,
+            system_prompt=SECTION_PLANNER_SYSTEM_PROMPT,
+            user_prompt=build_section_planner_prompt(
+                request=request,
+                context=context,
+                chapter=chapter,
+            ),
+        )
         completion_limit = get_completion_token_limit("planner")
         prompt_estimate = reserve_llm_call_budget(
             layer="planner",
@@ -57,8 +56,8 @@ class SectionPlannerNode:
                 lambda: self.client.chat.completions.create(
                     model=self.model_name,
                     temperature=0.2,
-                    response_format={"type": "json_object"},
                     messages=messages,
+                    **json_response_format_kwargs(self.model_name),
                     **completion_limit_kwargs("planner"),
                 )
             )
@@ -186,7 +185,11 @@ class SectionPlannerNode:
 
     def _should_retry_without_provider_json_mode(self, exc: Exception) -> bool:
         message = str(exc).lower()
-        return "json_validate_failed" in message or "failed to validate json" in message
+        return (
+            "json_validate_failed" in message
+            or "failed to validate json" in message
+            or "json mode is not enabled" in message
+        )
 
     def _clean_text(self, value: object) -> str:
         if value is None:

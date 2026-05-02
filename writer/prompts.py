@@ -62,6 +62,10 @@ Every section you write MUST follow this structure (adapt based on content type)
    - A small challenge for the reader to try.
    - Example: "Try changing the chunk_size to 256 and observe how retrieval quality changes."
 
+8. FURTHER READING (when reference_links are available)
+   - Add a short "Further Reading" list with the provided titles and URLs.
+   - Do not invent links. Use only provided reference_links.
+
 === CONTENT EMBEDDING RULES ===
 
 CODE BLOCKS:
@@ -199,6 +203,15 @@ def build_writer_user_prompt(section_input: WriterSectionInput) -> str:
         else "None"
     )
 
+    reference_links = "- None"
+    if section_input.reference_links:
+        reference_links = "\n".join(
+            f"- {item.get('source_id', '')}: "
+            f"{item.get('title') or item.get('source_id', '')} | "
+            f"{item.get('url', '')}"
+            for item in section_input.reference_links
+        )
+
     return f"""
 WRITE SECTION DRAFT
 
@@ -246,12 +259,15 @@ WRITER GUIDANCE
 ALLOWED SOURCE IDS
 {allowed_ids}
 
+REFERENCE LINKS (use only these in Further Reading)
+{reference_links}
+
 === TASK ===
 Write a section draft following the MANDATORY section structure:
-1. Concept → 2. Intuition → 3. Code Example → 4. Step-by-step → 5. Output → 6. Common Mistakes → 7. Mini Exercise
+1. Concept -> 2. Intuition -> 3. Code Example -> 4. Step-by-step -> 5. Output -> 6. Common Mistakes -> 7. Mini Exercise -> 8. Further Reading
 
 REQUIRED BEHAVIOR
-- Follow the 7-part structure. Skip parts only if the input material genuinely cannot support them.
+- Follow the 8-part structure. Skip parts only if the input material genuinely cannot support them.
 - If must_include_code is true: you MUST include at least one ```python code block.
 - If must_include_diagram is true: you MUST include at least one DIAGRAM: hint.
 - If code_snippets are provided: adapt and embed them in the section. Do not ignore them.
@@ -260,6 +276,7 @@ REQUIRED BEHAVIOR
 - Include expected output/result after code examples where possible.
 - Frame caveats as "Common Mistakes" with actionable fixes.
 - End with a mini exercise when appropriate.
+- If reference_links are available, add a final Further Reading list with titles and URLs.
 - Do NOT produce pure-text sections when code or diagrams are available.
 - The prose should feel like a hands-on technical book, not a lecture.
 

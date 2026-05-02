@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+
+from ..deterministic import build_deterministic_section_note
 from ..state import NotesSynthesizerState
 from ..schemas import SectionNoteArtifact, SynthesisStatus
 from ..llm import GroqStructuredLLM, StructuredLLMError
@@ -32,14 +35,17 @@ def synthesize_section_notes_node(
         return state
 
     try:
-        system_prompt = NOTES_SYNTHESIZER_SYSTEM_PROMPT
-        user_prompt = build_notes_synthesizer_user_prompt(task.synthesis_input)
+        if _deterministic_notes_enabled():
+            result = build_deterministic_section_note(task.synthesis_input)
+        else:
+            system_prompt = NOTES_SYNTHESIZER_SYSTEM_PROMPT
+            user_prompt = build_notes_synthesizer_user_prompt(task.synthesis_input)
 
-        result = llm.generate_structured(
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            response_model=SectionNoteArtifact,
-        )
+            result = llm.generate_structured(
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                response_model=SectionNoteArtifact,
+            )
 
         # attach result
         task.synthesized_note = result
@@ -49,19 +55,22 @@ def synthesize_section_notes_node(
             result.synthesis_status = SynthesisStatus.READY
 
     except StructuredLLMError as e:
-        task.errors.append(f"LLM error: {str(e)}")
-        state.failed_tasks.append(task)
-        state.active_task = None
+        task.warnings.append(f"Notes LLM fallback used after error: {str(e)}")
+        task.synthesized_note = build_deterministic_section_note(task.synthesis_input)
 
-        if state.runtime.fail_fast:
-            raise
+        if not task.synthesized_note.synthesis_status:
+            task.synthesized_note.synthesis_status = SynthesisStatus.READY
 
     except Exception as e:
-        task.errors.append(f"Unexpected error: {str(e)}")
-        state.failed_tasks.append(task)
-        state.active_task = None
+        task.warnings.append(f"Notes deterministic fallback used after unexpected error: {str(e)}")
+        task.synthesized_note = build_deterministic_section_note(task.synthesis_input)
 
-        if state.runtime.fail_fast:
-            raise
+        if not task.synthesized_note.synthesis_status:
+            task.synthesized_note.synthesis_status = SynthesisStatus.READY
 
     return state
+
+
+def _deterministic_notes_enabled() -> bool:
+    value = os.getenv("WRITERLM_DETERMINISTIC_NOTES", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}

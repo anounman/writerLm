@@ -6,3 +6,5 @@ runs/
 orchestration/runs/
 outputs/
 .cache/
+tmp_pdf_eval/*
+outputs/*

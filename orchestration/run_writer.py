@@ -19,7 +19,11 @@ from writer.graph import build_writer_graph, initialize_writer_state
 from writer.llm import GroqStructuredLLM
 from writer.schemas import WritingStatus, WriterSectionInput
 from writer.state import WriterInput, WriterSectionTask, WriterState
-from llm_provider import resolve_openai_compatible_config
+from llm_provider import (
+    get_default_models_for_layer,
+    get_legacy_model_env_names_by_provider,
+    resolve_openai_compatible_config,
+)
 
 
 INPUT_PATH = REPO_ROOT / "outputs" / "notes_bundle.json"
@@ -64,6 +68,7 @@ def build_tasks_from_notes_bundle(bundle: dict[str, Any]) -> List[WriterSectionT
                 recommended_flow=note.get("recommended_flow") or [],
                 writer_guidance=note.get("writer_guidance") or [],
                 allowed_citation_source_ids=note.get("allowed_citation_source_ids") or [],
+                reference_links=note.get("reference_links") or [],
             )
 
             task = WriterSectionTask(
@@ -98,14 +103,8 @@ def main() -> None:
 
     llm_config = resolve_openai_compatible_config(
         layer="writer",
-        default_models={
-            "groq": "llama-3.3-70b-versatile",
-            "google": "gemini-2.5-flash",
-        },
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-        },
+        default_models=get_default_models_for_layer("writer"),
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
     llm = GroqStructuredLLM(
         api_key=llm_config.api_key,

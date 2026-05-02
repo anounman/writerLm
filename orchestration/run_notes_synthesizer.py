@@ -18,7 +18,11 @@ load_dotenv(REPO_ROOT / ".env")
 from notes_synthesizer.graph import build_notes_synthesizer_graph, initialize_state
 from notes_synthesizer.llm import GroqStructuredLLM
 from notes_synthesizer.schemas import SynthesisStatus
-from llm_provider import resolve_openai_compatible_config
+from llm_provider import (
+    get_default_models_for_layer,
+    get_legacy_model_env_names_by_provider,
+    resolve_openai_compatible_config,
+)
 from notes_synthesizer.state import (
     NotesSynthesizerInput,
     NotesSynthesizerSectionTask,
@@ -220,14 +224,8 @@ def main() -> None:
 
     llm_config = resolve_openai_compatible_config(
         layer="notes",
-        default_models={
-            "groq": "llama-3.3-70b-versatile",
-            "google": "gemini-2.5-flash",
-        },
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
-            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
-        },
+        default_models=get_default_models_for_layer("notes"),
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
     llm = GroqStructuredLLM(
         api_key=llm_config.api_key,

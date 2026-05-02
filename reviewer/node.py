@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Callable
 
+from .deterministic import build_deterministic_reviewer_output
 from .prompt import SYSTEM_PROMPT, build_reviewer_prompt
 from .schemas import ReviewerSectionOutput
 from .state import ReviewerSectionTask
@@ -25,6 +27,11 @@ def review_section(
 ) -> ReviewerSectionTask:
     task = normalize_reviewer_task(task)
     validate_reviewer_task(task)
+
+    if _deterministic_reviewer_enabled():
+        task.section_output = build_deterministic_reviewer_output(task.section_input)
+        task.error_message = None
+        return task
 
     user_prompt = build_reviewer_prompt(task.section_input)
     raw_response = llm_client.generate(
@@ -49,9 +56,23 @@ def review_section_safe(
     try:
         return review_section(task=task, llm_client=llm_client)
     except Exception as exc:
-        task.section_output = None
-        task.error_message = error_formatter(exc) if error_formatter else str(exc)
+        message = error_formatter(exc) if error_formatter else str(exc)
+        try:
+            task = normalize_reviewer_task(task)
+            task.section_output = build_deterministic_reviewer_output(
+                task.section_input,
+                error_message=message,
+            )
+            task.error_message = None
+        except Exception:
+            task.section_output = None
+            task.error_message = message
         return task
+
+
+def _deterministic_reviewer_enabled() -> bool:
+    value = os.getenv("WRITERLM_DETERMINISTIC_REVIEWER", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def _parse_reviewer_output(raw_response: str) -> ReviewerSectionOutput:

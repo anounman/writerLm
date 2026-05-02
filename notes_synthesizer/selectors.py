@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Iterable, List, Optional
 
-from .schemas import CoverageSignal, SectionSynthesisInput
+from .schemas import CoverageSignal, SectionSynthesisInput, SourceReference
 
 
 MAX_KEY_CONCEPTS = 12
@@ -11,6 +11,7 @@ MAX_WRITING_GUIDANCE_ITEMS = 10
 MAX_OPEN_QUESTIONS = 10
 MAX_PLANNER_CONTEXT_CHARS = 500
 MAX_EVIDENCE_ITEM_CHARS = 300
+MAX_SOURCE_REFERENCES = 8
 
 
 def _as_clean_string(value: Any) -> Optional[str]:
@@ -149,6 +150,40 @@ def _extract_source_ids(source_references: Any, evidence_items: Any) -> List[str
                     add_source_id(source_id)
 
     return _dedupe_preserve_order(collected)
+
+
+def _extract_source_references(source_references: Any) -> List[SourceReference]:
+    output: List[SourceReference] = []
+    seen: set[str] = set()
+
+    if not isinstance(source_references, list):
+        return output
+
+    for item in source_references:
+        if isinstance(item, str):
+            source_id = _as_clean_string(item)
+            if source_id and source_id not in seen:
+                seen.add(source_id)
+                output.append(SourceReference(source_id=source_id))
+            continue
+
+        if not isinstance(item, dict):
+            continue
+
+        source_id = _as_clean_string(item.get("source_id") or item.get("id"))
+        if not source_id or source_id in seen:
+            continue
+
+        seen.add(source_id)
+        output.append(
+            SourceReference(
+                source_id=source_id,
+                title=_as_clean_string(item.get("title")) or source_id,
+                url=_as_clean_string(item.get("url") or item.get("canonical_url")) or "",
+            )
+        )
+
+    return output[:MAX_SOURCE_REFERENCES]
 
 
 def _normalize_coverage_signal(coverage_report: Any) -> CoverageSignal:
@@ -308,6 +343,7 @@ def build_section_synthesis_input(
         source_references=research_section.get("source_references"),
         evidence_items=research_section.get("evidence_items"),
     )
+    source_references = _extract_source_references(research_section.get("source_references"))
 
     planner_context = _extract_planner_context(planner_section)
 
@@ -333,6 +369,7 @@ def build_section_synthesis_input(
         open_questions=open_questions,
         coverage_signal=coverage_signal,
         available_source_ids=available_source_ids,
+        source_references=source_references,
         must_include_code=must_include_code,
         must_include_diagram=must_include_diagram,
         suggested_diagram_type=suggested_diagram_type,

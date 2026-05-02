@@ -7,6 +7,7 @@ from llm_metrics import (
     reserve_llm_call_budget,
 )
 from llm_retry import call_with_rate_limit_retries
+from llm_provider import build_chat_messages, json_response_format_kwargs
 from pydantic import ValidationError
 from planner_agent.config import get_client, get_model_name
 from planner_agent.outline_prompt import (
@@ -25,10 +26,11 @@ class ChapterOutlineNode:
 
     def _generate_raw(self, request: UserBookRequest, context: PlanningContext) -> str:
         prompt = build_chapter_outline_prompt(request, context)
-        messages = [
-            {"role": "system", "content": CHAPTER_OUTLINE_SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ]
+        messages = build_chat_messages(
+            model=self.model_name,
+            system_prompt=CHAPTER_OUTLINE_SYSTEM_PROMPT,
+            user_prompt=prompt,
+        )
         completion_limit = get_completion_token_limit("planner")
         prompt_estimate = reserve_llm_call_budget(
             layer="planner",
@@ -43,8 +45,8 @@ class ChapterOutlineNode:
                 lambda: self.client.chat.completions.create(
                     model=self.model_name,
                     temperature=0.2,
-                    response_format={"type": "json_object"},
                     messages=messages,
+                    **json_response_format_kwargs(self.model_name),
                     **completion_limit_kwargs("planner"),
                 )
             )
@@ -171,7 +173,11 @@ class ChapterOutlineNode:
 
     def _should_retry_without_provider_json_mode(self, exc: Exception) -> bool:
         message = str(exc).lower()
-        return "json_validate_failed" in message or "failed to validate json" in message
+        return (
+            "json_validate_failed" in message
+            or "failed to validate json" in message
+            or "json mode is not enabled" in message
+        )
 
     def run(
         self,

@@ -47,6 +47,16 @@ class SourceTraceItem(BaseModel):
         return deduped
 
 
+class SourceReference(BaseModel):
+    """Compact source link carried forward for further-reading lists."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    source_id: str = Field(..., min_length=1)
+    title: str = Field(default="")
+    url: str = Field(default="")
+
+
 class SupportingFact(BaseModel):
     """
     Compact factual statement the writer may use as grounded support.
@@ -157,6 +167,10 @@ class SectionSynthesisInput(BaseModel):
     available_source_ids: List[str] = Field(
         default_factory=list,
         description="All source IDs allowed for downstream citation usage.",
+    )
+    source_references: List[SourceReference] = Field(
+        default_factory=list,
+        description="Compact source metadata for links/further reading.",
     )
 
     # --- Content requirement flags from planner ---
@@ -331,6 +345,10 @@ class SectionNoteArtifact(BaseModel):
     source_trace: List[SourceTraceItem] = Field(
         default_factory=list,
         description="Minimal traceability from note elements to source IDs.",
+    )
+    reference_links: List[SourceReference] = Field(
+        default_factory=list,
+        description="Best source links the writer can include as further reading.",
     )
 
     @field_validator(

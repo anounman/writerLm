@@ -11,12 +11,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from planner_agent.schemas import BookPlan, ChapterPlan, SectionPlan
 
+from assembler.compiler import compile_latex_file
 from assembler.ids import build_section_id
 from assembler.io import (
     load_book_plan,
     load_review_bundle,
     save_book_plan,
     save_assembly_bundle,
+    save_latex_compile_result,
     save_latex_manuscript,
 )
 from assembler.orchestrator import run_assembler
@@ -35,6 +37,8 @@ REVIEW_BUNDLE_CANDIDATES = [OUTPUTS_DIR / "review_bundle.json", OUTPUTS_DIR / "r
 BOOK_JSON_PATH = OUTPUTS_DIR / "book.json"
 ASSEMBLY_BUNDLE_PATH = REPO_ROOT / "outputs" / "assembly_bundle.json"
 LATEX_OUTPUT_PATH = REPO_ROOT / "outputs" / "book.tex"
+LATEX_BUILD_DIR = REPO_ROOT / "outputs" / "latex_build"
+LATEX_COMPILE_RESULT_PATH = REPO_ROOT / "outputs" / "latex_compile_result.json"
 
 
 @dataclass
@@ -233,6 +237,11 @@ def main() -> None:
 
     save_assembly_bundle(artifacts.assembly_bundle, ASSEMBLY_BUNDLE_PATH)
     save_latex_manuscript(artifacts.latex_manuscript, LATEX_OUTPUT_PATH)
+    latex_compile_result = compile_latex_file(
+        LATEX_OUTPUT_PATH,
+        build_dir=LATEX_BUILD_DIR,
+    )
+    save_latex_compile_result(latex_compile_result, LATEX_COMPILE_RESULT_PATH)
 
     elapsed = time.time() - start_time
 
@@ -242,6 +251,10 @@ def main() -> None:
     print(f"Review bundle: {review_bundle_path}")
     print(f"Assembly bundle: {ASSEMBLY_BUNDLE_PATH}")
     print(f"LaTeX manuscript: {LATEX_OUTPUT_PATH}")
+    print(f"LaTeX compile status: {latex_compile_result.status}")
+    if latex_compile_result.pdf_path:
+        print(f"Compiled PDF: {latex_compile_result.pdf_path}")
+    print(f"LaTeX compile result: {LATEX_COMPILE_RESULT_PATH}")
     print(f"Assembly status: {artifacts.assembly_bundle.metadata.assembly_status.value}")
     print(f"Chapters: {artifacts.assembly_bundle.metadata.chapter_count}")
     print(f"Planned sections: {artifacts.assembly_bundle.metadata.planned_section_count}")

@@ -18,7 +18,11 @@ load_dotenv(REPO_ROOT / ".env")
 
 from planner_agent.schemas import BookPlan
 from researcher.schemas import PlannerSectionRef, SectionResearchPacket
-from llm_provider import resolve_openai_compatible_config
+from llm_provider import (
+    get_default_models_for_layer,
+    get_legacy_model_env_names_by_provider,
+    resolve_openai_compatible_config,
+)
 
 
 def ensure_dir(path: Path) -> None:
@@ -156,14 +160,8 @@ def build_researcher_workflow():
 
     llm_config = resolve_openai_compatible_config(
         layer="researcher",
-        default_models={
-            "groq": "openai/gpt-oss-120b",
-            "google": "gemini-2.5-flash",
-        },
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
-            "google": ("GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
-        },
+        default_models=get_default_models_for_layer("researcher"),
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
     )
 
     llm = GroqStructuredLLM(

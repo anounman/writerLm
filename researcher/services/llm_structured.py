@@ -14,7 +14,11 @@ from llm_metrics import (
     reserve_llm_call_budget,
 )
 from llm_retry import call_with_rate_limit_retries
-from openai import OpenAI
+from llm_provider import (
+    build_chat_messages,
+    build_openai_client,
+    json_response_format_kwargs,
+)
 from pydantic import BaseModel, ValidationError
 from researcher.schemas import EvidenceType, QueryKind, ReflexionAction
 
@@ -37,7 +41,7 @@ class GroqStructuredLLM:
     ) -> None:
         
 
-        self.client = OpenAI(
+        self.client = build_openai_client(
             api_key=api_key,
             base_url=base_url or os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
         )
@@ -77,13 +81,11 @@ class GroqStructuredLLM:
         response_model: Type[T],
         attempt: int = 1,
     ) -> str:
-        messages = [
-            {
-                "role": "system",
-                "content": self._build_system_prompt(system_prompt, response_model),
-            },
-            {"role": "user", "content": user_prompt.strip()},
-        ]
+        messages = build_chat_messages(
+            model=self.model,
+            system_prompt=self._build_system_prompt(system_prompt, response_model),
+            user_prompt=user_prompt,
+        )
         completion_limit = get_completion_token_limit("researcher")
         prompt_estimate = reserve_llm_call_budget(
             layer="researcher",
@@ -101,8 +103,8 @@ class GroqStructuredLLM:
                 lambda: self.client.chat.completions.create(
                     model=self.model,
                     temperature=self.temperature,
-                    response_format={"type": "json_object"},
                     messages=messages,
+                    **json_response_format_kwargs(self.model),
                     **completion_limit_kwargs("researcher"),
                 )
             )

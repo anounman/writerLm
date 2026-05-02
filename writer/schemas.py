@@ -90,6 +90,10 @@ class WriterSectionInput(BaseModel):
     writer_guidance: List[str] = Field(default_factory=list)
 
     allowed_citation_source_ids: List[str] = Field(default_factory=list)
+    reference_links: List[dict] = Field(
+        default_factory=list,
+        description="Reader-facing links: {source_id, title, url}.",
+    )
 
 
 # -----------------------------

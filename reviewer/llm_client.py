@@ -10,9 +10,14 @@ from llm_metrics import (
     reserve_llm_call_budget,
 )
 from llm_retry import call_with_rate_limit_retries
-from openai import OpenAI
-
-from llm_provider import resolve_openai_compatible_config
+from llm_provider import (
+    build_chat_messages,
+    build_openai_client,
+    get_default_models_for_layer,
+    get_legacy_model_env_names_by_provider,
+    json_response_format_kwargs,
+    resolve_openai_compatible_config,
+)
 from .node import LLMClientProtocol
 
 
@@ -27,16 +32,17 @@ class OpenAICompatibleReviewerClient(LLMClientProtocol):
     ) -> None:
         self.model = model
         self.temperature = temperature
-        self.client = OpenAI(
+        self.client = build_openai_client(
             api_key=api_key,
             base_url=base_url,
         )
 
     def generate(self, *, system_prompt: str, user_prompt: str) -> str:
-        messages = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ]
+        messages = build_chat_messages(
+            model=self.model,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+        )
         completion_limit = get_completion_token_limit("reviewer")
         prompt_estimate = reserve_llm_call_budget(
             layer="reviewer",
@@ -52,8 +58,8 @@ class OpenAICompatibleReviewerClient(LLMClientProtocol):
                 lambda: self.client.chat.completions.create(
                     model=self.model,
                     temperature=self.temperature,
-                    response_format={"type": "json_object"},
                     messages=messages,
+                    **json_response_format_kwargs(self.model),
                     **completion_limit_kwargs("reviewer"),
                 )
             )
@@ -108,15 +114,11 @@ class OpenAICompatibleReviewerClient(LLMClientProtocol):
 def build_reviewer_llm_client() -> OpenAICompatibleReviewerClient:
     config = resolve_openai_compatible_config(
         layer="reviewer",
-        default_models={
-            "groq": os.environ.get("REVIEWER_MODEL", "openai/gpt-oss-120b"),
-            "google": os.environ.get("REVIEWER_GOOGLE_MODEL", os.environ.get("GOOGLE_MODEL", "gemini-2.5-flash")),
-        },
-        legacy_env_names=("REVIEWER_MODEL",),
-        legacy_env_names_by_provider={
-            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
-            "google": ("REVIEWER_GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
-        },
+        default_models=get_default_models_for_layer("reviewer"),
+        legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(
+            google_extra=("REVIEWER_GOOGLE_MODEL",),
+            groq_extra=("REVIEWER_MODEL",),
+        ),
     )
     temperature = float(os.environ.get("REVIEWER_TEMPERATURE", "0.2"))
 
