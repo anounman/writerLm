@@ -45,11 +45,32 @@ def run_reviewer(
             )
         )
 
+    # Compute average quality scores
+    practicality_scores = []
+    code_coverage_scores = []
+    learning_depth_scores = []
+    visual_richness_scores = []
+
+    for result in completed_sections:
+        qs = result.section_output.quality_scores
+        if qs is not None:
+            practicality_scores.append(qs.practicality_score)
+            code_coverage_scores.append(qs.code_coverage_score)
+            learning_depth_scores.append(qs.learning_depth_score)
+            visual_richness_scores.append(qs.visual_richness_score)
+
+    def _avg(values: list[int]) -> float | None:
+        return round(sum(values) / len(values), 2) if values else None
+
     metadata = ReviewBundleMetadata(
         total_sections=len(completed_sections),
         approved_sections=approved_count,
         revised_sections=revised_count,
         flagged_sections=flagged_count,
+        avg_practicality_score=_avg(practicality_scores),
+        avg_code_coverage_score=_avg(code_coverage_scores),
+        avg_learning_depth_score=_avg(learning_depth_scores),
+        avg_visual_richness_score=_avg(visual_richness_scores),
     )
 
     return ReviewBundle(

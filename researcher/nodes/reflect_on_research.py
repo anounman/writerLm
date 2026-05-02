@@ -8,6 +8,7 @@ from researcher.constants import (
     MIN_DISTINCT_EVIDENCE_TYPES_FOR_SUFFICIENT_COVERAGE,
     MIN_EVIDENCE_ITEMS_PER_SECTION,
     MIN_SOURCE_COUNT_FOR_SUFFICIENT_COVERAGE,
+    USE_LLM_REFLEXION,
 )
 from researcher.schemas import (
     CoverageReport,
@@ -233,6 +234,16 @@ class ReflectOnResearchNode:
             return state
 
         heuristic_coverage_status = self._heuristic_coverage_status(state)
+        if not USE_LLM_REFLEXION:
+            state.coverage_report = self._build_fallback_coverage_report(
+                state,
+                heuristic_coverage_status=heuristic_coverage_status,
+            )
+            state.reflexion_decision = self._build_fallback_decision(
+                state,
+                heuristic_coverage_status=heuristic_coverage_status,
+            )
+            return state
 
         user_prompt = build_reflect_on_research_user_prompt(
             section_id=state.research_task.section.section_id,

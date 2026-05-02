@@ -3,8 +3,17 @@ from __future__ import annotations
 from enum import Enum
 import json
 import os
+import time
 from typing import Any, Optional, Type, TypeVar, get_args, get_origin
 
+from llm_metrics import (
+    completion_limit_kwargs,
+    get_completion_token_limit,
+    record_llm_call,
+    record_llm_validation_error,
+    reserve_llm_call_budget,
+)
+from llm_retry import call_with_rate_limit_retries
 from openai import OpenAI
 from pydantic import BaseModel, ValidationError
 
@@ -58,24 +67,88 @@ class GroqStructuredLLM:
         system_prompt: str,
         user_prompt: str,
         response_model: Type[T],
+        attempt: int = 1,
     ) -> str:
-        response = self.client.chat.completions.create(
+        messages = [
+            {
+                "role": "system",
+                "content": self._build_system_prompt(system_prompt, response_model),
+            },
+            {"role": "user", "content": user_prompt.strip()},
+        ]
+        completion_limit = get_completion_token_limit("writer")
+        prompt_estimate = reserve_llm_call_budget(
+            layer="writer",
+            operation="structured_generation",
             model=self.model,
-            temperature=self.temperature,
-            response_format={"type": "json_object"},
-            messages=[
-                {
-                    "role": "system",
-                    "content": self._build_system_prompt(system_prompt, response_model),
-                },
-                {"role": "user", "content": user_prompt.strip()},
-            ],
+            messages=messages,
+            attempt=attempt,
+            response_model=response_model.__name__,
+            completion_token_limit=completion_limit,
         )
+
+        start_time = time.perf_counter()
+        try:
+            response = call_with_rate_limit_retries(
+                lambda: self.client.chat.completions.create(
+                    model=self.model,
+                    temperature=self.temperature,
+                    response_format={"type": "json_object"},
+                    messages=messages,
+                    **completion_limit_kwargs("writer"),
+                )
+            )
+        except Exception as exc:
+            record_llm_call(
+                layer="writer",
+                operation="structured_generation",
+                model=self.model,
+                messages=messages,
+                response=None,
+                completion_text=None,
+                elapsed_seconds=time.perf_counter() - start_time,
+                success=False,
+                attempt=attempt,
+                response_model=response_model.__name__,
+                error=str(exc),
+                prompt_estimate_tokens=prompt_estimate,
+                completion_token_limit=completion_limit,
+            )
+            raise
 
         content = response.choices[0].message.content
         if not content or not content.strip():
+            record_llm_call(
+                layer="writer",
+                operation="structured_generation",
+                model=self.model,
+                messages=messages,
+                response=response,
+                completion_text=content,
+                elapsed_seconds=time.perf_counter() - start_time,
+                success=False,
+                attempt=attempt,
+                response_model=response_model.__name__,
+                error="Empty response from model.",
+                prompt_estimate_tokens=prompt_estimate,
+                completion_token_limit=completion_limit,
+            )
             raise StructuredLLMError("Empty response from model.")
 
+        record_llm_call(
+            layer="writer",
+            operation="structured_generation",
+            model=self.model,
+            messages=messages,
+            response=response,
+            completion_text=content,
+            elapsed_seconds=time.perf_counter() - start_time,
+            success=True,
+            attempt=attempt,
+            response_model=response_model.__name__,
+            prompt_estimate_tokens=prompt_estimate,
+            completion_token_limit=completion_limit,
+        )
         return content.strip()
 
     def _parse_json(self, raw_text: str) -> Any:
@@ -137,11 +210,20 @@ class GroqStructuredLLM:
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
                     response_model=response_model,
+                    attempt=attempt + 1,
                 )
                 parsed = self._parse_json(raw)
                 return response_model.model_validate(parsed)
             except (ValidationError, StructuredLLMError) as e:
                 last_error = e
+                record_llm_validation_error(
+                    layer="writer",
+                    operation="structured_generation",
+                    model=self.model,
+                    attempt=attempt + 1,
+                    response_model=response_model.__name__,
+                    error=str(e),
+                )
 
         raise StructuredLLMError(
             f"Failed after retries. Last error: {str(last_error)}"

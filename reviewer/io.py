@@ -72,8 +72,12 @@ def build_reviewer_tasks(
             ],
             writer_guidance=list(note_section.writer_guidance),
             allowed_citation_source_ids=list(note_section.allowed_citation_source_ids),
+            must_include_code=getattr(note_section, "must_include_code", False),
+            must_include_diagram=getattr(note_section, "must_include_diagram", False),
             writer_content=writer_section.content,
             writer_citations_used=list(writer_section.citations_used),
+            writer_code_blocks_count=getattr(writer_section, "code_blocks_count", 0),
+            writer_diagram_hints_count=len(getattr(writer_section, "diagram_hints", []) or []),
             writing_status=writer_section.writing_status,
         )
 

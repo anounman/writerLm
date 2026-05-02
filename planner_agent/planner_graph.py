@@ -19,7 +19,7 @@ assembler = BookPlanAssembler()
 def build_scope_node(state: PlannerState) -> dict:
     request = state["request"]
 
-    discovery_bundle = search_tools.run_planner_discovery(request.topic)
+    discovery_bundle = search_tools.run_planner_discovery(request)
     planning_context = scope_builder.build_context(
         request=request,
         discovery_bundle=discovery_bundle,
@@ -88,6 +88,7 @@ def assemble_book_node(state: PlannerState) -> dict:
         request=request,
         chapter_section_plans=chapter_section_plans,
         title=chapter_outline.title,
+        running_project=getattr(chapter_outline, "running_project", None),
     )
 
     return {

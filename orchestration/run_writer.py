@@ -19,6 +19,7 @@ from writer.graph import build_writer_graph, initialize_writer_state
 from writer.llm import GroqStructuredLLM
 from writer.schemas import WritingStatus, WriterSectionInput
 from writer.state import WriterInput, WriterSectionTask, WriterState
+from llm_provider import resolve_openai_compatible_config
 
 
 INPUT_PATH = REPO_ROOT / "outputs" / "notes_bundle.json"
@@ -53,6 +54,11 @@ def build_tasks_from_notes_bundle(bundle: dict[str, Any]) -> List[WriterSectionT
                 core_points=note.get("core_points") or [],
                 supporting_facts=note.get("supporting_facts") or [],
                 examples=note.get("examples") or [],
+                code_snippets=note.get("code_snippets") or [],
+                diagram_suggestions=note.get("diagram_suggestions") or [],
+                implementation_steps=note.get("implementation_steps") or [],
+                must_include_code=note.get("must_include_code", False),
+                must_include_diagram=note.get("must_include_diagram", False),
                 important_caveats=note.get("important_caveats") or [],
                 unresolved_gaps=note.get("unresolved_gaps") or [],
                 recommended_flow=note.get("recommended_flow") or [],
@@ -90,9 +96,21 @@ def main() -> None:
         print("No Writer tasks created.")
         raise SystemExit(1)
 
+    llm_config = resolve_openai_compatible_config(
+        layer="writer",
+        default_models={
+            "groq": "llama-3.3-70b-versatile",
+            "google": "gemini-2.5-flash",
+        },
+        legacy_env_names_by_provider={
+            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
+            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
+        },
+    )
     llm = GroqStructuredLLM(
-        api_key=os.getenv("GROQ_API_KEY"),
-        model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        api_key=llm_config.api_key,
+        model=llm_config.model,
+        base_url=llm_config.base_url,
     )
 
     input_data = WriterInput(

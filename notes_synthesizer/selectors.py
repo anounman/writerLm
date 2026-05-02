@@ -311,6 +311,17 @@ def build_section_synthesis_input(
 
     planner_context = _extract_planner_context(planner_section)
 
+    # Extract content requirements from planner section
+    content_reqs = planner_section.get("content_requirements") or {}
+    must_include_code = False
+    must_include_diagram = False
+    suggested_diagram_type = None
+
+    if isinstance(content_reqs, dict):
+        must_include_code = bool(content_reqs.get("must_include_code", False))
+        must_include_diagram = bool(content_reqs.get("must_include_diagram", False))
+        suggested_diagram_type = _as_clean_string(content_reqs.get("suggested_diagram_type"))
+
     return SectionSynthesisInput(
         section_id=section_id,
         section_title=section_title,
@@ -322,4 +333,7 @@ def build_section_synthesis_input(
         open_questions=open_questions,
         coverage_signal=coverage_signal,
         available_source_ids=available_source_ids,
+        must_include_code=must_include_code,
+        must_include_diagram=must_include_diagram,
+        suggested_diagram_type=suggested_diagram_type,
     )

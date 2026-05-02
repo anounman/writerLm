@@ -189,6 +189,8 @@ def _filter_book_plan_to_section_ids(book_plan: BookPlan, allowed_section_ids: s
                         goal=section.goal,
                         key_questions=list(section.key_questions),
                         estimated_words=section.estimated_words,
+                        content_requirements=section.content_requirements,
+                        builds_on=section.builds_on,
                     )
                 )
 
@@ -199,6 +201,7 @@ def _filter_book_plan_to_section_ids(book_plan: BookPlan, allowed_section_ids: s
                     title=chapter.title,
                     chapter_goal=chapter.chapter_goal,
                     sections=filtered_sections,
+                    project_milestone=chapter.project_milestone,
                 )
             )
 
@@ -208,6 +211,7 @@ def _filter_book_plan_to_section_ids(book_plan: BookPlan, allowed_section_ids: s
         tone=book_plan.tone,
         depth=book_plan.depth,
         chapters=filtered_chapters,
+        running_project=book_plan.running_project,
     )
 
 

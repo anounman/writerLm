@@ -14,6 +14,7 @@ from researcher.registry.source_registry import SourceRegistry
 from researcher.schemas import DiscoveredSource, SourceType
 from researcher.services.tavily_client import TavilySearchClient, TavilySearchError
 from researcher.state import ResearcherState
+from researcher.utils.urls import canonicalize_url
 
 
 class DiscoverSourcesNode:
@@ -87,7 +88,7 @@ class DiscoverSourcesNode:
                 continue
 
             for source in discovered:
-                normalized_url = str(source.url).strip().lower()
+                normalized_url = canonicalize_url(str(source.url))
                 if not normalized_url or normalized_url in seen_urls:
                     continue
                 if self._should_skip_source(source):

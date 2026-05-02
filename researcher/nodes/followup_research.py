@@ -8,6 +8,7 @@ from researcher.constants import (
     FIRECRAWL_FALLBACK_MIN_TEXT_CHARS,
     MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS,
 )
+from researcher.nodes.fetch_sources import FetchSourcesNode
 from researcher.registry.source_registry import SourceRegistry, SourceRegistryError
 from researcher.schemas import (
     DiscoveredSource,
@@ -28,6 +29,7 @@ from researcher.services.tavily_client import TavilySearchClient, TavilySearchEr
 from researcher.services.web_extractor import WebExtractionError, WebExtractor
 from researcher.state import ResearcherState
 from researcher.utils.ids import make_evidence_id
+from researcher.utils.urls import canonicalize_url
 
 
 class FollowupResearchNode:
@@ -61,6 +63,13 @@ class FollowupResearchNode:
         self.firecrawl_client = firecrawl_client
         self.allow_partial_failures = allow_partial_failures
         self.enable_firecrawl_fallback = enable_firecrawl_fallback
+        self.fetch_sources_node = FetchSourcesNode(
+            web_extractor=web_extractor,
+            pdf_extractor=pdf_extractor,
+            firecrawl_client=firecrawl_client,
+            allow_partial_failures=allow_partial_failures,
+            enable_firecrawl_fallback=enable_firecrawl_fallback,
+        )
 
     def run(self, state: ResearcherState) -> ResearcherState:
         """
@@ -84,7 +93,7 @@ class FollowupResearchNode:
 
         registry = self._build_registry_from_state(state)
         seen_urls = {
-            str(source.url).strip().lower() for source in state.discovered_sources
+            canonicalize_url(str(source.url)) for source in state.discovered_sources
         }
         seen_evidence_keys = {
             self._evidence_dedupe_key(item.content) for item in state.evidence_items
@@ -124,7 +133,7 @@ class FollowupResearchNode:
                 continue
 
             for source in discovered_sources:
-                normalized_url = str(source.url).strip().lower()
+                normalized_url = canonicalize_url(str(source.url))
                 if not normalized_url or normalized_url in seen_urls:
                     continue
 
@@ -133,18 +142,17 @@ class FollowupResearchNode:
                 registry.register_discovered_source(source)
                 discovered_count += 1
 
-                try:
-                    document = self._fetch_one_source(source)
-                except Exception as exc:
+                _, document, fetch_error = self.fetch_sources_node.fetch_sources([source])[0]
+                if fetch_error is not None:
                     message = (
                         f"Failed to fetch follow-up source '{source.source_id}' "
-                        f"({source.url}): {exc}"
+                        f"({source.url}): {fetch_error}"
                     )
                     if self.allow_partial_failures:
                         state.add_warning(message)
                         registry.add_reliability_note(
                             source_id=source.source_id,
-                            note=f"followup_fetch_failed: {exc}",
+                            note=f"followup_fetch_failed: {fetch_error}",
                         )
                         if discovered_count >= max_additional_sources:
                             break
@@ -153,6 +161,7 @@ class FollowupResearchNode:
                     state.add_error(message)
                     return state
 
+                assert document is not None
                 newly_fetched.append(document)
                 registry.register_source_document(
                     source_document=document,

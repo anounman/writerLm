@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from researcher.constants import MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS
+from researcher.constants import (
+    MAX_SOURCE_TEXT_CHARS_FOR_SINGLE_PASS,
+    USE_LLM_EVIDENCE_EXTRACTION,
+)
 from researcher.schemas import (
     EvidenceItem,
     EvidenceType,
@@ -152,23 +155,29 @@ class ExtractEvidenceNode:
         all_evidence_items: list[EvidenceItem] = []
 
         for document in state.fetched_documents:
-            try:
-                extracted_items = self._extract_from_one_document(
+            if USE_LLM_EVIDENCE_EXTRACTION:
+                try:
+                    extracted_items = self._extract_from_one_document(
+                        document=document,
+                        state=state,
+                    )
+                except Exception as exc:
+                    state.add_warning(
+                        f"Evidence extraction failed for source '{document.source_id}': {exc}"
+                    )
+                    try:
+                        registry.add_reliability_note(
+                            source_id=document.source_id,
+                            note=f"evidence_extraction_failed: {exc}",
+                        )
+                    except SourceRegistryError:
+                        pass
+                    continue
+            else:
+                extracted_items = self._extract_fallback_from_one_document(
                     document=document,
                     state=state,
                 )
-            except Exception as exc:
-                state.add_warning(
-                    f"Evidence extraction failed for source '{document.source_id}': {exc}"
-                )
-                try:
-                    registry.add_reliability_note(
-                        source_id=document.source_id,
-                        note=f"evidence_extraction_failed: {exc}",
-                    )
-                except SourceRegistryError:
-                    pass
-                continue
 
             for item in extracted_items:
                 all_evidence_items.append(item)
@@ -227,6 +236,84 @@ class ExtractEvidenceNode:
             section_id=state.research_task.section.section_id,
             candidates=llm_output.evidence_items,
         )
+
+    def _extract_fallback_from_one_document(
+        self,
+        *,
+        document: SourceDocument,
+        state: ResearcherState,
+    ) -> list[EvidenceItem]:
+        assert state.research_task is not None
+
+        source_text = self._clean_text(
+            self._truncate_source_text(document.text)
+        )
+        if not source_text:
+            return []
+
+        chunks = self._fallback_evidence_chunks(source_text)
+        evidence_types = [
+            EvidenceType.DEFINITION,
+            EvidenceType.FACT,
+            EvidenceType.EXAMPLE,
+        ]
+
+        items: list[EvidenceItem] = []
+        for index, chunk in enumerate(chunks, start=1):
+            evidence_type = evidence_types[(index - 1) % len(evidence_types)]
+            items.append(
+                EvidenceItem(
+                    evidence_id=make_evidence_id(
+                        document.source_id,
+                        evidence_type.value,
+                        index,
+                    ),
+                    source_id=document.source_id,
+                    section_id=state.research_task.section.section_id,
+                    evidence_type=evidence_type,
+                    content=chunk,
+                    summary=f"Evidence extracted from {document.title}.",
+                    relevance_note=(
+                        "Supports the practical research objective for "
+                        f"{state.research_task.section.section_title}."
+                    ),
+                    confidence=0.55,
+                    tags=[state.research_task.section.section_title],
+                )
+            )
+
+        return items
+
+    def _fallback_evidence_chunks(self, text: str) -> list[str]:
+        paragraphs = [
+            self._clean_text(part)
+            for part in text.split("\n")
+            if self._clean_text(part)
+        ]
+        if not paragraphs:
+            paragraphs = [text]
+
+        chunks: list[str] = []
+        for paragraph in paragraphs:
+            if len(paragraph) < 80 and len(paragraph.split()) < 8:
+                continue
+            chunks.append(paragraph[:700].strip())
+            if len(chunks) >= 3:
+                break
+
+        if len(chunks) < 3 and len(text) > 700:
+            for start in range(0, min(len(text), 2100), 700):
+                chunk = text[start : start + 700].strip()
+                if not chunk or chunk in chunks:
+                    continue
+                chunks.append(chunk)
+                if len(chunks) >= 3:
+                    break
+
+        if chunks:
+            return chunks
+
+        return [text[:700].strip()]
 
     def _normalize_evidence_items(
         self,

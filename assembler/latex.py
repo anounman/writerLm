@@ -70,6 +70,71 @@ def _render_preamble() -> str:
             "\\usepackage{hyperref}",
             "\\usepackage{bookmark}",
             "\\usepackage{enumitem}",
+            "\\usepackage{listings}",
+            "\\usepackage{xcolor}",
+            "\\usepackage{graphicx}",
+            "\\usepackage{float}",
+            "\\usepackage{tikz}",
+            "\\usepackage{pgfplots}",
+            "\\pgfplotsset{compat=1.18}",
+            "\\usepackage{tcolorbox}",
+            "\\tcbuselibrary{listings,skins}",
+            "",
+            "% Code listing style",
+            "\\definecolor{codebg}{RGB}{245,245,245}",
+            "\\definecolor{codeframe}{RGB}{200,200,200}",
+            "\\definecolor{codecomment}{RGB}{106,153,85}",
+            "\\definecolor{codestring}{RGB}{163,21,21}",
+            "\\definecolor{codekeyword}{RGB}{0,0,200}",
+            "",
+            "\\lstdefinestyle{bookcode}{",
+            "  backgroundcolor=\\color{codebg},",
+            "  frame=single,",
+            "  rulecolor=\\color{codeframe},",
+            "  basicstyle=\\ttfamily\\small,",
+            "  keywordstyle=\\color{codekeyword}\\bfseries,",
+            "  commentstyle=\\color{codecomment}\\itshape,",
+            "  stringstyle=\\color{codestring},",
+            "  showstringspaces=false,",
+            "  breaklines=true,",
+            "  breakatwhitespace=true,",
+            "  tabsize=4,",
+            "  numbers=left,",
+            "  numberstyle=\\tiny\\color{gray},",
+            "  numbersep=8pt,",
+            "  xleftmargin=2em,",
+            "  framexleftmargin=1.5em,",
+            "  captionpos=b,",
+            "}",
+            "\\lstset{style=bookcode}",
+            "",
+            "% Diagram placeholder box",
+            "\\newtcolorbox{diagramplaceholder}[2][]{",
+            "  colback=blue!5!white,",
+            "  colframe=blue!40!white,",
+            "  title={#2},",
+            "  fonttitle=\\bfseries,",
+            "  #1",
+            "}",
+            "",
+            "% Exercise box",
+            "\\newtcolorbox{exercisebox}[1][]{",
+            "  colback=green!5!white,",
+            "  colframe=green!40!white,",
+            "  title={Try It Yourself},",
+            "  fonttitle=\\bfseries,",
+            "  #1",
+            "}",
+            "",
+            "% Common mistakes box",
+            "\\newtcolorbox{gotchabox}[1][]{",
+            "  colback=red!5!white,",
+            "  colframe=red!40!white,",
+            "  title={Common Mistakes},",
+            "  fonttitle=\\bfseries,",
+            "  #1",
+            "}",
+            "",
             "\\KOMAoptions{parskip=half}",
             "\\setlist[itemize]{leftmargin=2em}",
             "\\setlist[enumerate]{leftmargin=2em}",
@@ -134,18 +199,115 @@ def _render_section(section: AssembledSection) -> str:
 
 
 def _render_content_blocks(text: str) -> str:
-    blocks = _split_blocks(_prepare_text(text))
+    prepared = _prepare_text(text)
+    segments = _split_code_and_text(prepared)
     rendered_blocks: list[str] = []
 
-    for block in blocks:
-        if _is_bullet_list(block):
-            rendered_blocks.append(_render_itemize(block))
-        elif _is_enumerated_list(block):
-            rendered_blocks.append(_render_enumerate(block))
+    for segment_type, segment_content in segments:
+        if segment_type == "code":
+            rendered_blocks.append(segment_content)
+        elif segment_type == "diagram":
+            rendered_blocks.append(segment_content)
         else:
-            rendered_blocks.append(_render_paragraph(block))
+            blocks = _split_blocks(segment_content)
+            for block in blocks:
+                if _is_bullet_list(block):
+                    rendered_blocks.append(_render_itemize(block))
+                elif _is_enumerated_list(block):
+                    rendered_blocks.append(_render_enumerate(block))
+                else:
+                    rendered_blocks.append(_render_paragraph(block))
 
     return "\n\n".join(block for block in rendered_blocks if block.strip())
+
+
+def _split_code_and_text(text: str) -> list[tuple[str, str]]:
+    """Split text into segments: ('text', content), ('code', latex), ('diagram', latex)."""
+    segments: list[tuple[str, str]] = []
+    lines = text.split("\n")
+    i = 0
+    current_text_lines: list[str] = []
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Check for fenced code block: ```language
+        if line.strip().startswith("```") and not line.strip() == "```":
+            # Flush accumulated text
+            if current_text_lines:
+                segments.append(("text", "\n".join(current_text_lines)))
+                current_text_lines = []
+
+            lang_hint = line.strip().lstrip("`").strip().lower()
+            code_lines: list[str] = []
+            i += 1
+            while i < len(lines) and not lines[i].strip().startswith("```"):
+                code_lines.append(lines[i])
+                i += 1
+            if i < len(lines):
+                i += 1  # skip closing ```
+
+            code_content = "\n".join(code_lines)
+            latex_lang = _map_language_to_lstlisting(lang_hint)
+            latex_code = (
+                f"\\begin{{lstlisting}}[language={latex_lang}]\n"
+                f"{code_content}\n"
+                f"\\end{{lstlisting}}"
+            )
+            segments.append(("code", latex_code))
+            continue
+
+        # Check for DIAGRAM: hint
+        if line.strip().startswith("DIAGRAM:"):
+            if current_text_lines:
+                segments.append(("text", "\n".join(current_text_lines)))
+                current_text_lines = []
+
+            diagram_title = line.strip()[len("DIAGRAM:"):].strip()
+            desc_lines: list[str] = []
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith("DIAGRAM:") and not lines[i].strip().startswith("```"):
+                desc_lines.append(lines[i].strip())
+                i += 1
+
+            description = " ".join(desc_lines) if desc_lines else diagram_title
+            safe_title = _escape_latex(diagram_title) if diagram_title else "Diagram"
+            safe_desc = _escape_latex(description)
+
+            latex_diagram = (
+                f"\\begin{{diagramplaceholder}}{{{safe_title}}}\n"
+                f"{safe_desc}\n"
+                f"\\end{{diagramplaceholder}}"
+            )
+            segments.append(("diagram", latex_diagram))
+            continue
+
+        current_text_lines.append(line)
+        i += 1
+
+    if current_text_lines:
+        segments.append(("text", "\n".join(current_text_lines)))
+
+    return segments
+
+
+def _map_language_to_lstlisting(lang_hint: str) -> str:
+    """Map a fenced code block language hint to lstlisting language name."""
+    mapping = {
+        "python": "Python",
+        "py": "Python",
+        "bash": "bash",
+        "sh": "bash",
+        "shell": "bash",
+        "javascript": "JavaScript",
+        "js": "JavaScript",
+        "json": "Python",
+        "sql": "SQL",
+        "text": "",
+        "output": "",
+        "": "",
+    }
+    return mapping.get(lang_hint, "")
 
 
 def _render_itemize(lines: list[str]) -> str:

@@ -159,6 +159,20 @@ class SectionSynthesisInput(BaseModel):
         description="All source IDs allowed for downstream citation usage.",
     )
 
+    # --- Content requirement flags from planner ---
+    must_include_code: bool = Field(
+        default=False,
+        description="Whether the planner requires code in this section.",
+    )
+    must_include_diagram: bool = Field(
+        default=False,
+        description="Whether the planner requires a diagram in this section.",
+    )
+    suggested_diagram_type: Optional[str] = Field(
+        default=None,
+        description="Planner hint for diagram type.",
+    )
+
     @field_validator("key_concepts", "evidence_items", "writing_guidance", "open_questions", "available_source_ids")
     @classmethod
     def strip_and_remove_empty(cls, value: List[str]) -> List[str]:
@@ -172,6 +186,77 @@ class SectionSynthesisInput(BaseModel):
                 seen.add(normalized)
                 cleaned.append(normalized)
         return cleaned
+
+
+class CodeSnippet(BaseModel):
+    """A code snippet extracted from research or synthesized for the section."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    language: str = Field(
+        default="python",
+        description="Programming language of the snippet.",
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        description="What this code demonstrates.",
+    )
+    code: str = Field(
+        ...,
+        min_length=1,
+        description="The actual code content.",
+    )
+    source_ids: List[str] = Field(
+        default_factory=list,
+        description="Source IDs this code is derived from.",
+    )
+
+
+class DiagramSuggestion(BaseModel):
+    """A diagram or visualization the writer should produce for this section."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    diagram_type: str = Field(
+        ...,
+        description="Type: flowchart, architecture, sequence_diagram, comparison_table, data_flow, graph.",
+    )
+    title: str = Field(
+        ...,
+        min_length=1,
+        description="Short title for the diagram.",
+    )
+    description: str = Field(
+        ...,
+        min_length=1,
+        description="What the diagram should show.",
+    )
+    elements: List[str] = Field(
+        default_factory=list,
+        description="Key elements/nodes/columns the diagram should contain.",
+    )
+
+
+class ImplementationStep(BaseModel):
+    """A concrete implementation step the reader should follow."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    step_number: int = Field(..., ge=1)
+    action: str = Field(
+        ...,
+        min_length=1,
+        description="What to do (e.g., 'Install dependencies', 'Create the retriever class').",
+    )
+    detail: str = Field(
+        default="",
+        description="Additional detail or explanation for this step.",
+    )
+    has_code: bool = Field(
+        default=False,
+        description="Whether this step involves writing code.",
+    )
 
 
 class SectionNoteArtifact(BaseModel):
@@ -201,6 +286,30 @@ class SectionNoteArtifact(BaseModel):
 
     supporting_facts: List[SupportingFact] = Field(default_factory=list)
     examples: List[ExampleNote] = Field(default_factory=list)
+
+    # --- New fields for practical book generation ---
+    code_snippets: List[CodeSnippet] = Field(
+        default_factory=list,
+        description="Code snippets the writer should include or adapt.",
+    )
+    diagram_suggestions: List[DiagramSuggestion] = Field(
+        default_factory=list,
+        description="Diagrams the writer should produce for this section.",
+    )
+    implementation_steps: List[ImplementationStep] = Field(
+        default_factory=list,
+        description="Step-by-step implementation guide for the reader.",
+    )
+
+    # --- Content requirement flags (passed from planner) ---
+    must_include_code: bool = Field(
+        default=False,
+        description="Whether the planner requires code in this section.",
+    )
+    must_include_diagram: bool = Field(
+        default=False,
+        description="Whether the planner requires a diagram in this section.",
+    )
 
     important_caveats: List[str] = Field(
         default_factory=list,

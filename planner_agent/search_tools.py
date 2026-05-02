@@ -1,21 +1,39 @@
 import os
+import re
 from pathlib import Path
 from typing import Any
 import requests
 from dotenv import load_dotenv
 from tavily import TavilyClient
+from tavily.errors import BadRequestError
+
+from planner_agent.schemas import UserBookRequest
 
 
 load_dotenv(Path(os.path.dirname(__file__)) / "../.env")
 
 
 class PlannerSearchTools:
+    MAX_TAVILY_QUERY_LENGTH = 380
+
     def __init__(self, enable_jina_fetch: bool = False) -> None:
         tavli_api_key = os.getenv("TAVILY_API_KEY")
         if not tavli_api_key:
             raise ValueError("TAVILY_API_KEY not found in environment variables.")
         self.tavily_client = TavilyClient(api_key=tavli_api_key)
         self.enable_jina_fetch = enable_jina_fetch
+
+    def _normalize_query_text(self, value: str) -> str:
+        return re.sub(r"\s+", " ", value).strip()
+
+    def _limit_query_length(self, query: str, max_length: int | None = None) -> str:
+        limit = max_length or self.MAX_TAVILY_QUERY_LENGTH
+        normalized = self._normalize_query_text(query)
+        if len(normalized) <= limit:
+            return normalized
+
+        truncated = normalized[: limit - 3].rstrip(" ,;:-")
+        return f"{truncated}..."
 
     def search_web(
         self, query: str, max_results: int = 5, topic: str = "general"
@@ -27,15 +45,32 @@ class PlannerSearchTools:
         - "general" for normal topics
         - "news" only when recency really matters
         """
+        safe_query = self._limit_query_length(query)
 
-        reponse = self.tavily_client.search(
-            query=query,
-            max_results=max_results,
-            topic=topic,
-            search_depth="basic",
-            include_answer=True,
-            include_raw_content=False,
-        )
+        try:
+            reponse = self.tavily_client.search(
+                query=safe_query,
+                max_results=max_results,
+                topic=topic,
+                search_depth="basic",
+                include_answer=True,
+                include_raw_content=False,
+            )
+        except BadRequestError as exc:
+            # Tavily enforces a hard 400-character limit. Retry once with a shorter query
+            # so planner discovery still works even when the user request becomes verbose.
+            if "Query is too long" not in str(exc):
+                raise
+
+            fallback_query = self._limit_query_length(safe_query, max_length=240)
+            reponse = self.tavily_client.search(
+                query=fallback_query,
+                max_results=max_results,
+                topic=topic,
+                search_depth="basic",
+                include_answer=True,
+                include_raw_content=False,
+            )
 
         return reponse
 
@@ -92,13 +127,63 @@ class PlannerSearchTools:
             if page.get("status") == "success" and page.get("content")
         ]
 
-    def run_planner_discovery(self, topic: str) -> dict[str, Any]:
-        queries = {
-            "audience_needs": f"common questions, struggles, FAQ, beginner roadmap for {topic}",
-            "competitor_books": f"best books guides syllabus table of contents for {topic}",
-            "topic_subareas": f"main concepts subtopics branches of {topic}",
-            "structure_frameworks": f"learning roadmap framework curriculum outline for {topic}",
+    def _build_queries(self, request: UserBookRequest) -> dict[str, str]:
+        topic = self._limit_query_length(request.topic, max_length=140)
+        audience = self._limit_query_length(request.audience, max_length=100)
+        goals = self._limit_query_length(
+            "; ".join(request.normalized_goals[:3]) or "None specified",
+            max_length=120,
+        )
+
+        if request.is_focused_beginner_guide:
+            return {
+                "audience_needs": (
+                    f"common beginner questions, struggles, misconceptions, and FAQ for "
+                    f"{topic} for {audience}"
+                ),
+                "minimal_architecture": (
+                    f"simple end-to-end architecture, core components, and mental model for "
+                    f"{topic}"
+                ),
+                "implementation_patterns": (
+                    f"practical tutorial, starter project, walkthrough, or implementation guide for "
+                    f"{topic} with goals: {goals}"
+                ),
+                "debugging_pitfalls": (
+                    f"common beginner mistakes, pitfalls, and debugging tips for {topic}"
+                ),
+            }
+
+        return {
+            "audience_needs": (
+                f"common questions, struggles, FAQ, and learning roadmap for {topic}"
+            ),
+            "implementation_patterns": (
+                f"practical implementation patterns, workflows, and tutorials for {topic}"
+            ),
+            "topic_structure": (
+                f"main concepts, learning progression, and structure for {topic}"
+            ),
+            "common_pitfalls": (
+                f"common mistakes, trade-offs, and practical pitfalls for {topic}"
+            ),
         }
+
+    def run_planner_discovery(self, request: UserBookRequest | str) -> dict[str, Any]:
+        if isinstance(request, UserBookRequest):
+            queries = self._build_queries(request)
+        else:
+            topic = self._limit_query_length(str(request), max_length=180)
+            queries = {
+                "audience_needs": (
+                    f"common questions, struggles, FAQ, and learning roadmap for {topic}"
+                ),
+                "implementation_patterns": (
+                    f"practical implementation patterns, workflows, and tutorials for {topic}"
+                ),
+                "topic_structure": f"main concepts and structure for {topic}",
+                "common_pitfalls": f"common mistakes and pitfalls for {topic}",
+            }
 
         bundle: dict[str, Any] = {}
 

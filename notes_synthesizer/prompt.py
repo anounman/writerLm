@@ -35,13 +35,42 @@ Compression goals:
 ---
 
 Depth and quality rules (CRITICAL):
-- Avoid generic textbook phrasing (e.g., “X is a method that…”).
+- Avoid generic textbook phrasing (e.g., "X is a method that…").
 - Each core point should include at least one of:
   - mechanism (how it works)
   - implication (why it matters)
   - trade-off (cost/benefit)
 - Prefer insight over definition.
 - Do NOT restate obvious or low-value facts unless necessary.
+- Prefer material that helps a practical guide teach the reader to reason about or build the system.
+- Avoid broad survey framing when the section can stay concrete and implementation-relevant.
+
+---
+
+CODE EXTRACTION (CRITICAL FOR PRACTICAL BOOKS):
+- Extract or synthesize code_snippets from evidence when the section involves implementation.
+- Each code snippet must have: language, description, code, and source_ids.
+- Code should be practical, runnable, and focused on one concept.
+- If must_include_code is true but no code is found in evidence, synthesize a minimal illustrative snippet based on the concepts described. Mark source_ids as empty.
+- Prefer Python code unless the topic requires another language.
+- Keep snippets concise (5-30 lines). Not full programs, just the key logic.
+
+---
+
+DIAGRAM SUGGESTIONS (CRITICAL FOR VISUAL LEARNING):
+- Generate diagram_suggestions when the section involves architecture, data flow, comparison, or process.
+- Each suggestion must have: diagram_type, title, description, elements.
+- Valid diagram_types: flowchart, architecture, sequence_diagram, comparison_table, data_flow, graph.
+- If must_include_diagram is true, you MUST produce at least one diagram_suggestion.
+- Focus on diagrams that clarify what words alone cannot.
+
+---
+
+IMPLEMENTATION STEPS:
+- When the section involves building something, produce implementation_steps.
+- Each step must have: step_number, action, detail, has_code.
+- Steps should be sequential and actionable.
+- This helps the Writer produce a step-by-step walkthrough.
 
 ---
 
@@ -70,7 +99,9 @@ Source-grounding rules:
 Writing-flow rules:
 - recommended_flow should be directly usable as a writing plan.
 - Steps should be ordered logically from fundamentals → deeper concepts.
+- For implementation sections, flow should follow: concept → code → output → gotchas.
 - writer_guidance should be practical and actionable.
+- Include guidance about which code snippets and diagrams to use where.
 
 ---
 
@@ -88,6 +119,9 @@ Failure modes to avoid:
 - Repetition of the same idea across multiple fields
 - Overconfident claims with weak evidence
 - Empty or vague core_points
+- Sections with must_include_code=true but no code_snippets
+- Sections with must_include_diagram=true but no diagram_suggestions
+- Pure-text notes when practical content is available
 """.strip()
 
 
@@ -131,6 +165,17 @@ def build_notes_synthesizer_user_prompt(section_input: SectionSynthesisInput) ->
         else "None"
     )
 
+    must_code = getattr(section_input, "must_include_code", False)
+    must_diagram = getattr(section_input, "must_include_diagram", False)
+    suggested_diagram = getattr(section_input, "suggested_diagram_type", None)
+
+    content_req_block = f"""
+CONTENT REQUIREMENTS FROM PLANNER:
+- must_include_code: {str(must_code).lower()}
+- must_include_diagram: {str(must_diagram).lower()}
+- suggested_diagram_type: {suggested_diagram or 'none'}
+"""
+
     return f"""
 SYNTHESIZE SECTION NOTES
 
@@ -139,6 +184,7 @@ Section Title: {section_input.section_title}
 Section Objective: {section_input.section_objective}
 Planner Context: {planner_context}
 Coverage Signal: {section_input.coverage_signal.value}
+{content_req_block}
 
 Key Concepts:
 {key_concepts}
@@ -169,4 +215,11 @@ Instructions:
 - Recommend a practical flow for the downstream Writer.
 - Keep source usage restricted to the allowed citation source IDs only.
 - Be conservative when evidence is incomplete.
+
+PRACTICAL CONTENT INSTRUCTIONS:
+- If must_include_code is true: extract or synthesize at least one code_snippet. Code must be runnable and focused.
+- If must_include_diagram is true: produce at least one diagram_suggestion with type, title, description, and elements.
+- When the section involves building something: produce implementation_steps with sequential, actionable steps.
+- Always include code_snippets and diagram_suggestions when they would help the reader understand, even if not strictly required.
+- Set must_include_code and must_include_diagram on the output to match the planner requirements.
 """.strip()

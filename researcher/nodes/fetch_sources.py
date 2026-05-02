@@ -23,6 +23,7 @@ from researcher.services.pdf_extractor import PDFExtractionError, PDFExtractor
 from researcher.services.web_extractor import WebExtractionError, WebExtractor
 from researcher.state import ResearcherState
 from researcher.utils.hashing import stable_url_hash
+from researcher.utils.urls import canonicalize_url
 
 
 class FetchSourcesNode:
@@ -177,6 +178,15 @@ class FetchSourcesNode:
 
         return ordered_results
 
+    def fetch_sources(
+        self,
+        sources: list[DiscoveredSource],
+    ) -> list[tuple[DiscoveredSource, SourceDocument | None, Exception | None]]:
+        """
+        Public cache-aware fetch helper for bounded source lists.
+        """
+        return self._fetch_sources_with_cache(sources)
+
     def _fetch_one_source(self, source: DiscoveredSource) -> SourceDocument:
         """
         Fetch and normalize one discovered source.
@@ -303,7 +313,7 @@ class FetchSourcesNode:
         return self.cache_dir / f"{stable_url_hash(self._normalized_url_for_cache(str(source.url)))}.json"
 
     def _normalized_url_for_cache(self, url: str) -> str:
-        return url.strip()
+        return canonicalize_url(url)
 
     def _load_cached_document(self, source: DiscoveredSource) -> SourceDocument | None:
         cache_path = self._cache_path_for_source(source)

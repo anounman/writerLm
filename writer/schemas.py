@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -54,6 +54,31 @@ class WriterSectionInput(BaseModel):
         description="Each item should include example text + source_ids.",
     )
 
+    # --- New fields for practical content ---
+    code_snippets: List[dict] = Field(
+        default_factory=list,
+        description="Code snippets from synthesizer: {language, description, code, source_ids}.",
+    )
+
+    diagram_suggestions: List[dict] = Field(
+        default_factory=list,
+        description="Diagram suggestions: {diagram_type, title, description, elements}.",
+    )
+
+    implementation_steps: List[dict] = Field(
+        default_factory=list,
+        description="Implementation steps: {step_number, action, detail, has_code}.",
+    )
+
+    must_include_code: bool = Field(
+        default=False,
+        description="Whether the planner requires code in this section.",
+    )
+    must_include_diagram: bool = Field(
+        default=False,
+        description="Whether the planner requires a diagram in this section.",
+    )
+
     important_caveats: List[str] = Field(default_factory=list)
     unresolved_gaps: List[str] = Field(default_factory=list)
 
@@ -71,6 +96,23 @@ class WriterSectionInput(BaseModel):
 # Output Per Section
 # -----------------------------
 
+class DiagramHint(BaseModel):
+    """A LaTeX-friendly diagram hint embedded in the written output."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    diagram_type: str = Field(
+        ...,
+        description="Type: flowchart, architecture, sequence_diagram, comparison_table, data_flow, graph.",
+    )
+    title: str = Field(..., description="Diagram title for the figure caption.")
+    description: str = Field(..., description="What the diagram shows.")
+    latex_label: Optional[str] = Field(
+        default=None,
+        description="LaTeX label for cross-referencing (e.g., fig:rag-pipeline).",
+    )
+
+
 class SectionDraft(BaseModel):
     """
     Final written output for one section.
@@ -85,12 +127,22 @@ class SectionDraft(BaseModel):
 
     content: str = Field(
         ...,
-        description="Final written section text in clean, natural language.",
+        description="Final written section text in clean, natural language. Includes ```python code blocks and DIAGRAM: hints.",
     )
 
     citations_used: List[str] = Field(
         default_factory=list,
         description="Subset of allowed source_ids actually used in writing.",
+    )
+
+    diagram_hints: List[DiagramHint] = Field(
+        default_factory=list,
+        description="Structured diagram hints for LaTeX figure generation.",
+    )
+
+    code_blocks_count: int = Field(
+        default=0,
+        description="Number of code blocks included in the content.",
     )
 
     writing_status: WritingStatus

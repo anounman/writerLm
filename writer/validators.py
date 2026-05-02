@@ -32,10 +32,9 @@ def normalize_section_draft(
     # Strip content
     draft.content = draft.content.strip()
 
-    # Remove leaked raw source ids from prose
-    draft.content = SOURCE_ID_PATTERN.sub("", draft.content)
-    draft.content = re.sub(r"\(\s*\)", "", draft.content)
-    draft.content = re.sub(r"\s{2,}", " ", draft.content).strip()
+    # Remove leaked raw source ids from prose, but preserve code blocks
+    # Split on code fences, only clean non-code parts
+    draft.content = _clean_prose_preserve_code(draft.content)
 
     # BLOCKED upstream stays BLOCKED
     if synthesis_status == "blocked":
@@ -57,3 +56,20 @@ def normalize_section_draft(
             draft.writing_status = WritingStatus.PARTIAL
 
     return draft
+
+
+def _clean_prose_preserve_code(content: str) -> str:
+    """Remove leaked source IDs and collapse whitespace in prose, but leave code blocks intact."""
+    parts = re.split(r"(```[\s\S]*?```)", content)
+    cleaned_parts = []
+    for i, part in enumerate(parts):
+        if part.startswith("```"):
+            # Code block — leave untouched
+            cleaned_parts.append(part)
+        else:
+            # Prose — clean up
+            cleaned = SOURCE_ID_PATTERN.sub("", part)
+            cleaned = re.sub(r"\(\s*\)", "", cleaned)
+            cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+            cleaned_parts.append(cleaned)
+    return "".join(cleaned_parts).strip()

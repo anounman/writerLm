@@ -18,6 +18,7 @@ load_dotenv(REPO_ROOT / ".env")
 from notes_synthesizer.graph import build_notes_synthesizer_graph, initialize_state
 from notes_synthesizer.llm import GroqStructuredLLM
 from notes_synthesizer.schemas import SynthesisStatus
+from llm_provider import resolve_openai_compatible_config
 from notes_synthesizer.state import (
     NotesSynthesizerInput,
     NotesSynthesizerSectionTask,
@@ -82,6 +83,7 @@ def build_tasks_from_research_bundle(
                     "chapter_title": chapter_title,
                     "chapter_goal": chapter_goal,
                     "key_concepts": _as_string_list(section.get("key_questions")),
+                    "content_requirements": section.get("content_requirements") or {},
                 }
 
     chapters = bundle.get("chapters")
@@ -216,9 +218,21 @@ def main() -> None:
         print("No Notes Synthesizer tasks could be built from the research bundle.")
         raise SystemExit(1)
 
+    llm_config = resolve_openai_compatible_config(
+        layer="notes",
+        default_models={
+            "groq": "llama-3.3-70b-versatile",
+            "google": "gemini-2.5-flash",
+        },
+        legacy_env_names_by_provider={
+            "groq": ("GROQ_MODEL", "GROQ_MODEL_NAME"),
+            "google": ("GOOGLE_MODEL", "GOOGLE_MODEL_NAME", "GEMINI_MODEL"),
+        },
+    )
     llm = GroqStructuredLLM(
-        api_key=os.getenv("GROQ_API_KEY"),
-        model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        api_key=llm_config.api_key,
+        model=llm_config.model,
+        base_url=llm_config.base_url,
     )
 
     input_data = NotesSynthesizerInput(

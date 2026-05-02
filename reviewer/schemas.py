@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -19,6 +19,42 @@ class ReviewWarning(str, Enum):
     PARTIAL_UNCERTAINTY_WEAKENED = "partial_uncertainty_weakened"
     INVALID_CITATION_REMOVED = "invalid_citation_removed"
     CLEANUP_ARTIFACT_FIXED = "cleanup_artifact_fixed"
+    MISSING_CODE_EXAMPLE = "missing_code_example"
+    MISSING_DIAGRAM = "missing_diagram"
+    PURE_TEXT_SECTION = "pure_text_section"
+    SHALLOW_EXPLANATION = "shallow_explanation"
+    MISSING_PRACTICAL_CONTENT = "missing_practical_content"
+
+
+class QualityScores(BaseModel):
+    """Quality scores assigned by the reviewer to each section."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    practicality_score: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="1-10: How practical/actionable is this section? 10 = reader can immediately apply what they learned.",
+    )
+    code_coverage_score: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="1-10: How well does code support the explanation? 10 = excellent code examples, well-commented.",
+    )
+    learning_depth_score: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="1-10: How deeply does the section teach? 10 = explains why, not just what, includes trade-offs.",
+    )
+    visual_richness_score: int = Field(
+        ...,
+        ge=1,
+        le=10,
+        description="1-10: Does the section use diagrams/visuals effectively? 10 = key concepts are visualized.",
+    )
 
 
 class ReviewerSectionInput(BaseModel):
@@ -42,8 +78,14 @@ class ReviewerSectionInput(BaseModel):
     writer_guidance: List[str] = Field(default_factory=list)
     allowed_citation_source_ids: List[str] = Field(default_factory=list)
 
+    # --- Content requirement flags ---
+    must_include_code: bool = Field(default=False)
+    must_include_diagram: bool = Field(default=False)
+
     writer_content: str
     writer_citations_used: List[str] = Field(default_factory=list)
+    writer_code_blocks_count: int = Field(default=0)
+    writer_diagram_hints_count: int = Field(default=0)
     writing_status: str
 
 
@@ -62,6 +104,11 @@ class ReviewerSectionOutput(BaseModel):
     citations_used: List[str] = Field(default_factory=list)
     applied_changes_summary: List[str] = Field(default_factory=list)
     reviewer_warnings: List[ReviewWarning] = Field(default_factory=list)
+
+    quality_scores: Optional[QualityScores] = Field(
+        default=None,
+        description="Quality scores for this section.",
+    )
 
 
 class ReviewerSectionResult(BaseModel):
@@ -89,6 +136,11 @@ class ReviewBundleMetadata(BaseModel):
     approved_sections: int
     revised_sections: int
     flagged_sections: int
+
+    avg_practicality_score: Optional[float] = None
+    avg_code_coverage_score: Optional[float] = None
+    avg_learning_depth_score: Optional[float] = None
+    avg_visual_richness_score: Optional[float] = None
 
 
 class ReviewBundle(BaseModel):

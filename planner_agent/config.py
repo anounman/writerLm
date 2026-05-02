@@ -1,20 +1,39 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from openai import OpenAI
+
+from llm_provider import build_openai_compatible_client, resolve_openai_compatible_config
 
 load_dotenv(Path(os.path.dirname(__file__)) / "../.env")
 
 
+PLANNER_DEFAULT_MODELS = {
+    "groq": "openai/gpt-oss-120b",
+    "google": "gemini-2.5-flash",
+}
+
+
 def get_client() -> OpenAI:
-    api_key = os.getenv("GROQ_API_KEY")
-    base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment variables.")
-    return OpenAI(
-        api_key=api_key,
-        base_url=base_url,
+    client, _ = build_openai_compatible_client(
+        layer="planner",
+        default_models=PLANNER_DEFAULT_MODELS,
+        legacy_env_names_by_provider={
+            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
+            "google": ("GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
+        },
     )
+    return client
+
 
 def get_model_name() -> str:
-    return os.getenv("GROQ_MODEL_NAME", "openai/gpt-oss-120b")
+    config = resolve_openai_compatible_config(
+        layer="planner",
+        default_models=PLANNER_DEFAULT_MODELS,
+        legacy_env_names_by_provider={
+            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
+            "google": ("GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
+        },
+    )
+    return config.model

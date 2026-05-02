@@ -18,6 +18,7 @@ load_dotenv(REPO_ROOT / ".env")
 
 from planner_agent.schemas import BookPlan
 from researcher.schemas import PlannerSectionRef, SectionResearchPacket
+from llm_provider import resolve_openai_compatible_config
 
 
 def ensure_dir(path: Path) -> None:
@@ -153,10 +154,22 @@ def build_researcher_workflow():
     from researcher.services.web_extractor import WebExtractor
     from researcher.workflow import ResearcherWorkflow
 
+    llm_config = resolve_openai_compatible_config(
+        layer="researcher",
+        default_models={
+            "groq": "openai/gpt-oss-120b",
+            "google": "gemini-2.5-flash",
+        },
+        legacy_env_names_by_provider={
+            "groq": ("GROQ_MODEL_NAME", "GROQ_MODEL"),
+            "google": ("GOOGLE_MODEL_NAME", "GOOGLE_MODEL", "GEMINI_MODEL"),
+        },
+    )
+
     llm = GroqStructuredLLM(
-        api_key=os.environ["GROQ_API_KEY"],
-        model=os.environ.get("GROQ_MODEL_NAME", "openai/gpt-oss-120b"),
-        base_url=os.environ.get("GROQ_BASE_URL"),
+        api_key=llm_config.api_key,
+        model=llm_config.model,
+        base_url=llm_config.base_url,
     )
 
     tavily_client = TavilySearchClient(

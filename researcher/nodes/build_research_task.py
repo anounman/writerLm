@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from researcher.constants import (
     DEFAULT_REQUIRED_EVIDENCE_TYPES,
     DEEP_RESEARCH_REQUIRED_EVIDENCE_TYPES,
+    USE_LLM_RESEARCH_TASK_PLANNING,
 )
 from researcher.schemas import EvidenceType, ResearchDepth, ResearchTask
 from researcher.services.llm_structured import GroqStructuredLLM
@@ -33,7 +34,7 @@ class BuildResearchTaskOutput(BaseModel):
 
 
 BUILD_RESEARCH_TASK_SYSTEM_PROMPT = """
-You are a research-planning specialist inside a multi-stage book generation system.
+You are a research-planning specialist inside a multi-stage PRACTICAL book generation system.
 
 Your job is to convert planner output for a single book section into a precise research brief.
 
@@ -50,7 +51,16 @@ Guidelines:
 - Research questions should help downstream search and evidence gathering.
 - Assumptions should be minimal and useful.
 - Do not invent unnecessary complexity.
+- Keep the task bounded to what this section needs; do not broaden a focused teaching section into an academic survey.
+- Prefer research angles that help a practical technical guide explain how something works, why it matters, and how to apply it.
 - Do not include markdown.
+
+PRACTICAL RESEARCH BIAS (CRITICAL):
+- Prioritize finding: working code examples, implementation tutorials, API documentation, and step-by-step guides.
+- Include in scope_inclusions: "working code examples", "implementation patterns", "common pitfalls and debugging tips" when the section is implementation-oriented.
+- Include in research_questions: questions about HOW to implement, not just WHAT something is.
+- Prefer sources that show real implementations over theoretical papers.
+- Include scope_inclusions for diagrams/architecture when the section needs visual explanation.
 """
 
 
@@ -103,6 +113,8 @@ Rules:
 - `scope_inclusions`, `scope_exclusions`, `research_questions`, and `assumptions` must all be arrays.
 - Do not include `section_id`, `section_title`, `chapter_title`, or `research_depth` in the output.
 - Do not add extra keys.
+- Keep the task tightly aligned to the section goal and planner key points.
+- Avoid broad academic expansion into adjacent topics unless the section clearly requires it.
 """.strip()
 
 
@@ -137,6 +149,23 @@ class BuildResearchTaskNode:
 
         section = state.planner_section
         depth = self.default_depth
+        required_evidence_types = self._required_evidence_types_for_depth(depth)
+
+        if not USE_LLM_RESEARCH_TASK_PLANNING:
+            state.research_task = ResearchTask(
+                task_id=make_research_task_id(section.section_id),
+                section=section,
+                objective=section.section_goal,
+                depth=depth,
+                scope_inclusions=self._fallback_scope_inclusions(section),
+                scope_exclusions=[],
+                required_evidence_types=required_evidence_types,
+                research_questions=self._fallback_research_questions(section),
+                assumptions=[
+                    "Use concise, implementation-focused evidence suitable for a practical book section."
+                ],
+            )
+            return state
 
         user_prompt = build_research_task_user_prompt(
             section_id=section.section_id,
@@ -159,7 +188,6 @@ class BuildResearchTaskNode:
                 f"Failed to build research task for section '{section.section_id}': {e}"
             )
             return state
-        required_evidence_types = self._required_evidence_types_for_depth(depth)
         state.research_task = ResearchTask(
             task_id=make_research_task_id(section.section_id),
             section=section,
@@ -173,3 +201,35 @@ class BuildResearchTaskNode:
         )
 
         return state
+
+    def _fallback_scope_inclusions(self, section) -> list[str]:
+        inclusions = [
+            section.section_title,
+            section.section_goal,
+            *list(section.key_points or []),
+            "working implementation details",
+            "common pitfalls and debugging tips",
+        ]
+        return self._clean_unique_strings(inclusions)
+
+    def _fallback_research_questions(self, section) -> list[str]:
+        questions = [
+            f"What should readers understand about {section.section_title}?",
+            f"How is {section.section_title} implemented in practice?",
+            f"What mistakes should readers avoid when working on {section.section_title}?",
+        ]
+        return self._clean_unique_strings(questions)
+
+    def _clean_unique_strings(self, values: list[str]) -> list[str]:
+        cleaned_values: list[str] = []
+        seen: set[str] = set()
+        for value in values:
+            cleaned = " ".join(str(value).split()).strip()
+            if not cleaned:
+                continue
+            key = cleaned.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned_values.append(cleaned)
+        return cleaned_values

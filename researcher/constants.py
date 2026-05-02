@@ -5,11 +5,23 @@ import os
 from researcher.schemas import EvidenceType, ResearchDepth
 
 
-RESEARCH_EXECUTION_PROFILE = os.getenv("RESEARCH_EXECUTION_PROFILE", "full").strip().lower()
-if RESEARCH_EXECUTION_PROFILE not in {"debug", "full"}:
-    RESEARCH_EXECUTION_PROFILE = "full"
+RESEARCH_EXECUTION_PROFILE = os.getenv("RESEARCH_EXECUTION_PROFILE", "budget").strip().lower()
+if RESEARCH_EXECUTION_PROFILE not in {"budget", "debug", "full"}:
+    RESEARCH_EXECUTION_PROFILE = "budget"
 
 EXECUTION_PROFILES = {
+    "budget": {
+        "max_discovered_sources_per_section": 5,
+        "max_fetched_sources_per_section": 2,
+        "max_reflexion_rounds": 0,
+        "max_followup_sources_per_round": 0,
+        "max_source_text_chars_for_single_pass": 2500,
+        "enable_firecrawl_fallback": False,
+        "use_llm_research_task_planning": False,
+        "use_llm_query_planning": False,
+        "use_llm_evidence_extraction": False,
+        "use_llm_reflexion": False,
+    },
     "debug": {
         "max_discovered_sources_per_section": 4,
         "max_fetched_sources_per_section": 2,
@@ -17,6 +29,10 @@ EXECUTION_PROFILES = {
         "max_followup_sources_per_round": 1,
         "max_source_text_chars_for_single_pass": 4000,
         "enable_firecrawl_fallback": False,
+        "use_llm_research_task_planning": True,
+        "use_llm_query_planning": True,
+        "use_llm_evidence_extraction": True,
+        "use_llm_reflexion": True,
     },
     "full": {
         "max_discovered_sources_per_section": 8,
@@ -25,6 +41,10 @@ EXECUTION_PROFILES = {
         "max_followup_sources_per_round": 2,
         "max_source_text_chars_for_single_pass": 8000,
         "enable_firecrawl_fallback": True,
+        "use_llm_research_task_planning": True,
+        "use_llm_query_planning": True,
+        "use_llm_evidence_extraction": True,
+        "use_llm_reflexion": True,
     },
 }
 
@@ -167,6 +187,10 @@ DOMAIN_TRUST_OVERRIDES = {
 # =========================================================
 
 ENABLE_FIRECRAWL_FALLBACK = ACTIVE_EXECUTION_PROFILE["enable_firecrawl_fallback"]
+USE_LLM_RESEARCH_TASK_PLANNING = ACTIVE_EXECUTION_PROFILE["use_llm_research_task_planning"]
+USE_LLM_QUERY_PLANNING = ACTIVE_EXECUTION_PROFILE["use_llm_query_planning"]
+USE_LLM_EVIDENCE_EXTRACTION = ACTIVE_EXECUTION_PROFILE["use_llm_evidence_extraction"]
+USE_LLM_REFLEXION = ACTIVE_EXECUTION_PROFILE["use_llm_reflexion"]
 
 # Use Firecrawl only when extraction is empty or too weak.
 FIRECRAWL_FALLBACK_MIN_TEXT_CHARS = 250

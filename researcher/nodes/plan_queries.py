@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from researcher.constants import DEPTH_TO_QUERY_COUNT
+from researcher.constants import DEPTH_TO_QUERY_COUNT, USE_LLM_QUERY_PLANNING
 from researcher.schemas import QueryKind, ResearchQuery, ResearchTask, SearchPlan
 from researcher.services.llm_structured import GroqStructuredLLM
 from researcher.state import ResearcherState
@@ -162,6 +162,14 @@ class PlanQueriesNode:
         research_task = state.research_task
         target_query_count = self._target_query_count_for_task(research_task)
 
+        if not USE_LLM_QUERY_PLANNING:
+            queries = self._build_fallback_queries(research_task=research_task)
+            state.search_plan = SearchPlan(
+                task_id=research_task.task_id,
+                queries=queries,
+            )
+            return state
+
         user_prompt = build_plan_queries_user_prompt(
             research_task=research_task,
             target_query_count=target_query_count,
@@ -245,3 +253,52 @@ class PlanQueriesNode:
         Normalize query text before storing it.
         """
         return " ".join(query_text.split()).strip()
+
+    def _build_fallback_queries(
+        self,
+        *,
+        research_task: ResearchTask,
+    ) -> list[ResearchQuery]:
+        section_title = research_task.section.section_title
+        chapter_title = research_task.section.chapter_title
+        candidates = [
+            (
+                QueryKind.TECHNICAL,
+                f"{section_title} practical implementation tutorial",
+                "Find implementation-focused guidance for the section.",
+            ),
+            (
+                QueryKind.EXAMPLE,
+                f"{section_title} Python example",
+                "Find concrete examples readers can learn from.",
+            ),
+            (
+                QueryKind.CORE_CONCEPT,
+                f"{chapter_title} {section_title} best practices",
+                "Find reliable conceptual and best-practice coverage.",
+            ),
+        ]
+
+        queries: list[ResearchQuery] = []
+        seen_query_texts: set[str] = set()
+        for index, (kind, query_text, rationale) in enumerate(candidates, start=1):
+            cleaned_query_text = self._clean_query_text(query_text)
+            dedupe_key = cleaned_query_text.casefold()
+            if dedupe_key in seen_query_texts:
+                continue
+            seen_query_texts.add(dedupe_key)
+            queries.append(
+                ResearchQuery(
+                    query_id=make_query_id(
+                        research_task.section.section_id,
+                        cleaned_query_text,
+                        index,
+                    ),
+                    kind=kind,
+                    query_text=cleaned_query_text,
+                    rationale=rationale,
+                    priority=index,
+                )
+            )
+
+        return queries
