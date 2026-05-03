@@ -105,7 +105,8 @@ export interface GeneratedBook {
   created_at: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+const configuredApiBase = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
+const API_BASE = configuredApiBase || (import.meta.env.PROD ? "" : "/api");
 
 export class ApiClient {
   token: string | null;
@@ -115,6 +116,9 @@ export class ApiClient {
   }
 
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    if (!API_BASE) {
+      throw new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel.");
+    }
     const headers = new Headers(options.headers);
     headers.set("Content-Type", "application/json");
     if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
@@ -181,6 +185,9 @@ export class ApiClient {
 
   /** Create a job and attach PDF source files via multipart upload. */
   createJobWithPdfs(payload: BookRequest, pdfFiles: File[]) {
+    if (!API_BASE) {
+      return Promise.reject(new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel."));
+    }
     const form = new FormData();
     form.append("request_json", JSON.stringify(payload));
     for (const file of pdfFiles) {
@@ -216,6 +223,9 @@ export class ApiClient {
   }
 
   async downloadArtifact(bookId: number, artifactName: string) {
+    if (!API_BASE) {
+      throw new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel.");
+    }
     const headers = new Headers();
     if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
     const response = await fetch(this.artifactUrl(bookId, artifactName), { headers });
