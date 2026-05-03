@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import os
+import shutil
+import uuid
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Response, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -41,6 +43,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def _safe_pdf_filename(filename: str | None) -> str:
+    original = Path(filename or "source.pdf").name
+    stem = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in Path(original).stem)
+    stem = stem.strip("._")[:80] or "source"
+    return f"{stem}_{uuid.uuid4().hex[:8]}.pdf"
 
 
 @app.on_event("startup")
@@ -144,6 +153,55 @@ def create_job(payload: BookRequest, user: User = Depends(current_user), db: Ses
     try:
         return launch_job(db, user=user, request=payload)
     except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@app.post("/jobs/upload", response_model=JobOut)
+async def create_job_with_pdfs(
+    request_json: str = Form(..., description="JSON-serialised BookRequest"),
+    pdf_files: list[UploadFile] = File(default=[], description="Optional PDF source files"),
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+) -> BookJob:
+    """
+    Create a job and optionally attach PDF source files.
+
+    The client sends a multipart/form-data request with:
+    - ``request_json``: the full BookRequest as a JSON string
+    - ``pdf_files``: zero or more PDF files (optional)
+    """
+    try:
+        request = BookRequest.model_validate_json(request_json)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid request JSON: {exc}") from exc
+
+    # Save uploaded PDFs to a temporary staging directory.
+    # pipeline_jobs.launch_job will pass WRITERLM_USER_PDF_DIR so the
+    # worker process knows where to find them.
+    user_pdf_dir: Path | None = None
+    invalid_files = [
+        upload
+        for upload in pdf_files
+        if not upload.filename or not upload.filename.lower().endswith(".pdf")
+    ]
+    if invalid_files:
+        raise HTTPException(status_code=400, detail="Only PDF files can be uploaded.")
+    valid_pdfs = [upload for upload in pdf_files if upload.filename]
+    if valid_pdfs:
+        staging_dir = Path(os.environ.get("WRITERLM_UPLOAD_STAGING", "/tmp")) / "writerlm_pdfs" / str(uuid.uuid4())
+        staging_dir.mkdir(parents=True, exist_ok=True)
+        for upload in valid_pdfs:
+            dest = staging_dir / _safe_pdf_filename(upload.filename)
+            with dest.open("wb") as fh:
+                shutil.copyfileobj(upload.file, fh)
+        user_pdf_dir = staging_dir
+
+    try:
+        return launch_job(db, user=user, request=request, user_pdf_dir=user_pdf_dir)
+    except ValueError as exc:
+        # Clean up staging dir on validation failure
+        if user_pdf_dir and user_pdf_dir.exists():
+            shutil.rmtree(user_pdf_dir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 

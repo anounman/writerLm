@@ -46,6 +46,7 @@ from researcher.services.firecrawl_client import FirecrawlClient
 from researcher.services.llm_structured import GroqStructuredLLM as ResearchGroqStructuredLLM
 from researcher.services.pdf_extractor import PDFExtractor
 from researcher.services.tavily_client import TavilySearchClient
+from researcher.services.user_document_store import UserDocumentStore
 from researcher.services.web_extractor import WebExtractor
 from researcher.workflow import ResearcherWorkflow
 from reviewer.io import build_reviewer_tasks, save_review_bundle
@@ -168,10 +169,6 @@ def build_researcher_workflow() -> ResearcherWorkflow:
         base_url=llm_config.base_url,
     )
 
-    tavily_client = TavilySearchClient(
-        api_key=os.environ["TAVILY_API_KEY"],
-    )
-
     web_extractor = WebExtractor()
     pdf_extractor = PDFExtractor()
 
@@ -180,12 +177,35 @@ def build_researcher_workflow() -> ResearcherWorkflow:
         FirecrawlClient(api_key=firecrawl_api_key) if firecrawl_api_key else None
     )
 
+    # Load any user-uploaded PDFs from inputs/pdfs/.
+    # Returns an empty list when no PDFs are present (no-op).
+    user_doc_store = UserDocumentStore()
+    user_documents = user_doc_store.load_all()
+
+    # Determine research mode:
+    #   - PDFs present + no force flag  -> PDF-only (no Tavily calls)
+    #   - PDFs present + force flag     -> both PDFs and web research
+    #   - No PDFs                       -> full web research (unchanged)
+    has_user_pdfs = any(user_doc_store.pdf_dir.glob("*.pdf"))
+    force_web = os.getenv("WRITERLM_FORCE_WEB_RESEARCH", "0").strip().lower() in {
+        "1", "true", "yes", "on"
+    }
+    web_research_enabled = (not has_user_pdfs) or force_web
+    tavily_client = None
+    if web_research_enabled:
+        tavily_api_key = os.environ.get("TAVILY_API_KEY")
+        if not tavily_api_key:
+            raise RuntimeError("TAVILY_API_KEY is required when web research is enabled.")
+        tavily_client = TavilySearchClient(api_key=tavily_api_key)
+
     return ResearcherWorkflow(
         llm=llm,
         tavily_client=tavily_client,
         web_extractor=web_extractor,
         pdf_extractor=pdf_extractor,
         firecrawl_client=firecrawl_client,
+        user_documents=user_documents or None,
+        web_research_enabled=web_research_enabled,
     )
 
 
@@ -380,6 +400,19 @@ def main() -> None:
         planner_workflow=planner_workflow,
         researcher_workflow=researcher_workflow,
     )
+
+    user_pdf_count = (
+        len(researcher_workflow.inject_user_documents_node.user_documents)
+        if researcher_workflow.inject_user_documents_node is not None
+        else 0
+    )
+    if user_pdf_count and not researcher_workflow.web_research_enabled:
+        print(f"User PDFs loaded: {user_pdf_count} file(s) — running in PDF-only mode (no web research)")
+        print("  Tip: set WRITERLM_FORCE_WEB_RESEARCH=1 to also run web research alongside PDFs")
+    elif user_pdf_count and researcher_workflow.web_research_enabled:
+        print(f"User PDFs loaded: {user_pdf_count} file(s) — running in combined mode (PDFs + web research)")
+    else:
+        print("User PDFs: none found in inputs/pdfs/ — using full web research")
 
     stage_start = time.perf_counter()
     research_bundle = pipeline.run(planner_input)

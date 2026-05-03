@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl";
 export type JobStatus = "queued" | "running" | "completed" | "completed_with_latex_issue" | "failed";
 
@@ -48,6 +49,7 @@ export interface BookRequest {
   example_density: "high" | "medium" | "low";
   diagram_density: "high" | "medium" | "low";
   max_section_words: number | null;
+  force_web_research: boolean;
 }
 
 export interface JobStage {
@@ -164,6 +166,26 @@ export class ApiClient {
     });
   }
 
+  /** Create a job and attach PDF source files via multipart upload. */
+  createJobWithPdfs(payload: BookRequest, pdfFiles: File[]) {
+    const form = new FormData();
+    form.append("request_json", JSON.stringify(payload));
+    for (const file of pdfFiles) {
+      form.append("pdf_files", file, file.name);
+    }
+    // Use fetch directly — request() forces Content-Type: application/json
+    const headers = new Headers();
+    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    return fetch(`${API_BASE}/jobs/upload`, { method: "POST", headers, body: form })
+      .then(async (response) => {
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({ detail: response.statusText }));
+          throw new Error(payload.detail || response.statusText);
+        }
+        return response.json() as Promise<Job>;
+      });
+  }
+
   jobs() {
     return this.request<Job[]>("/jobs");
   }
@@ -174,6 +196,23 @@ export class ApiClient {
 
   books() {
     return this.request<GeneratedBook[]>("/books");
+  }
+
+  async downloadArtifact(bookId: number, artifactName: string) {
+    const headers = new Headers();
+    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const response = await fetch(this.artifactUrl(bookId, artifactName), { headers });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(payload.detail || response.statusText);
+    }
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("content-disposition") || "";
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+    return {
+      blob,
+      filename: filenameMatch?.[1] || `${artifactName}-${bookId}`,
+    };
   }
 
   artifactUrl(bookId: number, artifactName: string) {

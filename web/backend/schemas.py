@@ -83,6 +83,10 @@ class BookRequest(BaseModel):
     example_density: Density = "high"
     diagram_density: Density = "medium"
     max_section_words: int | None = Field(default=None, ge=150, le=2000)
+    force_web_research: bool = Field(
+        default=False,
+        description="When True, run web research even if user PDFs are present (combined mode).",
+    )
 
 
 class JobOut(BaseModel):

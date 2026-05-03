@@ -38,10 +38,10 @@ def get_or_create_user_config(db: Session, user: User) -> UserConfig:
     return config
 
 
-def launch_job(db: Session, *, user: User, request: BookRequest) -> BookJob:
+def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: Path | None = None) -> BookJob:
     config = get_or_create_user_config(db, user)
     config_payload = PipelineConfig.model_validate(config.settings or {}).model_dump()
-    _validate_required_keys(db, user=user, config=config_payload)
+    _validate_required_keys(db, user=user, config=config_payload, has_user_pdfs=user_pdf_dir is not None, force_web=request.force_web_research)
 
     stages = _initial_stages()
     job = BookJob(
@@ -58,7 +58,7 @@ def launch_job(db: Session, *, user: User, request: BookRequest) -> BookJob:
     db.commit()
     db.refresh(job)
 
-    env = _build_job_environment(db, user=user, config=config_payload)
+    env = _build_job_environment(db, user=user, config=config_payload, request=request, user_pdf_dir=user_pdf_dir)
     env["WRITERLM_WEB_JOB_ID"] = str(job.id)
     env["WRITERLM_WEB_USER_ID"] = str(user.id)
 
@@ -98,10 +98,18 @@ def _book_request_to_planner_input(request: BookRequest) -> dict:
             "example_density": request.example_density,
             "diagram_density": request.diagram_density,
         },
+        "force_web_research": request.force_web_research,
     }
 
 
-def _build_job_environment(db: Session, *, user: User, config: dict) -> dict[str, str]:
+def _build_job_environment(
+    db: Session,
+    *,
+    user: User,
+    config: dict,
+    request: BookRequest | None = None,
+    user_pdf_dir: Path | None = None,
+) -> dict[str, str]:
     env = os.environ.copy()
     api_keys = _api_keys_by_provider(db, user=user)
 
@@ -143,13 +151,28 @@ def _build_job_environment(db: Session, *, user: User, config: dict) -> dict[str
     if config.get("max_completion_tokens"):
         env["WRITERLM_MAX_COMPLETION_TOKENS"] = str(config["max_completion_tokens"])
 
+    # PDF upload support
+    if user_pdf_dir is not None and user_pdf_dir.exists():
+        env["WRITERLM_USER_PDF_DIR"] = str(user_pdf_dir)
+    if request is not None and request.force_web_research:
+        env["WRITERLM_FORCE_WEB_RESEARCH"] = "1"
+
     return env
 
 
-def _validate_required_keys(db: Session, *, user: User, config: dict) -> None:
+def _validate_required_keys(
+    db: Session,
+    *,
+    user: User,
+    config: dict,
+    has_user_pdfs: bool = False,
+    force_web: bool = False,
+) -> None:
     api_keys = _api_keys_by_provider(db, user=user)
     missing = []
-    if "tavily" not in api_keys:
+    # Tavily is only required when web research will actually run
+    web_research_needed = (not has_user_pdfs) or force_web
+    if web_research_needed and "tavily" not in api_keys:
         missing.append("Tavily")
     if config["llm_provider"] == "google" and "google" not in api_keys:
         missing.append("Google/Gemini")

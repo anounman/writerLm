@@ -1,5 +1,6 @@
 .env
 .venv/
+writerlm_studio.db
 __pycache__/
 *.pyc
 runs/
@@ -11,3 +12,7 @@ outputs/*
 
 
 web/frontend/node_modules/*
+web/frontend/dist/
+
+# User-uploaded source PDFs — keep the folder, ignore contents
+inputs/pdfs/*.pdf

@@ -11,7 +11,7 @@ from cryptography.fernet import Fernet
 from passlib.context import CryptContext
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 def password_hash(password: str) -> str:
