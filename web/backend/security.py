@@ -53,12 +53,17 @@ def decode_clerk_session_token(token: str) -> dict[str, Any]:
 
     jwks_client = jwt.PyJWKClient(f"{issuer}/.well-known/jwks.json")
     signing_key = jwks_client.get_signing_key_from_jwt(token)
+    options = {"verify_aud": False}
+    if os.getenv("CLERK_JWT_VERIFY_TIME", "1").strip().lower() in {"0", "false", "no", "off"}:
+        options.update({"verify_exp": False, "verify_iat": False, "verify_nbf": False})
+
     return jwt.decode(
         token,
         signing_key.key,
         algorithms=["RS256"],
         issuer=issuer,
-        options={"verify_aud": False},
+        options=options,
+        leeway=int(os.getenv("CLERK_JWT_LEEWAY_SECONDS", "300")),
     )
 
 

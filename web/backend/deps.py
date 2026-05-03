@@ -53,7 +53,10 @@ def current_user(
         try:
             clerk_payload = decode_clerk_session_token(credentials.credentials)
         except Exception as exc:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token.") from exc
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid Clerk token: {exc}",
+            ) from exc
         return _clerk_user(db, clerk_payload)
 
     user = db.get(User, user_id)
