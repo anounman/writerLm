@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { ClerkProvider, SignInButton, SignUpButton, UserButton, useAuth, useUser } from "@clerk/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   Activity,
@@ -53,17 +54,22 @@ const tabs: Array<{ id: Tab; label: string; icon: React.ComponentType<{ size?: n
 ];
 
 const defaultBookRequest: BookRequest = {
-  topic: "Build a retrieval-augmented generation system for answering questions over your own documents",
-  audience: "Beginner to intermediate developers who understand basic Python but are new to RAG systems",
-  tone: "Practical step by step guide",
+  topic: "HMI 2 practice handbook with theory",
+  audience: "Beginner to intermediate students preparing from course notes and exercise sheets",
+  tone: "Clear, rigorous, and friendly",
+  book_type: "auto",
+  theory_practice_balance: "balanced",
+  pedagogy_style: "auto",
+  source_usage: "auto",
+  exercise_strategy: "extract_patterns",
   goals: [
-    "teach the reader how RAG works by building one from scratch",
-    "help the reader implement each core component with code",
-    "end with a working mini project the reader can extend"
+    "explain the theory with a clear mathematical structure",
+    "teach the methods needed to solve the uploaded exercise sheets",
+    "create original worked examples inspired by the source questions"
   ],
-  project_based: true,
-  running_project_description: "Build a local RAG assistant over personal documents",
-  code_density: "high",
+  project_based: false,
+  running_project_description: null,
+  code_density: "low",
   example_density: "high",
   diagram_density: "medium",
   max_section_words: 900,
@@ -72,16 +78,67 @@ const defaultBookRequest: BookRequest = {
 
 const stageOrder = ["planner_research", "notes_synthesis", "writer", "reviewer", "assembler", "latex_compile"];
 type Theme = "dark" | "light";
+type BookType = BookRequest["book_type"];
+type TheoryPracticeBalance = BookRequest["theory_practice_balance"];
+type PedagogyStyle = BookRequest["pedagogy_style"];
+type SourceUsage = BookRequest["source_usage"];
+type ExerciseStrategy = BookRequest["exercise_strategy"];
 const animatedStyle = { willChange: "opacity, transform" };
 const apiKeyAliases: Record<ApiKeyProvider, string[]> = {
   google: ["GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GENAI_API_KEY"],
   groq: ["GROQ_API_KEY"],
   tavily: ["TAVILY_API_KEY"],
-  firecrawl: ["FIRECRAWL_API_KEY", "FIRECRAWL_KEY"]
+  firecrawl: ["FIRECRAWL_API_KEY", "FIRECRAWL_KEY"],
+  neon: ["NEON_DATABASE_URL", "WRITERLM_USER_NEON_DATABASE_URL"]
 };
 
+const bookTypeOptions: Array<{ value: BookType; label: string; hint: string }> = [
+  { value: "auto", label: "Auto detect", hint: "Infer from topic, goals, and uploaded sources" },
+  { value: "textbook", label: "Textbook", hint: "Structured theory with examples" },
+  { value: "course_companion", label: "Course companion", hint: "Follow uploaded notes and sheets closely" },
+  { value: "practice_workbook", label: "Practice workbook", hint: "Problem patterns, drills, and worked solutions" },
+  { value: "exam_prep", label: "Exam prep", hint: "Focused revision and question strategy" },
+  { value: "conceptual_guide", label: "Conceptual guide", hint: "Mental models and intuition" },
+  { value: "reference_handbook", label: "Reference handbook", hint: "Broad lookup-oriented coverage" },
+  { value: "implementation_guide", label: "Implementation guide", hint: "Build or apply something step by step" }
+];
+
+const balanceOptions: Array<{ value: TheoryPracticeBalance; label: string; hint: string }> = [
+  { value: "balanced", label: "Balanced", hint: "Theory, examples, and practice in rhythm" },
+  { value: "theory_heavy", label: "Theory-heavy", hint: "Definitions, derivations, proofs, and rigor first" },
+  { value: "practice_heavy", label: "Practice-heavy", hint: "Theory followed by worked examples and exercises" },
+  { value: "implementation_heavy", label: "Implementation-heavy", hint: "Applied build or execution focus" },
+  { value: "auto", label: "Auto", hint: "Let sources and goals decide" }
+];
+
+const pedagogyOptions: Array<{ value: PedagogyStyle; label: string; hint: string }> = [
+  { value: "auto", label: "Auto", hint: "Use the best style for the source material" },
+  { value: "german_theoretical", label: "German theoretical", hint: "Rigorous theory-first explanation" },
+  { value: "indian_theory_then_examples", label: "Theory then examples", hint: "Theory, solved examples, then practice" },
+  { value: "exam_oriented", label: "Exam-oriented", hint: "Question patterns, tricks, and revision flow" },
+  { value: "socratic", label: "Socratic", hint: "Question-led discovery" },
+  { value: "project_based", label: "Project-based", hint: "One evolving artifact or implementation" }
+];
+
+const sourceUsageOptions: Array<{ value: SourceUsage; label: string; hint: string }> = [
+  { value: "auto", label: "Auto", hint: "Uploaded PDFs become primary when attached" },
+  { value: "primary_curriculum", label: "Primary curriculum", hint: "Follow uploaded documents as the main map" },
+  { value: "example_inspiration", label: "Example inspiration", hint: "Use sources mainly for question style and examples" },
+  { value: "supplemental", label: "Supplemental", hint: "Use sources as supporting references" }
+];
+
+const exerciseStrategyOptions: Array<{ value: ExerciseStrategy; label: string; hint: string }> = [
+  { value: "extract_patterns", label: "Extract patterns", hint: "Learn the style of uploaded questions" },
+  { value: "worked_examples", label: "Worked examples", hint: "Create source-inspired solved examples" },
+  { value: "practice_sets", label: "Practice sets", hint: "Generate new exercises after each topic" },
+  { value: "none", label: "None", hint: "Avoid exercise-style material" },
+  { value: "auto", label: "Auto", hint: "Let sources decide" }
+];
+
 function App() {
-  const [token, setToken] = useState(() => localStorage.getItem("writerlm_token"));
+  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
+  const { user } = useUser();
+  const [token, setToken] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("writerlm_theme") as Theme) || "dark");
   const api = useMemo(() => new ApiClient(token), [token]);
   const [userEmail, setUserEmail] = useState<string>("");
@@ -91,6 +148,29 @@ function App() {
   const [books, setBooks] = useState<GeneratedBook[]>([]);
   const [notice, setNotice] = useState<string>("");
   const [commandOpen, setCommandOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!isLoaded || !isSignedIn) {
+      setToken(null);
+      return;
+    }
+    getToken()
+      .then((nextToken) => {
+        if (!cancelled) setToken(nextToken);
+      })
+      .catch(() => {
+        if (!cancelled) setToken(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [getToken, isLoaded, isSignedIn]);
+
+  const logout = useCallback(() => {
+    setToken(null);
+    signOut().catch(() => undefined);
+  }, [signOut]);
 
   const refresh = useCallback(async () => {
     if (!token) return;
@@ -128,18 +208,16 @@ function App() {
     localStorage.setItem("writerlm_theme", theme);
   }, [theme]);
 
+  if (!isLoaded) {
+    return <LoadingScreen theme={theme} onTheme={setTheme} />;
+  }
+
+  if (!isSignedIn) {
+    return <AuthScreen theme={theme} onTheme={setTheme} />;
+  }
+
   if (!token) {
-    return (
-      <AuthScreen
-        api={api}
-        theme={theme}
-        onTheme={setTheme}
-        onToken={(nextToken) => {
-          localStorage.setItem("writerlm_token", nextToken);
-          setToken(nextToken);
-        }}
-      />
-    );
+    return <LoadingScreen theme={theme} onTheme={setTheme} />;
   }
 
   return (
@@ -170,17 +248,15 @@ function App() {
           <ThemeToggle theme={theme} onTheme={setTheme} />
           <div className="user-strip">
             <UserRound size={18} />
-            <span>{userEmail || "Signed in"}</span>
+            <span>{userEmail || user?.primaryEmailAddress?.emailAddress || "Signed in"}</span>
             <button
               className="icon-button"
               title="Log out"
-              onClick={() => {
-                localStorage.removeItem("writerlm_token");
-                setToken(null);
-              }}
+              onClick={logout}
             >
               <LogOut size={17} />
             </button>
+            <UserButton />
           </div>
         </div>
       </aside>
@@ -229,10 +305,7 @@ function App() {
           activeTab={activeTab}
           onTab={(tab) => setActiveTab(tab)}
           onRefresh={() => refresh().catch((error) => setNotice(error.message))}
-          onLogout={() => {
-            localStorage.removeItem("writerlm_token");
-            setToken(null);
-          }}
+          onLogout={logout}
         />
 
         <AnimatePresence mode="wait">
@@ -252,7 +325,7 @@ function App() {
                 setActiveTab("progress");
               }} onNotice={setNotice} />
             )}
-            {activeTab === "progress" && <ProgressPage jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJobId} />}
+            {activeTab === "progress" && <ProgressPage api={api} jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJobId} onJobs={setJobs} onNotice={setNotice} />}
             {activeTab === "books" && <BooksPage api={api} books={books} onNotice={setNotice} />}
             {activeTab === "keys" && <KeysPage api={api} onNotice={setNotice} />}
             {activeTab === "config" && <ConfigPage api={api} onNotice={setNotice} />}
@@ -405,31 +478,14 @@ function CommandMenu({
   );
 }
 
-function AuthScreen({ api, theme, onTheme, onToken }: { api: ApiClient; theme: Theme; onTheme: (theme: Theme) => void; onToken: (token: string) => void }) {
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
-    setError("");
-    try {
-      const result = mode === "login" ? await api.login(email, password) : await api.signup(email, password);
-      onToken(result.access_token);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Authentication failed.");
-    }
-  }
-
+function AuthScreen({ theme, onTheme }: { theme: Theme; onTheme: (theme: Theme) => void }) {
   return (
     <div className="auth-screen">
       <div className="auth-theme">
         <ThemeToggle theme={theme} onTheme={onTheme} />
       </div>
-      <motion.form
+      <motion.div
         className="auth-panel"
-        onSubmit={submit}
         initial={{ opacity: 0, scale: 0.97, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 24 }}
@@ -438,17 +494,33 @@ function AuthScreen({ api, theme, onTheme, onToken }: { api: ApiClient; theme: T
         <div className="auth-symbol"><Sparkles size={26} /></div>
         <h1>WriterLM Studio</h1>
         <p>Run the full AI book pipeline from one browser workspace.</p>
-        <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required /></label>
-        <label>Password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" minLength={8} required /></label>
-        {error && <div className="form-error">{error}</div>}
-        <motion.button className="primary-button" type="submit" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
-          <ChevronRight size={18} />
-          {mode === "login" ? "Log in" : "Create account"}
-        </motion.button>
-        <button className="text-button" type="button" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
-          {mode === "login" ? "Create a new account" : "Use an existing account"}
-        </button>
-      </motion.form>
+        <div className="auth-actions">
+          <SignInButton mode="modal">
+            <motion.button className="primary-button" type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
+              <ChevronRight size={18} />
+              Log in
+            </motion.button>
+          </SignInButton>
+          <SignUpButton mode="modal">
+            <button className="secondary-button" type="button">Create account</button>
+          </SignUpButton>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function LoadingScreen({ theme, onTheme }: { theme: Theme; onTheme: (theme: Theme) => void }) {
+  return (
+    <div className="auth-screen">
+      <div className="auth-theme">
+        <ThemeToggle theme={theme} onTheme={onTheme} />
+      </div>
+      <motion.div className="auth-panel" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 24 }} style={animatedStyle}>
+        <div className="auth-symbol"><RefreshCw size={24} className="spin" /></div>
+        <h1>Loading WriterLM</h1>
+        <p>Preparing your authenticated studio session.</p>
+      </motion.div>
     </div>
   );
 }
@@ -517,8 +589,45 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
           <label className="span-2">Topic<textarea value={request.topic} onChange={(e) => setRequest({ ...request, topic: e.target.value })} rows={3} /></label>
           <label>Audience<input value={request.audience} onChange={(e) => setRequest({ ...request, audience: e.target.value })} /></label>
           <label>Tone<input value={request.tone} onChange={(e) => setRequest({ ...request, tone: e.target.value })} /></label>
+          <label>
+            Book type
+            <select value={request.book_type} onChange={(e) => setRequest({ ...request, book_type: e.target.value as BookType })}>
+              {bookTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <small>{bookTypeOptions.find((option) => option.value === request.book_type)?.hint}</small>
+          </label>
+          <label>
+            Theory / practice
+            <select value={request.theory_practice_balance} onChange={(e) => setRequest({ ...request, theory_practice_balance: e.target.value as TheoryPracticeBalance })}>
+              {balanceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <small>{balanceOptions.find((option) => option.value === request.theory_practice_balance)?.hint}</small>
+          </label>
+          <label>
+            Teaching style
+            <select value={request.pedagogy_style} onChange={(e) => setRequest({ ...request, pedagogy_style: e.target.value as PedagogyStyle })}>
+              {pedagogyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <small>{pedagogyOptions.find((option) => option.value === request.pedagogy_style)?.hint}</small>
+          </label>
+          <label>
+            Uploaded sources
+            <select value={request.source_usage} onChange={(e) => setRequest({ ...request, source_usage: e.target.value as SourceUsage })}>
+              {sourceUsageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <small>{sourceUsageOptions.find((option) => option.value === request.source_usage)?.hint}</small>
+          </label>
+          <label className="span-2">
+            Exercise handling
+            <select value={request.exercise_strategy} onChange={(e) => setRequest({ ...request, exercise_strategy: e.target.value as ExerciseStrategy })}>
+              {exerciseStrategyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <small>{exerciseStrategyOptions.find((option) => option.value === request.exercise_strategy)?.hint}</small>
+          </label>
           <label className="span-2">Goals<textarea value={goalText} onChange={(e) => setGoalText(e.target.value)} rows={5} /></label>
-          <label className="span-2">Running project<input value={request.running_project_description || ""} onChange={(e) => setRequest({ ...request, running_project_description: e.target.value || null })} /></label>
+          {(request.project_based || request.book_type === "implementation_guide") && (
+            <label className="span-2">Running project<input value={request.running_project_description || ""} onChange={(e) => setRequest({ ...request, running_project_description: e.target.value || null })} /></label>
+          )}
         </div>
       </section>
 
@@ -572,7 +681,7 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
         <div className="source-mode">
           <div>
             <strong>{webResearchEnabled ? "Web research on" : "PDF-only research"}</strong>
-            <span>{hasPdfs ? "Turn this on to combine your PDFs with live web search." : "At least one source is required, so web research stays on until PDFs are attached."}</span>
+            <span>{hasPdfs ? "Uploaded PDFs stay primary; web search only supplements them when this is on." : "At least one source is required, so web research stays on until PDFs are attached."}</span>
           </div>
           <label className="toggle-switch">
             <input
@@ -606,8 +715,35 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
   );
 }
 
-function ProgressPage({ jobs, selectedJob, onSelect }: { jobs: Job[]; selectedJob: Job | null; onSelect: (id: number) => void }) {
+function ProgressPage({
+  api,
+  jobs,
+  selectedJob,
+  onSelect,
+  onJobs,
+  onNotice
+}: {
+  api: ApiClient;
+  jobs: Job[];
+  selectedJob: Job | null;
+  onSelect: (id: number) => void;
+  onJobs: React.Dispatch<React.SetStateAction<Job[]>>;
+  onNotice: (message: string) => void;
+}) {
   const shouldReduceMotion = useReducedMotion();
+  const canStop = selectedJob?.status === "queued" || selectedJob?.status === "running";
+
+  async function stopSelectedJob() {
+    if (!selectedJob) return;
+    try {
+      const stoppedJob = await api.stopJob(selectedJob.id);
+      onJobs((current) => current.map((job) => job.id === stoppedJob.id ? stoppedJob : job));
+      onNotice(`Job #${stoppedJob.id} stopped.`);
+    } catch (err) {
+      onNotice(err instanceof Error ? err.message : "Could not stop job.");
+    }
+  }
+
   return (
     <div className="progress-layout">
       <section className="job-list">
@@ -629,7 +765,15 @@ function ProgressPage({ jobs, selectedJob, onSelect }: { jobs: Job[]; selectedJo
                 <span className="eyebrow">Current job</span>
                 <h2>{String(selectedJob.request_payload.topic || `Job #${selectedJob.id}`)}</h2>
               </div>
-              <StatusPill status={selectedJob.status} />
+              <div className="job-hero-actions">
+                <StatusPill status={selectedJob.status} />
+                {canStop && (
+                  <motion.button className="secondary-button" type="button" onClick={stopSelectedJob} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
+                    <X size={16} />
+                    Stop
+                  </motion.button>
+                )}
+              </div>
             </div>
             <div className="stage-stack">
               {stageOrder.map((stageKey, index) => {
@@ -705,7 +849,7 @@ function BooksPage({ api, books, onNotice }: { api: ApiClient; books: GeneratedB
 
 function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: string) => void }) {
   const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
-  const [values, setValues] = useState<Record<ApiKeyProvider, string>>({ google: "", groq: "", tavily: "", firecrawl: "" });
+  const [values, setValues] = useState<Record<ApiKeyProvider, string>>({ google: "", groq: "", tavily: "", firecrawl: "", neon: "" });
   const [detected, setDetected] = useState<ApiKeyProvider[]>([]);
   const [isDraggingEnv, setIsDraggingEnv] = useState(false);
   const envInputRef = useRef<HTMLInputElement>(null);
@@ -770,7 +914,7 @@ function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: strin
     refresh();
   }
 
-  const labels: Record<ApiKeyProvider, string> = { google: "Google / Gemini", groq: "Groq", tavily: "Tavily", firecrawl: "Firecrawl" };
+  const labels: Record<ApiKeyProvider, string> = { google: "Google / Gemini", groq: "Groq", tavily: "Tavily", firecrawl: "Firecrawl", neon: "Neon database" };
   return (
     <div className="keys-layout">
       <section className="env-import-panel">
@@ -803,7 +947,7 @@ function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: strin
           />
           <Upload size={24} />
           <strong>{detected.length ? `${detected.length} key${detected.length > 1 ? "s" : ""} detected` : "Drag and drop .env"}</strong>
-          <span>Supports Google/Gemini, Groq, Tavily, and Firecrawl keys.</span>
+          <span>Supports Google/Gemini, Groq, Tavily, Firecrawl, and optional Neon database URLs.</span>
         </motion.div>
         <div className="detected-row">
           {(Object.keys(labels) as ApiKeyProvider[]).map((provider) => (
@@ -864,11 +1008,35 @@ function cleanEnvValue(rawValue: string) {
 
 function ConfigPage({ api, onNotice }: { api: ApiClient; onNotice: (message: string) => void }) {
   const [config, setConfig] = useState<PipelineConfig | null>(null);
-  useEffect(() => { api.config().then(setConfig).catch((error) => onNotice(error.message)); }, [api, onNotice]);
+  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
+  const [neonDatabaseUrl, setNeonDatabaseUrl] = useState("");
+  useEffect(() => {
+    Promise.all([api.config(), api.apiKeys()])
+      .then(([nextConfig, nextKeys]) => {
+        setConfig(nextConfig);
+        setKeys(nextKeys);
+      })
+      .catch((error) => onNotice(error.message));
+  }, [api, onNotice]);
   if (!config) return <EmptyState title="Loading config" text="Fetching your pipeline controls." />;
+  const neonKey = keys.find((item) => item.provider === "neon");
 
   function update<K extends keyof PipelineConfig>(key: K, value: PipelineConfig[K]) {
     setConfig({ ...config, [key]: value } as PipelineConfig);
+  }
+
+  async function saveNeonDatabaseUrl() {
+    if (!neonDatabaseUrl.trim()) return;
+    const saved = await api.saveApiKey("neon", neonDatabaseUrl.trim());
+    setKeys((current) => [saved, ...current.filter((item) => item.provider !== "neon")]);
+    setNeonDatabaseUrl("");
+    onNotice("Advanced Neon database URL saved encrypted.");
+  }
+
+  async function removeNeonDatabaseUrl() {
+    await api.deleteApiKey("neon");
+    setKeys((current) => current.filter((item) => item.provider !== "neon"));
+    onNotice("Advanced Neon database URL removed.");
   }
 
   return (
@@ -897,6 +1065,26 @@ function ConfigPage({ api, onNotice }: { api: ApiClient; onNotice: (message: str
         <label className="toggle-row"><span>Strict compile</span><input type="checkbox" checked={config.strict_latex_compile} onChange={(e) => update("strict_latex_compile", e.target.checked)} /></label>
         <label>LaTeX engine<select value={config.latex_engine} onChange={(e) => update("latex_engine", e.target.value as PipelineConfig["latex_engine"])}><option>pdflatex</option><option>xelatex</option><option>lualatex</option></select></label>
         <motion.button className="primary-button full" onClick={() => api.saveConfig(config).then(setConfig).then(() => onNotice("Configuration saved."))} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}><Save size={17} />Save config</motion.button>
+      </section>
+      <section className="control-panel">
+        <PanelTitle icon={Cpu} title="Advanced" meta="Optional user-owned Neon database" />
+        <label>
+          Neon database URL
+          <input
+            type="password"
+            value={neonDatabaseUrl}
+            placeholder={neonKey ? neonKey.key_hint : "postgresql://...sslmode=require"}
+            onChange={(e) => setNeonDatabaseUrl(e.target.value)}
+          />
+          <small>{neonKey ? `Saved encrypted: ${neonKey.key_hint}` : "Optional. Stored encrypted and passed only to your jobs as WRITERLM_USER_NEON_DATABASE_URL."}</small>
+        </label>
+        <div className="button-row">
+          <motion.button className="primary-button" type="button" disabled={!neonDatabaseUrl.trim()} onClick={() => saveNeonDatabaseUrl().catch((error) => onNotice(error.message))} whileHover={{ y: neonDatabaseUrl.trim() ? -1 : 0 }} whileTap={{ scale: neonDatabaseUrl.trim() ? 0.98 : 1 }}>
+            <Save size={16} />
+            Save Neon URL
+          </motion.button>
+          {neonKey && <button className="danger-button" type="button" onClick={() => removeNeonDatabaseUrl().catch((error) => onNotice(error.message))}><Trash2 size={16} />Remove</button>}
+        </div>
       </section>
     </div>
   );
@@ -930,6 +1118,7 @@ function stageIcon(status: string) {
   if (status === "completed") return <Check size={17} />;
   if (status === "running") return <RefreshCw size={17} className="spin" />;
   if (status === "failed") return <Trash2 size={17} />;
+  if (status === "stopped") return <X size={17} />;
   return <Timer size={17} />;
 }
 
@@ -959,4 +1148,16 @@ function EmptyState({ title, text }: { title: string; text: string }) {
   return <div className="empty-state"><Sparkles size={24} /><strong>{title}</strong><span>{text}</span></div>;
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Add your Clerk Publishable Key to VITE_CLERK_PUBLISHABLE_KEY in the frontend environment.");
+}
+
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+      <App />
+    </ClerkProvider>
+  </React.StrictMode>
+);

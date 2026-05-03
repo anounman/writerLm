@@ -5,7 +5,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     WRITERLM_COMPILE_LATEX=1 \
     WRITERLM_STRICT_LATEX_COMPILE=0 \
-    LATEX_ENGINE=pdflatex
+    LATEX_ENGINE=pdflatex \
+    WRITERLM_UPLOAD_STAGING=/app/.cache/uploads
 
 WORKDIR /app
 
@@ -34,6 +35,6 @@ RUN python -m pip install --upgrade pip \
 
 COPY . .
 
-RUN mkdir -p outputs runs .cache
+RUN mkdir -p outputs runs .cache/uploads data
 
 CMD ["python", "orchestration/run_full_pipeline.py"]

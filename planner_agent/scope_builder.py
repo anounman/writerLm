@@ -115,14 +115,40 @@ class ScopeBuilder:
         if request.normalized_goals:
             includes.extend(request.normalized_goals)
 
-        if request.project_based:
+        if request.uses_uploaded_sources_as_primary and request.source_context:
             includes.extend(
                 [
-                    "step-by-step implementation with working code at each stage",
-                    "concrete code examples the reader can run and modify",
-                    "diagrams and visuals explaining architecture and data flow",
-                    "progressive project build where each chapter adds a new capability",
-                    "common mistakes and debugging guidance for each implementation step",
+                    "uploaded source documents define the book's domain, terminology, and curriculum boundaries",
+                    "source-inspired worked examples and practice questions that are original, not copied",
+                ]
+            )
+            includes.extend(request.source_context.source_topics[:8])
+
+        if request.project_based or request.effective_book_type == "implementation_guide":
+            includes.extend(
+                [
+                    "step-by-step applied progression with verifiable milestones",
+                    "concrete implementation examples when the subject calls for them",
+                    "diagrams and visuals explaining structure, relationships, or process",
+                    "common mistakes and debugging or correction guidance",
+                ]
+            )
+
+        balance = request.effective_theory_practice_balance
+        if balance == "theory_heavy":
+            includes.extend(
+                [
+                    "precise definitions and conceptual foundations before applications",
+                    "theorem-style statements, derivations, or proof intuition where appropriate",
+                    "examples mainly to clarify theory, not to replace it",
+                ]
+            )
+        elif balance == "practice_heavy":
+            includes.extend(
+                [
+                    "theory followed by worked examples and practice exercises",
+                    "question patterns inspired by uploaded exercise sheets when present",
+                    "step-by-step solution methods and common mistake checks",
                 ]
             )
 
@@ -130,8 +156,8 @@ class ScopeBuilder:
             includes.extend(
                 [
                     "only the minimum background needed to understand the topic",
-                    "the core architecture and moving parts of a simple system",
-                    "a practical path from mental model to first implementation",
+                    "the core mental model and moving parts of the topic",
+                    "a practical path from mental model to first usable result",
                     "common beginner pitfalls, debugging tips, and pragmatic trade-offs",
                 ]
             )
@@ -186,7 +212,9 @@ class ScopeBuilder:
         ]
 
     def _build_sequence_logic(self, request: UserBookRequest, key_themes: list[str]) -> list[str]:
-        if request.project_based:
+        balance = request.effective_theory_practice_balance
+
+        if request.project_based or request.effective_book_type == "implementation_guide":
             logic = [
                 "start with minimal setup and get the reader to a working (even trivial) version in chapter 1-2",
                 "introduce concepts ONLY when the reader needs them for the next build step",
@@ -198,6 +226,22 @@ class ScopeBuilder:
             if request.is_focused_beginner_guide:
                 logic.append("reserve advanced extensions for optional later material only if requested")
             return logic
+
+        if balance == "theory_heavy":
+            return [
+                "start with definitions, notation, prerequisites, and conceptual motivation",
+                "develop theory in a logical sequence before broad applications",
+                "use examples to illuminate definitions, theorems, and derivations",
+                "reserve practice-heavy sections for consolidation after the theory is established",
+            ]
+
+        if balance == "practice_heavy":
+            return [
+                "introduce each concept with enough theory to make the method understandable",
+                "follow theory immediately with worked examples",
+                "include practice questions inspired by uploaded source question patterns when present",
+                "move from basic problems to mixed and exam-style problems",
+            ]
 
         if request.is_focused_beginner_guide:
             logic = [
@@ -228,12 +272,26 @@ class ScopeBuilder:
         return logic
 
     def _build_structure_options(self, request: UserBookRequest) -> list[str]:
-        if request.project_based:
+        if request.project_based or request.effective_book_type == "implementation_guide":
             return [
                 "project-driven: each chapter builds on the previous chapter's code",
                 "setup → core build → enhance → test/debug → polish progression",
                 "theory introduced just-in-time as the project demands it",
                 "every section ends with runnable code or a verifiable result",
+            ]
+
+        if request.effective_book_type in {"course_companion", "practice_workbook", "exam_prep"}:
+            return [
+                "course-companion: theory blocks followed by worked examples and practice sets",
+                "source-aligned sequence using uploaded documents as the primary curriculum map",
+                "problem-pattern progression from basic drills to mixed application questions",
+            ]
+
+        if request.effective_theory_practice_balance == "theory_heavy":
+            return [
+                "theory-first textbook structure",
+                "definitions → propositions/theorems → proof intuition → examples → exercises",
+                "slow conceptual build-up with clear notation and assumptions",
             ]
 
         if request.is_focused_beginner_guide:
@@ -269,8 +327,18 @@ class ScopeBuilder:
 
         return selected[:8]
 
-    def _build_notes(self, lines: list[str]) -> list[str]:
-        return lines[:10]
+    def _build_notes(self, request: UserBookRequest, lines: list[str]) -> list[str]:
+        notes: list[str] = []
+        if request.source_context and request.source_context.has_uploaded_sources:
+            notes.append(request.source_context.summary)
+            notes.extend(request.source_context.guidance)
+            if request.source_context.question_patterns:
+                notes.append(
+                    "Observed source question patterns: "
+                    + " | ".join(request.source_context.question_patterns[:6])
+                )
+        notes.extend(lines[:10])
+        return notes[:14]
 
     def build_context(
         self,
@@ -294,10 +362,14 @@ class ScopeBuilder:
         sequence_logic = self._build_sequence_logic(request, key_themes)
         structure_options = self._build_structure_options(request)
         evidence_examples = self._build_evidence_examples(lines)
-        notes = self._build_notes(lines)
+        notes = self._build_notes(request, lines)
 
-        if request.project_based:
-            book_purpose = "guide the reader through building a complete working project with code, examples, and diagrams at every step"
+        if request.project_based or request.effective_book_type == "implementation_guide":
+            book_purpose = "guide the reader through building or applying a complete working result with examples, diagrams, and code only when the subject requires it"
+        elif request.effective_book_type in {"course_companion", "practice_workbook", "exam_prep"}:
+            book_purpose = "teach the source-aligned theory and develop problem-solving skill through worked examples and practice"
+        elif request.effective_theory_practice_balance == "theory_heavy":
+            book_purpose = "explain the theory rigorously and build conceptual understanding"
         elif request.is_focused_beginner_guide:
             book_purpose = "explain and help the reader build a simple working system"
         elif request.depth == "introductory":
@@ -318,9 +390,12 @@ class ScopeBuilder:
             project_desc = f" The reader builds: {request.running_project_description}."
 
         core_idea = (
-            f"A {request.tone} book for {request.audience} that teaches "
-            f"{request.topic} with an appropriate scope and sequence.{goal_summary}{project_desc}"
+            f"A {request.tone} {request.effective_book_type} for {request.audience} that teaches "
+            f"{request.topic} with a {request.effective_theory_practice_balance} sequence.{goal_summary}{project_desc}"
         )
+
+        if request.source_context and request.source_context.has_uploaded_sources:
+            core_idea += f" Uploaded sources are primary: {request.source_context.summary}"
 
         if request.is_focused_beginner_guide:
             notes = [

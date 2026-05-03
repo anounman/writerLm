@@ -34,7 +34,7 @@ class BuildResearchTaskOutput(BaseModel):
 
 
 BUILD_RESEARCH_TASK_SYSTEM_PROMPT = """
-You are a research-planning specialist inside a multi-stage PRACTICAL book generation system.
+You are a research-planning specialist inside a multi-stage book generation system.
 
 Your job is to convert planner output for a single book section into a precise research brief.
 
@@ -42,7 +42,7 @@ You are NOT writing the section.
 You are NOT producing prose.
 You are preparing a research task for downstream discovery, source collection, and evidence extraction.
 
-Your output must be practical, scoped, and useful for structured research.
+Your output must be scoped, source-faithful, and useful for structured research.
 
 Guidelines:
 - Keep the objective specific and actionable.
@@ -52,15 +52,14 @@ Guidelines:
 - Assumptions should be minimal and useful.
 - Do not invent unnecessary complexity.
 - Keep the task bounded to what this section needs; do not broaden a focused teaching section into an academic survey.
-- Prefer research angles that help a practical technical guide explain how something works, why it matters, and how to apply it.
+- Prefer research angles that match the section type: theory, worked examples, practice questions, implementation, reference detail, or conceptual explanation.
 - Do not include markdown.
 
-PRACTICAL RESEARCH BIAS (CRITICAL):
-- Prioritize finding: working code examples, implementation tutorials, API documentation, and step-by-step guides.
-- Include in scope_inclusions: "working code examples", "implementation patterns", "common pitfalls and debugging tips" when the section is implementation-oriented.
-- Include in research_questions: questions about HOW to implement, not just WHAT something is.
-- Prefer sources that show real implementations over theoretical papers.
-- Include scope_inclusions for diagrams/architecture when the section needs visual explanation.
+DOMAIN ALIGNMENT (CRITICAL):
+- Do not force code, APIs, software architecture, or implementation tutorials into non-software subjects.
+- For math/course/theory sections, prioritize definitions, theorem/proof intuition, worked examples, problem patterns, and common misconceptions.
+- For implementation-oriented software sections, include working code examples, implementation patterns, and debugging tips.
+- Include scope_inclusions for diagrams/visual intuition when the section needs visual explanation.
 """
 
 
@@ -162,7 +161,7 @@ class BuildResearchTaskNode:
                 required_evidence_types=required_evidence_types,
                 research_questions=self._fallback_research_questions(section),
                 assumptions=[
-                    "Use concise, implementation-focused evidence suitable for a practical book section."
+                    "Use concise evidence aligned to the section's domain and teaching goal."
                 ],
             )
             return state
@@ -207,18 +206,43 @@ class BuildResearchTaskNode:
             section.section_title,
             section.section_goal,
             *list(section.key_points or []),
-            "working implementation details",
-            "common pitfalls and debugging tips",
+            "definitions, examples, and common misconceptions relevant to the section",
         ]
+        if self._looks_implementation_oriented(section):
+            inclusions.extend(
+                [
+                    "working implementation details",
+                    "common pitfalls and debugging tips",
+                ]
+            )
         return self._clean_unique_strings(inclusions)
 
     def _fallback_research_questions(self, section) -> list[str]:
         questions = [
             f"What should readers understand about {section.section_title}?",
-            f"How is {section.section_title} implemented in practice?",
-            f"What mistakes should readers avoid when working on {section.section_title}?",
+            f"What examples or problem patterns best teach {section.section_title}?",
+            f"What mistakes should readers avoid when learning {section.section_title}?",
         ]
+        if self._looks_implementation_oriented(section):
+            questions.append(f"How is {section.section_title} implemented in practice?")
         return self._clean_unique_strings(questions)
+
+    def _looks_implementation_oriented(self, section) -> bool:
+        text = f"{section.chapter_title} {section.section_title} {section.section_goal}".lower()
+        return any(
+            signal in text
+            for signal in (
+                "build",
+                "implement",
+                "code",
+                "python",
+                "api",
+                "software",
+                "pipeline",
+                "debug",
+                "deploy",
+            )
+        )
 
     def _clean_unique_strings(self, values: list[str]) -> list[str]:
         cleaned_values: list[str] = []

@@ -6,10 +6,31 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl"]
+ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl", "neon"]
 Provider = Literal["google", "groq"]
 Density = Literal["high", "medium", "low"]
 LatexEngine = Literal["pdflatex", "xelatex", "lualatex"]
+BookType = Literal[
+    "auto",
+    "textbook",
+    "practice_workbook",
+    "course_companion",
+    "implementation_guide",
+    "reference_handbook",
+    "conceptual_guide",
+    "exam_prep",
+]
+TheoryPracticeBalance = Literal["auto", "theory_heavy", "balanced", "practice_heavy", "implementation_heavy"]
+PedagogyStyle = Literal[
+    "auto",
+    "german_theoretical",
+    "indian_theory_then_examples",
+    "socratic",
+    "exam_oriented",
+    "project_based",
+]
+SourceUsage = Literal["auto", "primary_curriculum", "supplemental", "example_inspiration"]
+ExerciseStrategy = Literal["auto", "none", "extract_patterns", "worked_examples", "practice_sets"]
 
 
 class UserCreate(BaseModel):
@@ -75,11 +96,16 @@ class PipelineConfig(BaseModel):
 class BookRequest(BaseModel):
     topic: str = Field(..., min_length=3)
     audience: str = Field(..., min_length=3)
-    tone: str = "practical step by step guide"
+    tone: str = "clear and supportive"
+    book_type: BookType = "auto"
+    theory_practice_balance: TheoryPracticeBalance = "balanced"
+    pedagogy_style: PedagogyStyle = "auto"
+    source_usage: SourceUsage = "auto"
+    exercise_strategy: ExerciseStrategy = "auto"
     goals: list[str] = Field(default_factory=list)
-    project_based: bool = True
+    project_based: bool = False
     running_project_description: str | None = None
-    code_density: Density = "high"
+    code_density: Density = "low"
     example_density: Density = "high"
     diagram_density: Density = "medium"
     max_section_words: int | None = Field(default=None, ge=150, le=2000)

@@ -35,6 +35,11 @@ PRACTICAL_PAYOFF_PATTERNS = (
     "prototype",
     "python",
     "hands-on",
+    "worked example",
+    "practice",
+    "exercise",
+    "problem",
+    "solve",
 )
 
 BACKGROUND_PATTERNS = (
@@ -95,6 +100,10 @@ def _count_rag_specific_chapters(plan: BookPlan) -> int:
         if any(pattern in chapter_text for pattern in RAG_SPECIFIC_PATTERNS):
             count += 1
     return count
+
+
+def _request_is_rag_related(request: UserBookRequest) -> bool:
+    return any(pattern in request.combined_intent_text for pattern in RAG_SPECIFIC_PATTERNS)
 
 
 def validate_book_plan(plan: BookPlan, request: UserBookRequest) -> list[str]:
@@ -264,7 +273,7 @@ def validate_book_plan(plan: BookPlan, request: UserBookRequest) -> list[str]:
                 f"Focused beginner guides should not spend multiple chapters on broad background "
                 f"material alone, but this plan has {background_only_count} background-only chapters."
             )
-        if background_only_count >= max(2, rag_specific_count):
+        if _request_is_rag_related(request) and background_only_count >= max(2, rag_specific_count):
             issues.append(
                 "Background coverage outweighs RAG-specific content for a focused beginner guide."
             )

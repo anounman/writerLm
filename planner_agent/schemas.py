@@ -58,8 +58,8 @@ class ContentDensityTargets(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     code_density: Literal["high", "medium", "low"] = Field(
-        default="high",
-        description="How much code should appear. 'high' = code in every section, 'medium' = most sections, 'low' = selective.",
+        default="low",
+        description="How much programming/code should appear. 'high' = code in every section, 'medium' = most sections, 'low' = only when the subject requires it.",
     )
     example_density: Literal["high", "medium", "low"] = Field(
         default="high",
@@ -71,30 +71,129 @@ class ContentDensityTargets(BaseModel):
     )
 
 
+BookType = Literal[
+    "auto",
+    "textbook",
+    "practice_workbook",
+    "course_companion",
+    "implementation_guide",
+    "reference_handbook",
+    "conceptual_guide",
+    "exam_prep",
+]
+
+TheoryPracticeBalance = Literal[
+    "auto",
+    "theory_heavy",
+    "balanced",
+    "practice_heavy",
+    "implementation_heavy",
+]
+
+PedagogyStyle = Literal[
+    "auto",
+    "german_theoretical",
+    "indian_theory_then_examples",
+    "socratic",
+    "exam_oriented",
+    "project_based",
+]
+
+SourceUsage = Literal[
+    "auto",
+    "primary_curriculum",
+    "supplemental",
+    "example_inspiration",
+]
+
+ExerciseStrategy = Literal[
+    "auto",
+    "none",
+    "extract_patterns",
+    "worked_examples",
+    "practice_sets",
+]
+
+
+class UploadedSourceSummary(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    filename: str
+    title: str = ""
+    page_count: Optional[int] = None
+    language_hints: List[str] = Field(default_factory=list)
+    likely_topics: List[str] = Field(default_factory=list)
+    sample_questions: List[str] = Field(default_factory=list)
+    sample_terms: List[str] = Field(default_factory=list)
+    text_preview: str = ""
+    contains_exercises: bool = False
+
+
+class SourcePlanningContext(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    has_uploaded_sources: bool = False
+    source_priority: Literal["uploaded_sources_primary", "web_primary", "balanced"] = "balanced"
+    summary: str = ""
+    likely_domain: str = ""
+    likely_language: str = ""
+    uploaded_sources: List[UploadedSourceSummary] = Field(default_factory=list)
+    source_topics: List[str] = Field(default_factory=list)
+    question_patterns: List[str] = Field(default_factory=list)
+    guidance: List[str] = Field(default_factory=list)
+
+
 class UserBookRequest(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     topic: str = Field(..., min_length=3)
     audience: str = Field(..., min_length=3)
-    tone: str = "clear, practical, project-based"
+    tone: str = "clear and supportive"
     depth: Literal["introductory", "intermediate", "advanced"] = "intermediate"
+    book_type: BookType = Field(
+        default="auto",
+        description="The desired kind of book. Use auto to infer from topic, sources, and goals.",
+    )
+    theory_practice_balance: TheoryPracticeBalance = Field(
+        default="balanced",
+        description="Controls whether the book emphasizes theory, practice, or implementation.",
+    )
+    pedagogy_style: PedagogyStyle = Field(
+        default="auto",
+        description="Teaching style, such as theory-first German textbook style or theory-then-examples Indian textbook style.",
+    )
+    source_usage: SourceUsage = Field(
+        default="auto",
+        description="How uploaded/user sources should influence the book.",
+    )
+    exercise_strategy: ExerciseStrategy = Field(
+        default="auto",
+        description="How to use exercise/question sources when present.",
+    )
     goals: List[str] = Field(default_factory=list)
     chapter_count: Optional[int] = Field(default=None, ge=3, le=20)
     max_section_words: Optional[int] = Field(default=None, ge=150, le=2000)
     constraints: Optional[RequestConstraints] = None
 
-    # --- New fields for practical book generation ---
     project_based: bool = Field(
-        default=True,
-        description="If true, the book teaches through a single evolving project across chapters.",
+        default=False,
+        description="If true, the book teaches through one evolving project. Leave false for textbooks, course companions, math books, and theory-first books.",
     )
     running_project_description: Optional[str] = Field(
         default=None,
-        description="Optional description of the running project (e.g., 'Build a RAG chatbot from scratch').",
+        description="Optional description of the running project or applied artifact.",
     )
     content_density: ContentDensityTargets = Field(
         default_factory=ContentDensityTargets,
         description="Controls code, example, and diagram density throughout the book.",
+    )
+    force_web_research: bool = Field(
+        default=False,
+        description="When true, web research may supplement uploaded sources. Uploaded sources remain authoritative when present.",
+    )
+    source_context: Optional[SourcePlanningContext] = Field(
+        default=None,
+        description="Compact planning summary extracted from uploaded source documents before outline generation.",
     )
 
     @model_validator(mode="before")
@@ -142,6 +241,9 @@ class UserBookRequest(BaseModel):
             str(payload.get("topic", "")),
             str(payload.get("audience", "")),
             str(payload.get("tone", "")),
+            str(payload.get("book_type", "")),
+            str(payload.get("theory_practice_balance", "")),
+            str(payload.get("pedagogy_style", "")),
         ]
 
         goals = payload.get("goals")
@@ -165,9 +267,44 @@ class UserBookRequest(BaseModel):
             self.topic,
             self.audience,
             self.tone,
+            self.book_type,
+            self.theory_practice_balance,
+            self.pedagogy_style,
             *self.normalized_goals,
         ]
         return " ".join(part.lower() for part in parts if part)
+
+    @property
+    def effective_book_type(self) -> str:
+        if self.book_type != "auto":
+            return self.book_type
+        if self.project_based:
+            return "implementation_guide"
+        if self.source_context and self.source_context.has_uploaded_sources:
+            if self.source_context.question_patterns:
+                return "course_companion"
+            return "textbook"
+        if self.content_density.code_density == "high" or self.theory_practice_balance == "implementation_heavy":
+            return "implementation_guide"
+        return "textbook"
+
+    @property
+    def effective_theory_practice_balance(self) -> str:
+        if self.theory_practice_balance != "auto":
+            return self.theory_practice_balance
+        if self.pedagogy_style == "german_theoretical":
+            return "theory_heavy"
+        if self.pedagogy_style in {"indian_theory_then_examples", "exam_oriented"}:
+            return "practice_heavy"
+        if self.project_based:
+            return "implementation_heavy"
+        return "balanced"
+
+    @property
+    def uses_uploaded_sources_as_primary(self) -> bool:
+        if not self.source_context or not self.source_context.has_uploaded_sources:
+            return False
+        return self.source_usage in {"auto", "primary_curriculum"} or self.source_context.source_priority == "uploaded_sources_primary"
 
     def has_any_signal(self, signals: tuple[str, ...]) -> bool:
         combined = self.combined_intent_text
@@ -179,7 +316,10 @@ class UserBookRequest(BaseModel):
 
     @property
     def is_practical_focused(self) -> bool:
-        return self.has_any_signal(PRACTICAL_SIGNALS)
+        return (
+            self.has_any_signal(PRACTICAL_SIGNALS)
+            or self.effective_theory_practice_balance in {"practice_heavy", "implementation_heavy"}
+        )
 
     @property
     def wants_comprehensive_coverage(self) -> bool:
@@ -190,6 +330,7 @@ class UserBookRequest(BaseModel):
         return (
             self.is_beginner_focused
             and self.is_practical_focused
+            and self.effective_book_type == "implementation_guide"
             and not self.wants_comprehensive_coverage
         )
 

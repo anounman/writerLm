@@ -261,23 +261,43 @@ class PlanQueriesNode:
     ) -> list[ResearchQuery]:
         section_title = research_task.section.section_title
         chapter_title = research_task.section.chapter_title
-        candidates = [
-            (
-                QueryKind.TECHNICAL,
-                f"{section_title} practical implementation tutorial",
-                "Find implementation-focused guidance for the section.",
-            ),
-            (
-                QueryKind.EXAMPLE,
-                f"{section_title} Python example",
-                "Find concrete examples readers can learn from.",
-            ),
-            (
-                QueryKind.CORE_CONCEPT,
-                f"{chapter_title} {section_title} best practices",
-                "Find reliable conceptual and best-practice coverage.",
-            ),
-        ]
+        task_text = f"{research_task.objective} {section_title} {chapter_title}".lower()
+        if any(signal in task_text for signal in ("build", "implement", "code", "python", "api", "software", "pipeline")):
+            candidates = [
+                (
+                    QueryKind.TECHNICAL,
+                    f"{section_title} practical implementation tutorial",
+                    "Find implementation-focused guidance for the section.",
+                ),
+                (
+                    QueryKind.EXAMPLE,
+                    f"{section_title} code example",
+                    "Find concrete implementation examples readers can learn from.",
+                ),
+                (
+                    QueryKind.CORE_CONCEPT,
+                    f"{chapter_title} {section_title} best practices",
+                    "Find reliable conceptual and best-practice coverage.",
+                ),
+            ]
+        else:
+            candidates = [
+                (
+                    QueryKind.CORE_CONCEPT,
+                    f"{chapter_title} {section_title} explanation",
+                    "Find reliable conceptual coverage.",
+                ),
+                (
+                    QueryKind.EXAMPLE,
+                    f"{section_title} worked examples exercises",
+                    "Find concrete examples or problem patterns readers can learn from.",
+                ),
+                (
+                    QueryKind.COUNTERPOINT,
+                    f"{section_title} common mistakes misconceptions",
+                    "Find common learner mistakes and misconceptions.",
+                ),
+            ]
 
         queries: list[ResearchQuery] = []
         seen_query_texts: set[str] = set()

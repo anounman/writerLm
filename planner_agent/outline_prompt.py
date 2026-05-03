@@ -4,7 +4,7 @@ from planner_agent.schemas import PlanningContext, UserBookRequest
 
 
 CHAPTER_OUTLINE_SYSTEM_PROMPT = """
-You are a chapter-outline planning engine for a multi-stage technical book generation system.
+You are a chapter-outline planning engine for a multi-stage book generation system.
 
 Your task is to create only the high-level chapter outline for a book.
 
@@ -16,22 +16,33 @@ STRICT OUTPUT RULES:
 - Do NOT return a partial answer.
 
 CORE DESIGN PRINCIPLE:
-You are building a PRACTICAL BOOK, not a knowledge handbook.
-The reader should BUILD something real, not just READ about concepts.
-Every chapter must advance the reader toward a working implementation.
+Infer the right book form from the user's intent and sources.
+The result may be a theory-first textbook, course companion, practice workbook,
+implementation guide, reference handbook, conceptual guide, or exam-prep book.
+Do not force every topic into a software, coding, or project-building structure.
 
 PLANNING RULES:
 - First infer the correct book archetype from the request:
-  - focused beginner practical guide
-  - general technical guide
-  - broad handbook only if the user explicitly asks for comprehensive coverage
+  - theory-first textbook
+  - theory plus worked examples
+  - practice workbook or exam-prep guide
+  - project/implementation guide
+  - conceptual guide
+  - reference handbook only if the user explicitly asks for broad coverage
+- Uploaded source documents are authoritative when present. Use them to disambiguate acronyms, course names, terminology, and curriculum boundaries.
 - Treat explicit user goals as hard scope boundaries, not optional inspiration.
-- Keep chapter titles concrete, task-oriented, and specific.
+- Keep chapter titles concrete, specific, and appropriate to the book type.
 - Avoid overlap and repetition across chapters.
-- Each chapter_goal should clearly describe what the reader BUILDS or ACHIEVES, not just what they learn.
-- Each chapter must end with a tangible milestone (project_milestone field).
+- Each chapter_goal should clearly describe what the reader understands, solves, applies, builds, or can do by the end.
+- project_milestone may be a learning outcome, problem-solving milestone, or built artifact depending on book type.
 
-PROJECT-BASED PLANNING (CRITICAL):
+SOURCE-AWARE PLANNING (CRITICAL):
+- If uploaded sources are present, treat them as the primary domain signal.
+- If web results conflict with uploaded sources, follow the uploaded sources.
+- Build original explanations and examples; do not copy source exercises verbatim.
+- When source exercise sheets are present, infer question patterns and include source-inspired worked examples/practice.
+
+PROJECT-BASED PLANNING:
 - When project_based is true, ALL chapters must contribute to building a single evolving project.
 - The running_project field describes what the reader is building across the entire book.
 - Chapter sequence must follow a BUILD progression:
@@ -44,7 +55,7 @@ PROJECT-BASED PLANNING (CRITICAL):
 - Each chapter_goal must reference what new capability is added to the running project.
 
 FOCUSED-BEGINNER RULES:
-- When the request is beginner-focused and practical, plan a focused guide, not a comprehensive handbook.
+- When the request is beginner-focused and implementation-oriented, plan a focused guide, not a comprehensive handbook.
 - Include only the minimum background needed to understand and build the requested system.
 - Prefer early practical payoff over long theoretical runways.
 - Do NOT add advanced production, governance, compliance, ethics, future trends, broad case-study collections, or research-frontier chapters unless explicitly requested.
@@ -71,8 +82,8 @@ def build_chapter_outline_prompt(
             {
                 "chapter_number": 1,
                 "title": "string",
-                "chapter_goal": "string (what the reader BUILDS or ACHIEVES)",
-                "project_milestone": "string (what is working by end of chapter)",
+                "chapter_goal": "string (what the reader understands, solves, applies, builds, or achieves)",
+                "project_milestone": "string or null (learning/practice milestone, or what is working by end of chapter for project books)",
             }
         ],
     }
@@ -89,9 +100,9 @@ def build_chapter_outline_prompt(
     )
 
     archetype = (
-        "focused beginner practical guide"
+        "focused beginner implementation guide"
         if request.is_focused_beginner_guide
-        else "general technical guide"
+        else request.effective_book_type.replace("_", " ")
     )
 
     banned_chapters_instruction = (
@@ -107,7 +118,7 @@ def build_chapter_outline_prompt(
         "- Ensure a practical implementation or hands-on architecture chapter appears by Chapter "
         f"{request.preferred_practical_payoff_latest_chapter} at the latest."
         if request.preferred_practical_payoff_latest_chapter is not None
-        else "- Keep the chapter sequence pedagogical and actionable."
+        else "- Keep the chapter sequence pedagogical and aligned with the requested theory/practice balance."
     )
 
     project_instruction = ""
@@ -126,28 +137,33 @@ PROJECT-BASED STRUCTURE (MANDATORY):
     else:
         project_instruction = """
 - running_project may be null for non-project-based books.
-- project_milestone is still encouraged to describe what the reader can DO after each chapter.
+- project_milestone is optional. When useful, use it as a learning outcome, problem-solving checkpoint, or practice milestone.
 """
 
     content_density = request.content_density
     density_instruction = f"""
 CONTENT DENSITY REQUIREMENTS:
-- Code density target: {content_density.code_density} ({"code in every section" if content_density.code_density == "high" else "code in most sections" if content_density.code_density == "medium" else "code where essential"})
+- Code density target: {content_density.code_density} ({"code in every section when this is a programming/software topic" if content_density.code_density == "high" else "code in most implementation sections when the topic requires code" if content_density.code_density == "medium" else "code only where the subject genuinely requires it"})
 - Example density target: {content_density.example_density} ({"concrete example in every section" if content_density.example_density == "high" else "examples in most sections" if content_density.example_density == "medium" else "examples where helpful"})
 - Diagram density target: {content_density.diagram_density} ({"diagram/visual in every section" if content_density.diagram_density == "high" else "at least one diagram per chapter" if content_density.diagram_density == "medium" else "diagrams for key concepts only"})
-- Plan chapters that ENABLE these density targets. Implementation-heavy chapters naturally support high code density.
+- Plan chapters that ENABLE these density targets without changing the subject. For mathematics, examples mean worked problems; diagrams mean visual intuition/graphs/tables, not software architecture.
 """
 
     goals_json = json.dumps(request.normalized_goals, indent=2)
 
     return f"""
-Create a high-level chapter outline for a technical book.
+Create a high-level chapter outline for a book.
 
 USER INPUT
 Topic: {request.topic}
 Audience: {request.audience}
 Tone: {request.tone}
 Depth: {request.depth}
+Book type: {request.book_type} (effective: {request.effective_book_type})
+Theory/practice balance: {request.theory_practice_balance} (effective: {request.effective_theory_practice_balance})
+Pedagogy style: {request.pedagogy_style}
+Source usage: {request.source_usage}
+Exercise strategy: {request.exercise_strategy}
 Goals:
 {goals_json}
 
@@ -192,6 +208,9 @@ Evidence or example directions:
 Additional notes:
 {json.dumps(context.notes, indent=2)}
 
+UPLOADED SOURCE CONTEXT:
+{json.dumps(request.source_context.model_dump(mode="json") if request.source_context else {}, indent=2)}
+
 IMPORTANT CONSTRAINTS:
 {chapter_count_instruction}
 - The total number of chapters must be between 3 and 20.
@@ -199,8 +218,11 @@ IMPORTANT CONSTRAINTS:
 {practical_payoff_instruction}
 - Chapters must be ordered logically.
 - Chapters must cover the user goals without unnecessary breadth.
-- Prefer concrete chapter titles such as "Build a Simple RAG Pipeline" over vague or sweeping titles like "Understanding RAG".
-- Chapter titles should use ACTION verbs: "Build", "Implement", "Add", "Test", "Optimize" — not "Understanding", "Overview of", "Introduction to".
+- Prefer concrete chapter titles. For implementation guides, action verbs such as "Build" or "Implement" are good. For textbooks, titles such as "Linear Systems and Rank" or "Differentiability in Several Variables" are better than fake build verbs.
+- Do not create software/project chapters unless project_based is true, book_type is implementation_guide, or the user's topic genuinely requires implementation.
+- For math/course books, prefer definitions, theorem/proof intuition, worked examples, common mistakes, and practice sections.
+- For German/theory-heavy style, front-load rigorous conceptual structure before practice.
+- For Indian theory-then-examples style, introduce theory and then show detailed worked examples and practice patterns.
 - Respect the scope boundaries strictly.
 - Return the FULL outline, not just the first chapter or first few chapters.
 - Ensure chapter_number values are sequential: 1, 2, 3, ...
@@ -208,11 +230,11 @@ IMPORTANT CONSTRAINTS:
 Before finalizing, silently check:
 1. The JSON is complete.
 2. The number of chapters matches the request profile.
-3. The outline is a focused guide instead of a broad handbook when the request is beginner-practical.
+3. The outline matches the effective book type and theory/practice balance.
 4. The chapter order reaches practical payoff early enough.
 5. The outline covers the user goals without drifting into excluded chapter families.
 6. Every chapter has a concrete project_milestone if project_based is true.
-7. Chapter titles use action verbs, not passive descriptions.
+7. Chapter titles fit the domain and do not force a coding/project frame.
 8. The response contains only JSON.
 9. No sections or subsections are included.
 

@@ -5,10 +5,13 @@ from planner_agent.workflow import PlannerWorkflow
 
 def main() -> None:
     request = UserBookRequest(
-        topic="Learn Generative AI and Agentic AI through practical projects",
-        audience="beginner to intermediate software developers",
-        tone="clear, practical, project-based",
+        topic="HMI 2 practice handbook with theory",
+        audience="beginner to intermediate students",
+        tone="clear, rigorous, and friendly",
         depth="intermediate",
+        book_type="course_companion",
+        theory_practice_balance="practice_heavy",
+        exercise_strategy="worked_examples",
     )
 
     workflow = PlannerWorkflow()

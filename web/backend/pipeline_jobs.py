@@ -8,6 +8,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
+from planner_agent.document_context import build_source_context_from_pdf_dir
 from web.backend.models import ApiKey, BookJob, User, UserConfig
 from web.backend.schemas import BookRequest, PipelineConfig
 from web.backend.security import decrypt_secret
@@ -42,13 +43,14 @@ def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: P
     config = get_or_create_user_config(db, user)
     config_payload = PipelineConfig.model_validate(config.settings or {}).model_dump()
     _validate_required_keys(db, user=user, config=config_payload, has_user_pdfs=user_pdf_dir is not None, force_web=request.force_web_research)
+    planner_payload = _book_request_to_planner_input(request, user_pdf_dir=user_pdf_dir)
 
     stages = _initial_stages()
     job = BookJob(
         user_id=user.id,
         status="queued",
         current_stage="queued",
-        request_payload=_book_request_to_planner_input(request),
+        request_payload=planner_payload,
         config_snapshot=config_payload,
         stages=stages,
         summary={},
@@ -84,11 +86,16 @@ def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: P
     return job
 
 
-def _book_request_to_planner_input(request: BookRequest) -> dict:
-    return {
+def _book_request_to_planner_input(request: BookRequest, *, user_pdf_dir: Path | None = None) -> dict:
+    payload = {
         "topic": request.topic,
         "audience": request.audience,
         "tone": request.tone,
+        "book_type": request.book_type,
+        "theory_practice_balance": request.theory_practice_balance,
+        "pedagogy_style": request.pedagogy_style,
+        "source_usage": request.source_usage,
+        "exercise_strategy": request.exercise_strategy,
         "goals": [goal.strip() for goal in request.goals if goal.strip()],
         "project_based": request.project_based,
         "running_project_description": request.running_project_description,
@@ -100,6 +107,10 @@ def _book_request_to_planner_input(request: BookRequest) -> dict:
         },
         "force_web_research": request.force_web_research,
     }
+    source_context = build_source_context_from_pdf_dir(user_pdf_dir)
+    if source_context is not None:
+        payload["source_context"] = source_context.model_dump(mode="json")
+    return payload
 
 
 def _build_job_environment(
@@ -112,6 +123,7 @@ def _build_job_environment(
 ) -> dict[str, str]:
     env = os.environ.copy()
     api_keys = _api_keys_by_provider(db, user=user)
+    _remove_deployment_provider_secrets(env)
 
     key_env_map = {
         "google": "GOOGLE_API_KEY",
@@ -123,6 +135,9 @@ def _build_job_environment(
         value = api_keys.get(provider)
         if value:
             env[env_name] = value
+
+    if api_keys.get("neon"):
+        env["WRITERLM_USER_NEON_DATABASE_URL"] = api_keys["neon"]
 
     env.update(
         {
@@ -158,6 +173,23 @@ def _build_job_environment(
         env["WRITERLM_FORCE_WEB_RESEARCH"] = "1"
 
     return env
+
+
+def _remove_deployment_provider_secrets(env: dict[str, str]) -> None:
+    for name in (
+        "GOOGLE_API_KEY",
+        "GEMINI_API_KEY",
+        "GOOGLE_GENERATIVE_AI_API_KEY",
+        "GOOGLE_AI_API_KEY",
+        "GOOGLE_AI_STUDIO_API_KEY",
+        "GROQ_API_KEY",
+        "TAVILY_API_KEY",
+        "FIRECRAWL_API_KEY",
+        "FIRECRAWL_KEY",
+        "NEON_DATABASE_URL",
+        "WRITERLM_USER_NEON_DATABASE_URL",
+    ):
+        env.pop(name, None)
 
 
 def _validate_required_keys(

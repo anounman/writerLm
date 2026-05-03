@@ -29,11 +29,12 @@ PLANNING RULES:
 
 CONTENT REQUIREMENTS (CRITICAL):
 - Every section MUST specify content_requirements with:
-  - must_include_code: true/false — whether the section needs code examples
-  - must_include_example: true/false — whether the section needs a concrete example or analogy
+  - must_include_code: true/false — whether the section needs programming/code examples
+  - must_include_example: true/false — whether the section needs a concrete example, worked problem, analogy, or case
   - must_include_diagram: true/false — whether the section needs a diagram or visualization
   - suggested_diagram_type: null or a string like "flowchart", "architecture", "comparison_table", "sequence_diagram", "data_flow"
-- For implementation-oriented chapters: MOST sections should have must_include_code = true.
+- For implementation-oriented software chapters: MOST sections should have must_include_code = true.
+- For math/course/theory chapters: use worked examples and diagrams/visual intuition; do not add code unless explicitly useful.
 - For conceptual sections: must_include_example should be true and consider must_include_diagram = true.
 - NO section should have ALL three set to false. Every section must include at least one of: code, example, or diagram.
 
@@ -91,7 +92,10 @@ def build_section_planner_prompt(
     )
 
     chapter_text = f"{chapter.title} {chapter.chapter_goal}".lower()
-    chapter_is_implementation_oriented = any(
+    chapter_is_implementation_oriented = (
+        request.effective_book_type == "implementation_guide"
+        or request.project_based
+        or any(
         signal in chapter_text
         for signal in (
             "build",
@@ -105,22 +109,38 @@ def build_section_planner_prompt(
             "hands-on",
             "code",
         )
+        )
     )
 
-    implementation_guidance = (
+    chapter_is_software_or_code = request.content_density.code_density != "low" or any(
+        signal in f"{request.topic} {chapter_text}".lower()
+        for signal in ("code", "python", "api", "software", "program", "app", "pipeline")
+    )
+
+    if chapter_is_implementation_oriented and chapter_is_software_or_code:
+        implementation_guidance = (
         "- This chapter is implementation-oriented. Make sections concrete and sequential, such as setup, architecture, build steps, debugging, and improvement.\n"
         "- MOST sections in this chapter MUST have must_include_code = true.\n"
         "- At least one section should have must_include_diagram = true (e.g., architecture or data flow)."
-        if chapter_is_implementation_oriented
-        else "- Keep sections concrete and directly useful to the stated chapter goal.\n"
+        )
+    elif request.effective_book_type in {"textbook", "course_companion", "practice_workbook", "exam_prep"}:
+        implementation_guidance = (
+            "- This is a textbook/course/practice chapter. Make sections progress through theory, worked examples, and practice.\n"
+            "- Prefer must_include_example = true for worked problems or concrete examples.\n"
+            "- Set must_include_code = true only if the topic explicitly requires programming.\n"
+            "- Use diagrams for conceptual maps, graphs, tables, geometry, or visual intuition where useful."
+        )
+    else:
+        implementation_guidance = (
+            "- Keep sections concrete and directly useful to the stated chapter goal.\n"
         "- Conceptual sections MUST have must_include_example = true.\n"
         "- At least one section per chapter should have must_include_diagram = true."
-    )
+        )
 
     content_density = request.content_density
     density_guidance = f"""
 CONTENT DENSITY TARGETS:
-- Code density: {content_density.code_density} — {"set must_include_code = true for every section" if content_density.code_density == "high" else "set must_include_code = true for most sections" if content_density.code_density == "medium" else "set must_include_code = true only where essential"}
+- Code density: {content_density.code_density} — {"set must_include_code = true for every section only for programming/software content" if content_density.code_density == "high" else "set must_include_code = true for most implementation sections only when the topic requires code" if content_density.code_density == "medium" else "set must_include_code = true only where essential"}
 - Example density: {content_density.example_density} — {"set must_include_example = true for every section" if content_density.example_density == "high" else "set must_include_example = true for most sections" if content_density.example_density == "medium" else "set must_include_example = true where helpful"}
 - Diagram density: {content_density.diagram_density} — {"set must_include_diagram = true for every section" if content_density.diagram_density == "high" else "set must_include_diagram = true for at least one section per chapter" if content_density.diagram_density == "medium" else "set must_include_diagram = true for key concept sections only"}
 - HARD RULE: No section may have ALL three (must_include_code, must_include_example, must_include_diagram) set to false.
@@ -138,6 +158,9 @@ Topic: {request.topic}
 Audience: {request.audience}
 Tone: {request.tone}
 Depth: {request.depth}
+Book type: {request.book_type} (effective: {request.effective_book_type})
+Theory/practice balance: {request.theory_practice_balance} (effective: {request.effective_theory_practice_balance})
+Pedagogy style: {request.pedagogy_style}
 Goals:
 {json.dumps(request.normalized_goals, indent=2)}
 
@@ -145,6 +168,9 @@ REQUEST PROFILE
 Project-based: {str(request.project_based).lower()}
 Focused beginner practical guide: {str(request.is_focused_beginner_guide).lower()}
 Practical focus: {str(request.is_practical_focused).lower()}
+
+UPLOADED SOURCE CONTEXT:
+{json.dumps(request.source_context.model_dump(mode="json") if request.source_context else {}, indent=2)}
 
 PLANNING CONTEXT
 Book purpose: {context.book_purpose}
@@ -183,6 +209,7 @@ IMPORTANT CONSTRAINTS:
 - Avoid repetition and avoid sections that exist only to broaden coverage.
 - Keep the order pedagogical and easy to follow.
 {implementation_guidance}
+- For uploaded exercise sheets, create sections that teach the underlying method and include original source-inspired worked examples or practice prompts.
 - Every section must have title, goal, key_questions, estimated_words, and content_requirements.
 - Use builds_on to chain sections that form a progressive build sequence.
 - Return only this chapter's section plan.
@@ -196,7 +223,7 @@ Before finalizing, silently check:
 5. No section has all content_requirements set to false.
 6. The sections support the chapter goal without drifting into excluded scope.
 7. The response contains only JSON.
-8. The sections are concrete enough for a beginner-oriented technical book.
+8. The sections are concrete enough for the requested book type.
 
 Return ONLY JSON in this exact structure:
 {json.dumps(schema_hint, indent=2)}

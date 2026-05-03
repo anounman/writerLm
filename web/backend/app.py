@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import os
+import signal
 import shutil
+import subprocess
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, status
@@ -44,12 +47,104 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+ACTIVE_JOB_STATUSES = {"queued", "running"}
+TERMINAL_JOB_STATUSES = {"completed", "completed_with_latex_issue", "failed", "stopped"}
+
 
 def _safe_pdf_filename(filename: str | None) -> str:
     original = Path(filename or "source.pdf").name
     stem = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in Path(original).stem)
     stem = stem.strip("._")[:80] or "source"
     return f"{stem}_{uuid.uuid4().hex[:8]}.pdf"
+
+
+def _utciso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _pid_is_alive(pid: int | None) -> bool:
+    if not pid:
+        return False
+
+    try:
+        waited_pid, _ = os.waitpid(pid, os.WNOHANG)
+        if waited_pid == pid:
+            return False
+        return True
+    except ChildProcessError:
+        pass
+    except OSError:
+        return False
+
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+
+    try:
+        stat = subprocess.check_output(
+            ["ps", "-p", str(pid), "-o", "stat="],
+            text=True,
+            stderr=subprocess.DEVNULL,
+            timeout=1,
+        ).strip()
+    except Exception:
+        return True
+    return bool(stat) and not stat.startswith("Z")
+
+
+def _mark_job_stopped(db: Session, job: BookJob, message: str = "Job was stopped.") -> BookJob:
+    now = datetime.now(timezone.utc)
+    stages = dict(job.stages or {})
+    active_stage = job.current_stage
+
+    for stage_name, entry in list(stages.items()):
+        stage_entry = dict(entry or {})
+        if stage_entry.get("status") == "running" or stage_name == active_stage:
+            if stage_entry.get("status") != "completed":
+                stage_entry["status"] = "stopped"
+                stage_entry["completed_at"] = _utciso()
+                stage_entry["details"] = {
+                    **(stage_entry.get("details") or {}),
+                    "message": message,
+                }
+                stages[stage_name] = stage_entry
+
+    job.status = "stopped"
+    job.current_stage = "stopped"
+    job.completed_at = now
+    job.error_message = message
+    job.stages = stages
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def _reconcile_job_status(db: Session, job: BookJob) -> BookJob:
+    if job.status not in ACTIVE_JOB_STATUSES:
+        return job
+    if job.process_id and not _pid_is_alive(job.process_id):
+        return _mark_job_stopped(db, job, "Job process is no longer running.")
+    return job
+
+
+def _stop_process(pid: int | None) -> None:
+    if not pid or not _pid_is_alive(pid):
+        return
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return
+    except Exception:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
 
 
 @app.on_event("startup")
@@ -207,13 +302,14 @@ async def create_job_with_pdfs(
 
 @app.get("/jobs", response_model=list[JobOut])
 def list_jobs(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[BookJob]:
-    return (
+    jobs = (
         db.query(BookJob)
         .filter(BookJob.user_id == user.id)
         .order_by(BookJob.created_at.desc())
         .limit(50)
         .all()
     )
+    return [_reconcile_job_status(db, job) for job in jobs]
 
 
 @app.get("/jobs/{job_id}", response_model=JobOut)
@@ -221,7 +317,18 @@ def get_job(job_id: int, user: User = Depends(current_user), db: Session = Depen
     job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
-    return job
+    return _reconcile_job_status(db, job)
+
+
+@app.post("/jobs/{job_id}/stop", response_model=JobOut)
+def stop_job(job_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if job.status in TERMINAL_JOB_STATUSES:
+        return job
+    _stop_process(job.process_id)
+    return _mark_job_stopped(db, job, "Job was stopped by the user.")
 
 
 @app.get("/books", response_model=list[GeneratedBookOut])

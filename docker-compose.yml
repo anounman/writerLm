@@ -4,18 +4,40 @@ services:
       context: .
       dockerfile: Dockerfile
     image: writerlm:latest
-    env_file:
-      - .env
     environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      CLERK_JWT_ISSUER: ${CLERK_JWT_ISSUER:-}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-google}
+      PLANNER_GOOGLE_MODEL: ${PLANNER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
+      RESEARCHER_GOOGLE_MODEL: ${RESEARCHER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
+      NOTES_GOOGLE_MODEL: ${NOTES_GOOGLE_MODEL:-gemini-2.5-flash-lite}
+      WRITER_GOOGLE_MODEL: ${WRITER_GOOGLE_MODEL:-gemma-3-27b-it}
+      REVIEWER_GOOGLE_MODEL: ${REVIEWER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
+      PLANNER_GROQ_MODEL: ${PLANNER_GROQ_MODEL:-openai/gpt-oss-120b}
+      RESEARCHER_GROQ_MODEL: ${RESEARCHER_GROQ_MODEL:-openai/gpt-oss-120b}
+      NOTES_GROQ_MODEL: ${NOTES_GROQ_MODEL:-llama-3.3-70b-versatile}
+      WRITER_GROQ_MODEL: ${WRITER_GROQ_MODEL:-llama-3.3-70b-versatile}
+      REVIEWER_GROQ_MODEL: ${REVIEWER_GROQ_MODEL:-openai/gpt-oss-120b}
+      WRITERLM_STRICT_PROVIDER_MODELS: ${WRITERLM_STRICT_PROVIDER_MODELS:-1}
+      LLM_HTTP_TRUST_ENV: ${LLM_HTTP_TRUST_ENV:-0}
       WRITERLM_COMPILE_LATEX: "1"
       WRITERLM_STRICT_LATEX_COMPILE: "0"
       LATEX_ENGINE: "pdflatex"
-      APP_CORS_ORIGINS: "http://localhost:8080,http://localhost:5173"
+      WRITERLM_UPLOAD_STAGING: "/app/.cache/uploads"
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:8080,http://localhost:5173,http://localhost:5174}
     volumes:
       - .:/app
     working_dir: /app
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     command:
       - uvicorn
       - web.backend.app:app
@@ -28,9 +50,12 @@ services:
     build:
       context: ./web/frontend
       dockerfile: Dockerfile
+      args:
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}}
     image: writerlm-studio:latest
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8080:80"
 
@@ -39,15 +64,20 @@ services:
       context: .
       dockerfile: Dockerfile
     image: writerlm:latest
-    env_file:
-      - .env
     environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-google}
       WRITERLM_COMPILE_LATEX: "1"
       WRITERLM_STRICT_LATEX_COMPILE: "0"
       LATEX_ENGINE: "pdflatex"
+      WRITERLM_UPLOAD_STAGING: "/app/.cache/uploads"
     volumes:
       - .:/app
     working_dir: /app
+    profiles:
+      - tools
     command:
       - python
       - orchestration/run_full_pipeline.py
@@ -57,15 +87,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - .env
     environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
       WRITERLM_COMPILE_LATEX: "1"
       WRITERLM_STRICT_LATEX_COMPILE: "0"
       LATEX_ENGINE: "pdflatex"
+      WRITERLM_UPLOAD_STAGING: "/app/.cache/uploads"
     volumes:
       - .:/app
     working_dir: /app
+    profiles:
+      - tools
     command:
       - python
       - orchestration/run_latex_compile.py
@@ -78,15 +112,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file:
-      - .env
     environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY:-}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:-}
       WRITERLM_COMPILE_LATEX: "1"
       WRITERLM_STRICT_LATEX_COMPILE: "0"
       LATEX_ENGINE: "pdflatex"
+      WRITERLM_UPLOAD_STAGING: "/app/.cache/uploads"
     volumes:
       - .:/app
     working_dir: /app
+    profiles:
+      - tools
     command:
       - python
       - orchestration/run_assembler_only.py

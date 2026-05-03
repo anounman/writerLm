@@ -41,11 +41,33 @@ def decode_access_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, _jwt_secret(), algorithms=["HS256"])
 
 
+def decode_clerk_session_token(token: str) -> dict[str, Any]:
+    unverified = jwt.decode(token, options={"verify_signature": False})
+    issuer = str(unverified.get("iss") or "").rstrip("/")
+    if not issuer:
+        raise ValueError("Clerk token is missing issuer.")
+
+    configured_issuer = os.getenv("CLERK_JWT_ISSUER", "").strip().rstrip("/")
+    if configured_issuer and issuer != configured_issuer:
+        raise ValueError("Clerk token issuer does not match CLERK_JWT_ISSUER.")
+
+    jwks_client = jwt.PyJWKClient(f"{issuer}/.well-known/jwks.json")
+    signing_key = jwks_client.get_signing_key_from_jwt(token)
+    return jwt.decode(
+        token,
+        signing_key.key,
+        algorithms=["RS256"],
+        issuer=issuer,
+        options={"verify_aud": False},
+    )
+
+
 def _fernet_key() -> bytes:
     configured = os.getenv("APP_ENCRYPTION_KEY", "").strip()
     if configured:
         return configured.encode("utf-8")
-    digest = hashlib.sha256(_jwt_secret().encode("utf-8")).digest()
+    seed = os.getenv("CLERK_SECRET_KEY") or _jwt_secret()
+    digest = hashlib.sha256(seed.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest)
 
 

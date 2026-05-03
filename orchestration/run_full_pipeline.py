@@ -59,18 +59,22 @@ from writer.state import WriterInput, WriterState
 
 
 DEFAULT_PLANNER_INPUT: dict[str, Any] = {
-    "topic": "build a retrieval-augmented generation system for answering questions over your own documents",
-    "audience": "beginner to intermediate developers who understand basic Python but are new to RAG systems",
-    "tone": "practical step by step guide",
+    "topic": "HMI 2 practice handbook with theory",
+    "audience": "beginner to intermediate students preparing from course notes and exercise sheets",
+    "tone": "clear, rigorous, and friendly",
+    "book_type": "auto",
+    "theory_practice_balance": "balanced",
+    "pedagogy_style": "auto",
+    "source_usage": "auto",
+    "exercise_strategy": "extract_patterns",
     "goals": [
-        "teach the reader how RAG works by building one from scratch",
-        "help the reader implement each core component with code",
-        "show how ingestion, chunking, embeddings, retrieval, prompting, and evaluation fit together",
-        "end with a working mini project the reader can extend"
+        "explain the theory with a clear structure",
+        "teach the methods needed to solve exercise-sheet questions",
+        "create original worked examples inspired by uploaded sources",
     ],
-    "project_based": True,
+    "project_based": False,
     "content_density": {
-        "code_density": "high",
+        "code_density": "low",
         "example_density": "high",
         "diagram_density": "medium"
     }

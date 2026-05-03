@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl";
-export type JobStatus = "queued" | "running" | "completed" | "completed_with_latex_issue" | "failed";
+export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl" | "neon";
+export type JobStatus = "queued" | "running" | "completed" | "completed_with_latex_issue" | "failed" | "stopped";
 
 export interface User {
   id: number;
@@ -42,6 +42,19 @@ export interface BookRequest {
   topic: string;
   audience: string;
   tone: string;
+  book_type:
+    | "auto"
+    | "textbook"
+    | "practice_workbook"
+    | "course_companion"
+    | "implementation_guide"
+    | "reference_handbook"
+    | "conceptual_guide"
+    | "exam_prep";
+  theory_practice_balance: "auto" | "theory_heavy" | "balanced" | "practice_heavy" | "implementation_heavy";
+  pedagogy_style: "auto" | "german_theoretical" | "indian_theory_then_examples" | "socratic" | "exam_oriented" | "project_based";
+  source_usage: "auto" | "primary_curriculum" | "supplemental" | "example_inspiration";
+  exercise_strategy: "auto" | "none" | "extract_patterns" | "worked_examples" | "practice_sets";
   goals: string[];
   project_based: boolean;
   running_project_description: string | null;
@@ -54,7 +67,7 @@ export interface BookRequest {
 
 export interface JobStage {
   label: string;
-  status: "queued" | "running" | "completed" | "failed";
+  status: "queued" | "running" | "completed" | "failed" | "stopped";
   started_at: string | null;
   completed_at: string | null;
   seconds: number | null;
@@ -192,6 +205,10 @@ export class ApiClient {
 
   job(id: number) {
     return this.request<Job>(`/jobs/${id}`);
+  }
+
+  stopJob(id: number) {
+    return this.request<Job>(`/jobs/${id}/stop`, { method: "POST" });
   }
 
   books() {
