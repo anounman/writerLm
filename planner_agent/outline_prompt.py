@@ -164,6 +164,7 @@ Theory/practice balance: {request.theory_practice_balance} (effective: {request.
 Pedagogy style: {request.pedagogy_style}
 Source usage: {request.source_usage}
 Exercise strategy: {request.exercise_strategy}
+Language request: {request.language_request if request.language_request else "Not specified — default to English."}
 Goals:
 {goals_json}
 
@@ -226,6 +227,7 @@ IMPORTANT CONSTRAINTS:
 - Respect the scope boundaries strictly.
 - Return the FULL outline, not just the first chapter or first few chapters.
 - Ensure chapter_number values are sequential: 1, 2, 3, ...
+{f"- LANGUAGE INSTRUCTION (MANDATORY): {request.language_request}" if request.language_request else ""}
 
 Before finalizing, silently check:
 1. The JSON is complete.

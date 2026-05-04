@@ -49,6 +49,7 @@ app.add_middleware(
 
 ACTIVE_JOB_STATUSES = {"queued", "running"}
 TERMINAL_JOB_STATUSES = {"completed", "completed_with_latex_issue", "failed", "stopped"}
+SUPPORTED_API_KEY_PROVIDERS = {"google", "groq", "tavily", "firecrawl"}
 
 
 def _safe_pdf_filename(filename: str | None) -> str:
@@ -196,6 +197,7 @@ def list_api_keys(user: User = Depends(current_user), db: Session = Depends(get_
             updated_at=row.updated_at,
         )
         for row in rows
+        if row.provider in SUPPORTED_API_KEY_PROVIDERS
     ]
 
 
@@ -206,6 +208,8 @@ def upsert_api_key(
     user: User = Depends(current_user),
     db: Session = Depends(get_db),
 ) -> ApiKeyOut:
+    if provider not in SUPPORTED_API_KEY_PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unsupported API key provider.")
     if provider != payload.provider:
         raise HTTPException(status_code=400, detail="Provider path and payload do not match.")
     row = db.query(ApiKey).filter(ApiKey.user_id == user.id, ApiKey.provider == provider).first()

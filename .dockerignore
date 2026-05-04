@@ -16,6 +16,13 @@ runs
 outputs
 .cache
 tmp_pdf_eval
+web/frontend/node_modules
+web/frontend/dist
+web/frontend/.vite
+web/frontend/.vercel
+web/frontend/.env
+web/frontend/.env.*
+!web/frontend/.env.example
 
 *.pdf
 *.aux

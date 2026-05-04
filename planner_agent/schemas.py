@@ -195,6 +195,14 @@ class UserBookRequest(BaseModel):
         default=None,
         description="Compact planning summary extracted from uploaded source documents before outline generation.",
     )
+    language_request: Optional[str] = Field(
+        default=None,
+        description=(
+            "Free-form language instruction that controls the language(s) used in the book. "
+            "For example: 'Explain all theory in English but write exam solutions and formulas in German.' "
+            "When provided, this is injected verbatim into the planner and writer prompts."
+        ),
+    )
 
     @model_validator(mode="before")
     @classmethod

@@ -107,6 +107,8 @@ def _book_request_to_planner_input(request: BookRequest, *, user_pdf_dir: Path |
         },
         "force_web_research": request.force_web_research,
     }
+    if request.language_request:
+        payload["language_request"] = request.language_request
     source_context = build_source_context_from_pdf_dir(user_pdf_dir)
     if source_context is not None:
         payload["source_context"] = source_context.model_dump(mode="json")
@@ -135,9 +137,6 @@ def _build_job_environment(
         value = api_keys.get(provider)
         if value:
             env[env_name] = value
-
-    if api_keys.get("neon"):
-        env["WRITERLM_USER_NEON_DATABASE_URL"] = api_keys["neon"]
 
     env.update(
         {

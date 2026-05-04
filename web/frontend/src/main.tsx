@@ -74,6 +74,7 @@ const defaultBookRequest: BookRequest = {
   diagram_density: "medium",
   max_section_words: 900,
   force_web_research: false,
+  language_request: null,
 };
 
 const stageOrder = ["planner_research", "notes_synthesis", "writer", "reviewer", "assembler", "latex_compile"];
@@ -88,8 +89,7 @@ const apiKeyAliases: Record<ApiKeyProvider, string[]> = {
   google: ["GOOGLE_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GENAI_API_KEY"],
   groq: ["GROQ_API_KEY"],
   tavily: ["TAVILY_API_KEY"],
-  firecrawl: ["FIRECRAWL_API_KEY", "FIRECRAWL_KEY"],
-  neon: ["NEON_DATABASE_URL", "WRITERLM_USER_NEON_DATABASE_URL"]
+  firecrawl: ["FIRECRAWL_API_KEY", "FIRECRAWL_KEY"]
 };
 
 const bookTypeOptions: Array<{ value: BookType; label: string; hint: string }> = [
@@ -625,6 +625,16 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
             <small>{exerciseStrategyOptions.find((option) => option.value === request.exercise_strategy)?.hint}</small>
           </label>
           <label className="span-2">Goals<textarea value={goalText} onChange={(e) => setGoalText(e.target.value)} rows={5} /></label>
+          <label className="span-2">
+            Language request
+            <textarea
+              value={request.language_request || ""}
+              onChange={(e) => setRequest({ ...request, language_request: e.target.value || null })}
+              rows={2}
+              placeholder="Optional. Describe language mixing, e.g. &quot;Explain all theory in English, write exam examples and formulas in German.&quot; Leave blank for English only."
+            />
+            <small>Injected verbatim into the planner and writer prompts. Supports any bilingual or multilingual instruction.</small>
+          </label>
           {(request.project_based || request.book_type === "implementation_guide") && (
             <label className="span-2">Running project<input value={request.running_project_description || ""} onChange={(e) => setRequest({ ...request, running_project_description: e.target.value || null })} /></label>
           )}
@@ -849,7 +859,7 @@ function BooksPage({ api, books, onNotice }: { api: ApiClient; books: GeneratedB
 
 function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: string) => void }) {
   const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
-  const [values, setValues] = useState<Record<ApiKeyProvider, string>>({ google: "", groq: "", tavily: "", firecrawl: "", neon: "" });
+  const [values, setValues] = useState<Record<ApiKeyProvider, string>>({ google: "", groq: "", tavily: "", firecrawl: "" });
   const [detected, setDetected] = useState<ApiKeyProvider[]>([]);
   const [isDraggingEnv, setIsDraggingEnv] = useState(false);
   const envInputRef = useRef<HTMLInputElement>(null);
@@ -914,7 +924,7 @@ function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: strin
     refresh();
   }
 
-  const labels: Record<ApiKeyProvider, string> = { google: "Google / Gemini", groq: "Groq", tavily: "Tavily", firecrawl: "Firecrawl", neon: "Neon database" };
+  const labels: Record<ApiKeyProvider, string> = { google: "Google / Gemini", groq: "Groq", tavily: "Tavily", firecrawl: "Firecrawl" };
   return (
     <div className="keys-layout">
       <section className="env-import-panel">
@@ -947,7 +957,7 @@ function KeysPage({ api, onNotice }: { api: ApiClient; onNotice: (message: strin
           />
           <Upload size={24} />
           <strong>{detected.length ? `${detected.length} key${detected.length > 1 ? "s" : ""} detected` : "Drag and drop .env"}</strong>
-          <span>Supports Google/Gemini, Groq, Tavily, Firecrawl, and optional Neon database URLs.</span>
+          <span>Supports Google/Gemini, Groq, Tavily, and Firecrawl keys.</span>
         </motion.div>
         <div className="detected-row">
           {(Object.keys(labels) as ApiKeyProvider[]).map((provider) => (
@@ -1008,35 +1018,15 @@ function cleanEnvValue(rawValue: string) {
 
 function ConfigPage({ api, onNotice }: { api: ApiClient; onNotice: (message: string) => void }) {
   const [config, setConfig] = useState<PipelineConfig | null>(null);
-  const [keys, setKeys] = useState<ApiKeyRecord[]>([]);
-  const [neonDatabaseUrl, setNeonDatabaseUrl] = useState("");
   useEffect(() => {
-    Promise.all([api.config(), api.apiKeys()])
-      .then(([nextConfig, nextKeys]) => {
-        setConfig(nextConfig);
-        setKeys(nextKeys);
-      })
+    api.config()
+      .then(setConfig)
       .catch((error) => onNotice(error.message));
   }, [api, onNotice]);
   if (!config) return <EmptyState title="Loading config" text="Fetching your pipeline controls." />;
-  const neonKey = keys.find((item) => item.provider === "neon");
 
   function update<K extends keyof PipelineConfig>(key: K, value: PipelineConfig[K]) {
     setConfig({ ...config, [key]: value } as PipelineConfig);
-  }
-
-  async function saveNeonDatabaseUrl() {
-    if (!neonDatabaseUrl.trim()) return;
-    const saved = await api.saveApiKey("neon", neonDatabaseUrl.trim());
-    setKeys((current) => [saved, ...current.filter((item) => item.provider !== "neon")]);
-    setNeonDatabaseUrl("");
-    onNotice("Advanced Neon database URL saved encrypted.");
-  }
-
-  async function removeNeonDatabaseUrl() {
-    await api.deleteApiKey("neon");
-    setKeys((current) => current.filter((item) => item.provider !== "neon"));
-    onNotice("Advanced Neon database URL removed.");
   }
 
   return (
@@ -1065,26 +1055,6 @@ function ConfigPage({ api, onNotice }: { api: ApiClient; onNotice: (message: str
         <label className="toggle-row"><span>Strict compile</span><input type="checkbox" checked={config.strict_latex_compile} onChange={(e) => update("strict_latex_compile", e.target.checked)} /></label>
         <label>LaTeX engine<select value={config.latex_engine} onChange={(e) => update("latex_engine", e.target.value as PipelineConfig["latex_engine"])}><option>pdflatex</option><option>xelatex</option><option>lualatex</option></select></label>
         <motion.button className="primary-button full" onClick={() => api.saveConfig(config).then(setConfig).then(() => onNotice("Configuration saved."))} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}><Save size={17} />Save config</motion.button>
-      </section>
-      <section className="control-panel">
-        <PanelTitle icon={Cpu} title="Advanced" meta="Optional user-owned Neon database" />
-        <label>
-          Neon database URL
-          <input
-            type="password"
-            value={neonDatabaseUrl}
-            placeholder={neonKey ? neonKey.key_hint : "postgresql://...sslmode=require"}
-            onChange={(e) => setNeonDatabaseUrl(e.target.value)}
-          />
-          <small>{neonKey ? `Saved encrypted: ${neonKey.key_hint}` : "Optional. Stored encrypted and passed only to your jobs as WRITERLM_USER_NEON_DATABASE_URL."}</small>
-        </label>
-        <div className="button-row">
-          <motion.button className="primary-button" type="button" disabled={!neonDatabaseUrl.trim()} onClick={() => saveNeonDatabaseUrl().catch((error) => onNotice(error.message))} whileHover={{ y: neonDatabaseUrl.trim() ? -1 : 0 }} whileTap={{ scale: neonDatabaseUrl.trim() ? 0.98 : 1 }}>
-            <Save size={16} />
-            Save Neon URL
-          </motion.button>
-          {neonKey && <button className="danger-button" type="button" onClick={() => removeNeonDatabaseUrl().catch((error) => onNotice(error.message))}><Trash2 size={16} />Remove</button>}
-        </div>
       </section>
     </div>
   );

@@ -9,6 +9,7 @@ ENV PYTHONUNBUFFERED=1 \
     WRITERLM_UPLOAD_STAGING=/app/.cache/uploads
 
 WORKDIR /app
+EXPOSE 8000
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -37,4 +38,4 @@ COPY . .
 
 RUN mkdir -p outputs runs .cache/uploads data
 
-CMD ["python", "orchestration/run_full_pipeline.py"]
+CMD ["uvicorn", "web.backend.app:app", "--host", "0.0.0.0", "--port", "8000"]

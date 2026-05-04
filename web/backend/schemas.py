@@ -6,7 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl", "neon"]
+ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl"]
 Provider = Literal["google", "groq"]
 Density = Literal["high", "medium", "low"]
 LatexEngine = Literal["pdflatex", "xelatex", "lualatex"]
@@ -52,7 +52,11 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    email: EmailStr
+    # Use plain `str` instead of `EmailStr` because Clerk generates synthetic
+    # placeholder addresses (e.g. user-xxx@clerk-user.local) for OAuth users
+    # who have no verified primary email.  Those fail Pydantic's strict RFC
+    # 5322 domain validation even though they are perfectly valid DB values.
+    email: str
     created_at: datetime
 
 
@@ -112,6 +116,15 @@ class BookRequest(BaseModel):
     force_web_research: bool = Field(
         default=False,
         description="When True, run web research even if user PDFs are present (combined mode).",
+    )
+    language_request: str | None = Field(
+        default=None,
+        description=(
+            "Free-form language instruction injected into the planner prompt. "
+            "Examples: 'Explain all theory in English, but write exercise solutions and exam formulas in German.' "
+            "'Use French for all content.' "
+            "'Bilingual: English explanations, German technical terms and exam answers.'"
+        ),
     )
 
 

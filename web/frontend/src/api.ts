@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl" | "neon";
+export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl";
 export type JobStatus = "queued" | "running" | "completed" | "completed_with_latex_issue" | "failed" | "stopped";
 
 export interface User {
@@ -63,6 +63,8 @@ export interface BookRequest {
   diagram_density: "high" | "medium" | "low";
   max_section_words: number | null;
   force_web_research: boolean;
+  /** Free-form language instruction, e.g. "Explain theory in English, write exam examples in German." */
+  language_request?: string | null;
 }
 
 export interface JobStage {
