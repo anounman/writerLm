@@ -20,6 +20,18 @@ def test_parse_file_line_error() -> None:
     assert "Undefined control sequence" in issues[0].message
 
 
+def test_parse_layout_and_duplicate_destination_warnings() -> None:
+    issues = parse_latex_issues(
+        "Overfull \\hbox (101.57pt too wide) in paragraph at lines 10--11\n"
+        "pdfTeX warning (ext4): destination with the same identifier (name{figure.4.1}) has been already used, duplicate ignored\n"
+    )
+
+    assert len(issues) == 2
+    assert all(issue.severity == "warning" for issue in issues)
+    assert "Overfull" in issues[0].message
+    assert "duplicate ignored" in issues[1].message
+
+
 def test_missing_compiler_returns_clear_result() -> None:
     with TemporaryDirectory() as tmp:
         tex_path = Path(tmp) / "book.tex"

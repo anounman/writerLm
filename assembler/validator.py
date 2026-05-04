@@ -6,6 +6,11 @@ from .schemas import AssembledChapter, AssemblerPlannerBook, AssemblerReviewedSe
 
 
 INTERNAL_SOURCE_ID_PATTERN = re.compile(r"query_[a-zA-Z0-9_\-]+__src_\d+")
+RAW_HTML_MATH_PATTERN = re.compile(r"</?(?:sub|sup)>", flags=re.IGNORECASE)
+PRIVATE_SOURCE_PATH_PATTERN = re.compile(
+    r"(?:file://|/app/\.cache|/Users/)[^\s\]\)>,]*",
+    flags=re.IGNORECASE,
+)
 VALID_SYNTHESIS_STATUSES = {"ready", "partial", "blocked"}
 VALID_WRITING_STATUSES = {"ready", "partial", "blocked"}
 
@@ -109,6 +114,16 @@ def validate_reviewed_sections(sections: list[AssemblerReviewedSection]) -> None
                 f"Reviewed section {section.section_id} contains internal source ids in prose."
             )
 
+        if RAW_HTML_MATH_PATTERN.search(section.reviewed_content):
+            # The renderer can repair these in most cases, but preserving this
+            # signal helps us track prompt hygiene and reviewer cleanup gaps.
+            continue
+
+        if PRIVATE_SOURCE_PATH_PATTERN.search(section.reviewed_content):
+            # Private upload paths are stripped by the LaTeX renderer. Do not
+            # fail here because old review bundles may contain them.
+            continue
+
 
 def validate_planner_reviewer_alignment(
     book: AssemblerPlannerBook,
@@ -173,6 +188,12 @@ def validate_rendered_latex(
     for fragment in required_fragments:
         if fragment not in latex_content:
             raise ValueError(f"Rendered LaTeX manuscript is missing required fragment: {fragment}")
+
+    if RAW_HTML_MATH_PATTERN.search(latex_content):
+        raise ValueError("Rendered LaTeX contains raw HTML sub/sup tags.")
+
+    if PRIVATE_SOURCE_PATH_PATTERN.search(latex_content):
+        raise ValueError("Rendered LaTeX contains private local source paths.")
 
     expected_chapter_count = len(assembled_chapters)
     actual_chapter_count = latex_content.count("\\chapter{")

@@ -10,6 +10,14 @@ from .state import WriterSectionTask
 MIN_CONTENT_LENGTH = 180
 SOURCE_ID_PATTERN = re.compile(r"query_[a-zA-Z0-9\-_]+__src_\d+")
 CODE_FENCE_PATTERN = re.compile(r"```[a-zA-Z0-9_-]*\n")
+PRIVATE_SOURCE_URL_PATTERN = re.compile(
+    r"(?:file://|/app/\.cache|/Users/)[^\s\]\)>,]*",
+    flags=re.IGNORECASE,
+)
+SELF_CORRECTION_PATTERN = re.compile(
+    r"\b(?:there appears to be an error|there was an error|previous calculation was wrong)\b",
+    flags=re.IGNORECASE,
+)
 
 
 def normalize_section_draft(
@@ -56,6 +64,9 @@ def normalize_section_draft(
     if SOURCE_ID_PATTERN.search(draft.content):
         if draft.writing_status == WritingStatus.READY:
             draft.writing_status = WritingStatus.PARTIAL
+
+    if SELF_CORRECTION_PATTERN.search(draft.content):
+        draft.writing_status = WritingStatus.PARTIAL
 
     if draft.writing_status == WritingStatus.PARTIAL and _draft_is_assembly_ready(task, draft):
         draft.writing_status = WritingStatus.READY
@@ -143,7 +154,7 @@ def _ensure_reference_links(task: WriterSectionTask, draft: SectionDraft) -> Non
     links = [
         item
         for item in task.section_input.reference_links
-        if item.get("url")
+        if item.get("url") and not PRIVATE_SOURCE_URL_PATTERN.search(str(item.get("url")))
     ]
     if not links:
         return
@@ -184,6 +195,7 @@ def _clean_prose_preserve_code(content: str) -> str:
         else:
             # Prose — clean up
             cleaned = SOURCE_ID_PATTERN.sub("", part)
+            cleaned = PRIVATE_SOURCE_URL_PATTERN.sub("", cleaned)
             cleaned = re.sub(r"\(\s*\)", "", cleaned)
             cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
             cleaned_parts.append(cleaned)

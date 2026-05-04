@@ -66,6 +66,19 @@ COMMON_TEXT_REPLACEMENTS = {
     "\u00a9": "(C)", # ©  COPYRIGHT SIGN
 }
 
+PRIVATE_SOURCE_URL_PATTERN = re.compile(
+    r"(?:file://|/app/\.cache|/Users/)[^\s\]\)>,]*",
+    flags=re.IGNORECASE,
+)
+HTML_MATH_TAG_PATTERN = re.compile(
+    r"(?P<base>[A-Za-z0-9]+)?<(?P<tag>sub|sup)>(?P<body>[^<>]{1,64})</(?P=tag)>",
+    flags=re.IGNORECASE,
+)
+SELF_CORRECTION_PATTERN = re.compile(
+    r"\b(?:there appears to be an error|there was an error|let'?s recalculate|previous calculation was wrong)\b",
+    flags=re.IGNORECASE,
+)
+
 
 def render_latex_manuscript(
     *,
@@ -113,6 +126,7 @@ def _render_preamble() -> str:
             "\\usepackage[a4paper,margin=1in]{geometry}",
             "\\usepackage{hyperref}",
             "\\usepackage{url}",
+            "\\usepackage{xurl}",
             "\\usepackage{bookmark}",
             "\\usepackage{enumitem}",
             "\\usepackage{listings}",
@@ -139,6 +153,9 @@ def _render_preamble() -> str:
             "\\addtokomafont{section}{\\color{brandteal}}",
             "\\addtokomafont{subsection}{\\color{brandorange}}",
             "\\hypersetup{colorlinks=true,linkcolor=brandblue,urlcolor=brandteal,citecolor=brandgreen}",
+            "\\hypersetup{hypertexnames=false}",
+            "\\Urlmuskip=0mu plus 1mu",
+            "\\emergencystretch=3em",
             "",
             "% Code listing style",
             "\\definecolor{codebg}{RGB}{248,250,252}",
@@ -229,7 +246,7 @@ def _render_title_page(front_matter: AssemblyFrontMatter) -> str:
             "\\vspace*{0.18\\textheight}",
             "{\\Huge\\bfseries " + title + "\\par}",
             "\\vspace{1.5cm}",
-            "{\\Large Technical Book Manuscript\\par}",
+            "{\\Large Generated Book Manuscript\\par}",
             "\\vspace{1.2cm}",
             "{\\large Audience: " + audience + "\\par}",
             "\\vspace{0.3cm}",
@@ -649,6 +666,7 @@ def _strip_enum_marker(line: str) -> str:
 def _prepare_text(text: str) -> str:
     normalized = _normalize_text_artifacts(text)
     normalized = normalized.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = _strip_private_source_blocks(normalized)
     normalized = re.sub(r"\n{3,}", "\n\n", normalized)
     return normalized.strip()
 
@@ -667,20 +685,73 @@ def _escape_latex_with_urls(text: str) -> str:
 
     for match in url_pattern.finditer(text):
         if match.start() > last_index:
-            segment = _escape_latex(text[last_index : match.start()])
-            parts.append(_apply_inline_markdown(segment))
+            parts.append(_render_inline_text_segment(text[last_index : match.start()]))
         url = match.group(1).rstrip(".,;")
         trailing = match.group(1)[len(url) :]
         parts.append("\\url{" + url.replace("\\", "/") + "}")
         if trailing:
-            parts.append(_apply_inline_markdown(_escape_latex(trailing)))
+            parts.append(_render_inline_text_segment(trailing))
         last_index = match.end()
 
     if last_index < len(text):
-        segment = _escape_latex(text[last_index:])
-        parts.append(_apply_inline_markdown(segment))
+        parts.append(_render_inline_text_segment(text[last_index:]))
 
     return "".join(parts)
+
+
+def _render_inline_text_segment(text: str) -> str:
+    """Escape a non-URL prose segment while preserving safe inline math tags."""
+    if not text:
+        return ""
+
+    rendered: list[str] = []
+    last_index = 0
+
+    for match in HTML_MATH_TAG_PATTERN.finditer(text):
+        if match.start() > last_index:
+            rendered.append(
+                _apply_inline_markdown(_escape_latex(text[last_index : match.start()]))
+            )
+
+        base = match.group("base") or ""
+        tag = match.group("tag").lower()
+        body = _latex_math_body(match.group("body"))
+        math_base = _latex_math_identifier(base)
+
+        if tag == "sub":
+            rendered.append(f"\\ensuremath{{{math_base}_{{{body}}}}}")
+        else:
+            rendered.append(f"\\ensuremath{{{math_base}^{{{body}}}}}")
+        last_index = match.end()
+
+    if last_index < len(text):
+        rendered.append(_apply_inline_markdown(_escape_latex(text[last_index:])))
+
+    return "".join(rendered)
+
+
+def _latex_math_identifier(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", value.strip())
+    if not cleaned:
+        return "{}"
+    if len(cleaned) == 1 and cleaned.isalpha():
+        return cleaned
+    return r"\mathrm{" + _latex_math_body(cleaned) + "}"
+
+
+def _latex_math_body(value: str) -> str:
+    normalized = _normalize_text_artifacts(value)
+    replacements = {
+        " ": r"\,",
+        "_": r"\_",
+        "%": r"\%",
+        "#": r"\#",
+        "&": r"\&",
+        "{": r"\{",
+        "}": r"\}",
+        "\\": r"\backslash{}",
+    }
+    return "".join(replacements.get(char, char) for char in normalized if ord(char) <= 127)
 
 
 def _apply_inline_markdown(escaped_text: str) -> str:
@@ -767,3 +838,50 @@ def _normalize_text_artifacts(text: str) -> str:
         normalized = normalized.replace(source, replacement)
 
     return normalized
+
+
+def _strip_private_source_blocks(text: str) -> str:
+    """Remove reader-facing private upload URLs and empty Further Reading blocks."""
+    blocks = re.split(r"\n\s*\n", text)
+    cleaned_blocks: list[str] = []
+    index = 0
+
+    while index < len(blocks):
+        block = blocks[index].strip()
+        if not block:
+            index += 1
+            continue
+
+        heading = _strip_heading_markup(block.splitlines()[0]).strip(":").lower()
+        if heading == "further reading":
+            collected = [block]
+            next_index = index + 1
+            while next_index < len(blocks):
+                next_block = blocks[next_index].strip()
+                if not next_block:
+                    next_index += 1
+                    continue
+                next_heading = _extract_standalone_heading([next_block.splitlines()[0].strip()])
+                if next_heading and next_heading.lower().strip(":") != "further reading":
+                    break
+                if _is_bullet_list(next_block.splitlines()) or PRIVATE_SOURCE_URL_PATTERN.search(next_block):
+                    collected.append(next_block)
+                    next_index += 1
+                    continue
+                break
+
+            if PRIVATE_SOURCE_URL_PATTERN.search("\n\n".join(collected)):
+                index = next_index
+                continue
+
+        cleaned_lines = [
+            line
+            for line in block.splitlines()
+            if not PRIVATE_SOURCE_URL_PATTERN.search(line)
+        ]
+        cleaned_block = "\n".join(cleaned_lines).strip()
+        if cleaned_block and _strip_heading_markup(cleaned_block).strip(":").lower() != "further reading":
+            cleaned_blocks.append(cleaned_block)
+        index += 1
+
+    return "\n\n".join(cleaned_blocks)

@@ -21,7 +21,17 @@ RISK_WARNINGS = {
     ReviewWarning.POSSIBLE_TOPIC_DRIFT,
     ReviewWarning.UNSUPPORTED_CLAIM_RISK,
     ReviewWarning.MISSING_CAVEAT,
+    ReviewWarning.UNRESOLVED_SELF_CORRECTION,
 }
+PRIVATE_SOURCE_URL_PATTERN = re.compile(
+    r"(?:file://|/app/\.cache|/Users/)[^\s\]\)>,]*",
+    flags=re.IGNORECASE,
+)
+RAW_HTML_MATH_PATTERN = re.compile(r"</?(?:sub|sup)>", flags=re.IGNORECASE)
+SELF_CORRECTION_PATTERN = re.compile(
+    r"\b(?:there appears to be an error|there was an error|let'?s recalculate|previous calculation was wrong)\b",
+    flags=re.IGNORECASE,
+)
 
 
 def normalize_reviewer_task(task: ReviewerSectionTask) -> ReviewerSectionTask:
@@ -114,6 +124,15 @@ def normalize_reviewer_output(
         if ReviewWarning.CLEANUP_ARTIFACT_FIXED not in output.reviewer_warnings:
             output.reviewer_warnings.append(ReviewWarning.CLEANUP_ARTIFACT_FIXED)
 
+    if PRIVATE_SOURCE_URL_PATTERN.search(task.section_input.writer_content) and ReviewWarning.PRIVATE_SOURCE_PATH_REMOVED not in output.reviewer_warnings:
+        output.reviewer_warnings.append(ReviewWarning.PRIVATE_SOURCE_PATH_REMOVED)
+
+    if RAW_HTML_MATH_PATTERN.search(output.reviewed_content) and ReviewWarning.RAW_MARKUP_ARTIFACT not in output.reviewer_warnings:
+        output.reviewer_warnings.append(ReviewWarning.RAW_MARKUP_ARTIFACT)
+
+    if SELF_CORRECTION_PATTERN.search(output.reviewed_content) and ReviewWarning.UNRESOLVED_SELF_CORRECTION not in output.reviewer_warnings:
+        output.reviewer_warnings.append(ReviewWarning.UNRESOLVED_SELF_CORRECTION)
+
     if _partial_uncertainty_weakened(task, output.reviewed_content):
         if ReviewWarning.PARTIAL_UNCERTAINTY_WEAKENED not in output.reviewer_warnings:
             output.reviewer_warnings.append(ReviewWarning.PARTIAL_UNCERTAINTY_WEAKENED)
@@ -160,6 +179,12 @@ def validate_reviewer_output(
         raise ValueError(
             f"Reviewer output for section {task.section_input.section_id} contains "
             "inline citation artifacts inside reviewed_content."
+        )
+
+    if PRIVATE_SOURCE_URL_PATTERN.search(output.reviewed_content):
+        raise ValueError(
+            f"Reviewer output for section {task.section_input.section_id} contains "
+            "private local source paths inside reviewed_content."
         )
 
     allowed_ids: Set[str] = set(task.section_input.allowed_citation_source_ids)
@@ -274,6 +299,9 @@ def _clean_reviewed_content(text: str) -> str:
     for pattern in INLINE_CITATION_PATTERNS:
         cleaned = re.sub(pattern, "", cleaned)
 
+    cleaned = "\n".join(
+        line for line in cleaned.splitlines() if not PRIVATE_SOURCE_URL_PATTERN.search(line)
+    )
     cleaned = re.sub(r"\(\s*,?\s*\)", "", cleaned)
     cleaned = re.sub(r"\s+([,.;:])", r"\1", cleaned)
     cleaned = re.sub(r"([(\[])\s+", r"\1", cleaned)

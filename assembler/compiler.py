@@ -335,6 +335,26 @@ def parse_latex_issues(log_text: str) -> list[LatexIssue]:
                     line=_extract_latex_line_number(stripped),
                 )
             )
+            continue
+
+        if "Overfull \\hbox" in stripped or "Underfull \\hbox" in stripped:
+            issues.append(
+                LatexIssue(
+                    severity="warning",
+                    message=stripped,
+                    line=_extract_latex_line_number(stripped),
+                )
+            )
+            continue
+
+        if "duplicate ignored" in stripped:
+            issues.append(
+                LatexIssue(
+                    severity="warning",
+                    message=stripped,
+                    line=_extract_latex_line_number(stripped),
+                )
+            )
 
     return _dedupe_issues(issues)
 

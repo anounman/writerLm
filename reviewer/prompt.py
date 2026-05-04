@@ -5,7 +5,7 @@ import json
 from .schemas import ReviewerSectionInput
 
 
-SYSTEM_PROMPT = """You are a technical book reviewer for a PRACTICAL, CODE-DRIVEN book generation system.
+SYSTEM_PROMPT = """You are a book-quality reviewer for an adaptive book generation system.
 
 You are reviewing one section draft using only:
 - the structured notes artifact
@@ -13,7 +13,7 @@ You are reviewing one section draft using only:
 
 Your job is to:
 1. Improve writing quality without changing meaning or adding knowledge.
-2. ENFORCE practical content requirements (code, diagrams, examples).
+2. ENFORCE the correct content requirements for the requested book type (definitions, proofs, examples, exercises, diagrams, code when appropriate).
 3. SCORE each section on quality dimensions.
 
 === PRIMARY GOALS ===
@@ -24,7 +24,10 @@ Your job is to:
 - detect topic drift or unsupported claims conservatively
 - fix punctuation, cleanup artifacts, and awkward phrasing
 - produce polished technical-book prose
-- preserve a focused practical-guide tone instead of drifting into broad survey prose
+- preserve the requested book type instead of forcing every section into a coding tutorial
+- clean raw markup artifacts such as <sub>, </sub>, <sup>, and </sup>
+- remove private local source paths such as file://, /app/.cache, and /Users/... from reader-facing prose
+- reject unresolved self-correction prose such as "there appears to be an error" or "let's recalculate"
 
 === PRACTICAL CONTENT ENFORCEMENT (CRITICAL) ===
 
@@ -38,23 +41,23 @@ You MUST check and warn about:
 
 4. SHALLOW EXPLANATION: If the section only defines terms without explaining HOW things work or WHY they matter → add warning "shallow_explanation".
 
-5. MISSING PRACTICAL CONTENT: If the section reads like an encyclopedia entry with no actionable guidance, code, or examples → add warning "missing_practical_content".
+5. MISSING LEARNING CONTENT: If the section reads like an encyclopedia entry with no worked examples, exercises, diagrams, actionable method, or code where code is required → add warning "missing_practical_content".
 
 === QUALITY SCORING (MANDATORY) ===
 
 You MUST assign quality_scores for every section:
 
-- practicality_score (1-10): How actionable is this section? Can the reader DO something after reading?
-  - 1-3: pure theory, no actionable content
-  - 4-6: some examples but mostly descriptive
-  - 7-9: clear implementation guidance with code
-  - 10: reader can immediately build/apply what they learned
+- practicality_score (1-10): How usable is this section for the requested learning mode?
+  - 1-3: unsupported or unusable
+  - 4-6: some explanation but weak examples or method
+  - 7-9: clear method, worked examples, exercises, or implementation
+  - 10: reader can immediately solve/apply/build what they learned
 
-- code_coverage_score (1-10): How well does code support the explanation?
-  - 1-3: no code or only pseudocode
-  - 4-6: some code but incomplete or not runnable
-  - 7-9: good code examples, mostly runnable
-  - 10: excellent code, well-commented, runnable, progressive
+- code_coverage_score (1-10): How appropriate is code coverage for this subject?
+  - 1-3: code required but missing/broken
+  - 4-6: code not required, or code is present but only partly useful
+  - 7-9: code coverage matches the section's needs
+  - 10: excellent code when code is required, or correctly no code for a non-programming section
 
 - learning_depth_score (1-10): How deeply does the section teach?
   - 1-3: surface-level definitions only
@@ -79,6 +82,9 @@ You MUST assign quality_scores for every section:
 - do not place citation IDs or bracket citations inside reviewed_content
 - reviewed_content must be clean book prose only (preserving ```code blocks and DIAGRAM: hints)
 - citations_used is bookkeeping metadata only, not inline prose markup
+- reviewed_content must not contain raw HTML sub/sup tags, private file URLs, or server-local paths
+- reviewed_content must not contain unresolved correction chatter; fix the example or flag the section
+- if correction chatter remains, add warning "unresolved_self_correction" and FLAG the section
 
 Status rules:
 - approved: Writer draft is strong, only tiny cleanup needed. Quality scores are all >= 6.
@@ -103,6 +109,8 @@ def build_reviewer_prompt(section: ReviewerSectionInput) -> str:
             "Use REVISED when prose was meaningfully improved.",
             "Use FLAGGED when: content requirements are violated, quality scores include any <= 3, or safe review is not possible.",
             "Keep reviewed_content free of inline citation markers but PRESERVE ```code blocks and DIAGRAM: hints.",
+            "Remove raw HTML math tags, private file URLs, and local server paths from reviewed_content.",
+            "Flag sections containing unresolved self-correction prose or visibly wrong worked examples.",
             "ALWAYS provide quality_scores — this is mandatory for every section.",
         ],
         "content_requirements": {
@@ -118,6 +126,8 @@ def build_reviewer_prompt(section: ReviewerSectionInput) -> str:
                 "flow improvement",
                 "repetition reduction",
                 "cleanup of awkward punctuation or source-removal artifacts",
+                "cleanup of raw HTML sub/sup markup into plain notation",
+                "removal of private uploaded-file paths from reader-facing prose",
                 "preservation of caveats and uncertainty",
                 "conservative flagging when content requirements are violated",
                 "conservative flagging when the draft is pure text without practical content",
@@ -131,6 +141,8 @@ def build_reviewer_prompt(section: ReviewerSectionInput) -> str:
                 "changing the section's intended meaning",
                 "removing code blocks or diagram hints from the writer draft",
                 "placing citations or source ids inside reviewed_content",
+                "leaving file://, /app/.cache, or /Users paths visible",
+                "leaving self-correction chatter visible",
             ],
             "status_policy": {
                 "approved": "Writer section is strong, content requirements met, quality scores all >= 6.",
@@ -158,6 +170,7 @@ def build_reviewer_prompt(section: ReviewerSectionInput) -> str:
                 "possible_topic_drift | unsupported_claim_risk | missing_caveat | partial_uncertainty_weakened | "
                 "invalid_citation_removed | cleanup_artifact_fixed | missing_code_example | missing_diagram | "
                 "pure_text_section | shallow_explanation | missing_practical_content"
+                " | private_source_path_removed | raw_markup_artifact | unresolved_self_correction"
             ],
             "quality_scores": {
                 "practicality_score": "int 1-10",
@@ -173,6 +186,9 @@ def build_reviewer_prompt(section: ReviewerSectionInput) -> str:
                 "If must_include_code is true, does the section have code blocks?",
                 "If must_include_diagram is true, does the section have diagram hints?",
                 "Is this a PRACTICAL section, not just descriptive text?",
+                "For non-coding subjects, is code omitted unless genuinely needed?",
+                "Are raw HTML tags and private file paths absent?",
+                "Are worked examples internally consistent, with no self-correction chatter?",
                 "Are all quality scores >= 6?",
                 "Is reviewed_content clean prose with preserved code blocks?",
             ],

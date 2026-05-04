@@ -24,6 +24,9 @@ class ReviewWarning(str, Enum):
     PURE_TEXT_SECTION = "pure_text_section"
     SHALLOW_EXPLANATION = "shallow_explanation"
     MISSING_PRACTICAL_CONTENT = "missing_practical_content"
+    PRIVATE_SOURCE_PATH_REMOVED = "private_source_path_removed"
+    RAW_MARKUP_ARTIFACT = "raw_markup_artifact"
+    UNRESOLVED_SELF_CORRECTION = "unresolved_self_correction"
 
 
 class QualityScores(BaseModel):
