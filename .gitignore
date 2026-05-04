@@ -1,4 +1,5 @@
 .env
+.env.*
 .venv/
 writerlm_studio.db
 __pycache__/
