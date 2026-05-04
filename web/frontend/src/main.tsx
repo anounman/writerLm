@@ -140,7 +140,7 @@ function App() {
   const { user } = useUser();
   const [token, setToken] = useState<string | null>(null);
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("writerlm_theme") as Theme) || "dark");
-  const api = useMemo(() => new ApiClient(token), [token]);
+  const api = useMemo(() => new ApiClient(token, isSignedIn ? getToken : undefined), [getToken, isSignedIn, token]);
   const [userEmail, setUserEmail] = useState<string>("");
   const [activeTab, setActiveTab] = useState<Tab>("create");
   const [jobs, setJobs] = useState<Job[]>([]);

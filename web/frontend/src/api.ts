@@ -107,12 +107,22 @@ export interface GeneratedBook {
 
 const configuredApiBase = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
 const API_BASE = configuredApiBase || (import.meta.env.PROD ? "" : "/api");
+type TokenProvider = () => Promise<string | null>;
 
 export class ApiClient {
   token: string | null;
+  private tokenProvider?: TokenProvider;
 
-  constructor(token: string | null) {
+  constructor(token: string | null, tokenProvider?: TokenProvider) {
     this.token = token;
+    this.tokenProvider = tokenProvider;
+  }
+
+  private async authToken() {
+    if (!this.tokenProvider) return this.token;
+    const nextToken = await this.tokenProvider();
+    this.token = nextToken;
+    return nextToken;
   }
 
   async request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -121,7 +131,8 @@ export class ApiClient {
     }
     const headers = new Headers(options.headers);
     headers.set("Content-Type", "application/json");
-    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const token = await this.authToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
 
     const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (!response.ok) {
@@ -184,7 +195,7 @@ export class ApiClient {
   }
 
   /** Create a job and attach PDF source files via multipart upload. */
-  createJobWithPdfs(payload: BookRequest, pdfFiles: File[]) {
+  async createJobWithPdfs(payload: BookRequest, pdfFiles: File[]) {
     if (!API_BASE) {
       return Promise.reject(new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel."));
     }
@@ -195,7 +206,8 @@ export class ApiClient {
     }
     // Use fetch directly — request() forces Content-Type: application/json
     const headers = new Headers();
-    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const token = await this.authToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
     return fetch(`${API_BASE}/jobs/upload`, { method: "POST", headers, body: form })
       .then(async (response) => {
         if (!response.ok) {
@@ -227,7 +239,8 @@ export class ApiClient {
       throw new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel.");
     }
     const headers = new Headers();
-    if (this.token) headers.set("Authorization", `Bearer ${this.token}`);
+    const token = await this.authToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
     const response = await fetch(this.artifactUrl(bookId, artifactName), { headers });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ detail: response.statusText }));
