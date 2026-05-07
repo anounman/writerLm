@@ -177,8 +177,8 @@ def _build_job_environment(
         }
     )
 
-    if config.get("token_budget"):
-        env["WRITERLM_TOKEN_BUDGET"] = str(config["token_budget"])
+    env.pop("WRITERLM_TOKEN_BUDGET", None)
+    env.pop("LLM_TOKEN_BUDGET", None)
     if config.get("max_completion_tokens"):
         env["WRITERLM_MAX_COMPLETION_TOKENS"] = str(config["max_completion_tokens"])
 

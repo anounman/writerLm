@@ -39,10 +39,7 @@ def configure_llm_metrics(
     with _LOCK:
         _CONFIGURED = True
         _METRICS_PATH = _resolve_metrics_path(path)
-        _TOKEN_BUDGET = token_budget if token_budget is not None else _read_int_env(
-            "WRITERLM_TOKEN_BUDGET",
-            "LLM_TOKEN_BUDGET",
-        )
+        _TOKEN_BUDGET = token_budget if _token_budget_enabled() else None
         _CHARS_PER_TOKEN = max(
             _read_int_env("WRITERLM_CHARS_PER_TOKEN") or 4,
             1,
@@ -122,6 +119,11 @@ def reserve_llm_call_budget(
         f"(budget={budget}, projected={projected_total}, "
         f"layer={layer}, operation={operation}, model={model})."
     )
+
+
+def _token_budget_enabled() -> bool:
+    value = os.getenv("WRITERLM_ENABLE_TOKEN_BUDGET", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
 
 
 def record_llm_call(
