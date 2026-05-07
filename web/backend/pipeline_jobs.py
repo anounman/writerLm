@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -16,6 +17,9 @@ from web.backend.security import decrypt_secret
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUNS_DIR = REPO_ROOT / "runs"
+REMOVED_GOOGLE_MODELS = {
+    "gemma-3-27b-it": "gemini-2.5-flash-lite",
+}
 
 
 def default_config() -> dict:
@@ -31,6 +35,9 @@ def get_or_create_user_config(db: Session, user: User) -> UserConfig:
         db.refresh(config)
     else:
         merged = {**default_config(), **(config.settings or {})}
+        writer_model = str(merged.get("writer_google_model") or "")
+        if writer_model in REMOVED_GOOGLE_MODELS:
+            merged["writer_google_model"] = REMOVED_GOOGLE_MODELS[writer_model]
         if merged != config.settings:
             config.settings = merged
             db.add(config)
@@ -60,6 +67,13 @@ def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: P
     db.commit()
     db.refresh(job)
 
+    run_dir = RUNS_DIR / f"web_job_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    job.run_dir = str(run_dir)
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
     env = _build_job_environment(db, user=user, config=config_payload, request=request, user_pdf_dir=user_pdf_dir)
     env["WRITERLM_WEB_JOB_ID"] = str(job.id)
     env["WRITERLM_WEB_USER_ID"] = str(user.id)
@@ -71,14 +85,16 @@ def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: P
         "--job-id",
         str(job.id),
     ]
-    process = subprocess.Popen(
-        command,
-        cwd=str(REPO_ROOT),
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+    worker_log = run_dir / "worker.log"
+    with worker_log.open("ab", buffering=0) as log_file:
+        process = subprocess.Popen(
+            command,
+            cwd=str(REPO_ROOT),
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
     job.process_id = process.pid
     db.add(job)
     db.commit()
@@ -106,6 +122,7 @@ def _book_request_to_planner_input(request: BookRequest, *, user_pdf_dir: Path |
             "diagram_density": request.diagram_density,
         },
         "force_web_research": request.force_web_research,
+        "urls": request.urls,
     }
     if request.language_request:
         payload["language_request"] = request.language_request

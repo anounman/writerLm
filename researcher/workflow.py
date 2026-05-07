@@ -7,6 +7,7 @@ from researcher.nodes.extract_evidance import ExtractEvidenceNode
 from researcher.nodes.fetch_sources import FetchSourcesNode
 from researcher.nodes.followup_research import FollowupResearchNode
 from researcher.nodes.inject_user_documents import InjectUserDocumentsNode
+from researcher.nodes.inject_user_urls import InjectUserUrlsNode
 from researcher.nodes.plan_queries import PlanQueriesNode
 from researcher.nodes.reflect_on_research import ReflectOnResearchNode
 from researcher.schemas import SourceDocument
@@ -56,6 +57,7 @@ class ResearcherWorkflow:
         firecrawl_client: FirecrawlClient | None = None,
         validator: ResearchPacketValidator | None = None,
         user_documents: list[SourceDocument] | None = None,
+        user_urls: list[str] | None = None,
         web_research_enabled: bool = True,
     ) -> None:
         if web_research_enabled and tavily_client is None:
@@ -74,16 +76,18 @@ class ResearcherWorkflow:
         self.reflect_on_research_node: ReflectOnResearchNode | None = None
         self.followup_research_node: FollowupResearchNode | None = None
 
+        # FetchSourcesNode is needed for web research AND for injecting user URLs.
+        self.fetch_sources_node = FetchSourcesNode(
+            web_extractor=web_extractor,
+            pdf_extractor=pdf_extractor,
+            firecrawl_client=firecrawl_client,
+        )
+
         if web_research_enabled:
             assert tavily_client is not None
             self.plan_queries_node = PlanQueriesNode(llm=llm)
             self.discover_sources_node = DiscoverSourcesNode(
                 tavily_client=tavily_client,
-            )
-            self.fetch_sources_node = FetchSourcesNode(
-                web_extractor=web_extractor,
-                pdf_extractor=pdf_extractor,
-                firecrawl_client=firecrawl_client,
             )
             self.reflect_on_research_node = ReflectOnResearchNode(llm=llm)
             self.followup_research_node = FollowupResearchNode(
@@ -102,6 +106,12 @@ class ResearcherWorkflow:
             else None
         )
 
+        self.inject_user_urls_node: InjectUserUrlsNode | None = (
+            InjectUserUrlsNode(user_urls, self.fetch_sources_node)
+            if user_urls
+            else None
+        )
+
     def run(self, state: ResearcherState) -> ResearcherState:
         """
         Execute the Researcher workflow for one planner section.
@@ -112,6 +122,10 @@ class ResearcherWorkflow:
         # Step 0 (always): inject user-uploaded PDFs when available.
         if self.inject_user_documents_node is not None:
             state = self.inject_user_documents_node.run(state)
+            
+        # Step 0.5 (always): inject user-provided URLs when available.
+        if self.inject_user_urls_node is not None:
+            state = self.inject_user_urls_node.run(state)
 
         if self.web_research_enabled:
             return self._run_full_web(state)

@@ -6,26 +6,27 @@ from .schemas import DiagramHint, SectionDraft, WriterSectionInput, WritingStatu
 def build_deterministic_section_draft(section_input: WriterSectionInput) -> SectionDraft:
     core_points = _render_core_points(section_input)
     build_goal = _build_goal_sentence(section_input)
+    subject = _subject_label(section_input)
 
     content_parts = [
         "### Concept",
         (
-            f"{section_input.section_title} is a working checkpoint in the running project. "
+            f"{section_input.section_title} is a focused checkpoint in the book's learning path. "
             f"{section_input.central_thesis} {build_goal}"
         ),
         core_points,
         "### Checkpoint",
         (
             "Before moving on, you should be able to explain what input this step receives, "
-            "what it produces, and how you would know it worked. That habit keeps a RAG "
-            "project debuggable as it grows."
+            f"what it produces, and how you would know it worked. That habit keeps {subject} "
+            "clear as the material becomes more complex."
         ),
         "### Intuition",
         (
-            "Think of the RAG system as an assembly line. Each station does one job: "
-            "load data, split it, embed it, retrieve it, or answer with it. If one station "
-            "is vague, the final answer becomes hard to trust. So in this section you make "
-            "one station visible and testable."
+            f"Think of {subject} as a chain of connected ideas. Each step should make the "
+            "next step easier to understand, apply, or verify. If one step is vague, the "
+            "reader loses the thread, so this section makes the important moving parts "
+            "visible and testable."
         ),
     ]
 
@@ -64,9 +65,9 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
             "### Output / Expected Result",
             (
                 "The expected result is not just that the code runs. You should see a concrete "
-                "artifact: a created environment, loaded documents, chunks, vectors, retrieved "
-                "context, an answer, or a visible UI response. Save that artifact or print a "
-                "small summary so the next section has something real to build on."
+                "artifact: a solved example, a derived formula, a diagram, a short explanation, "
+                "a working code result, or a visible project outcome. Save that artifact or write "
+                "a small summary so the next section has something real to build on."
             ),
             "### Common Mistakes",
             _render_common_mistakes(section_input),
@@ -119,10 +120,29 @@ def _render_core_points(section_input: WriterSectionInput) -> str:
     if not points:
         points = [
             "Keep the step small enough to test.",
-            "Connect the output to the next stage of the RAG pipeline.",
+            "Connect the output to the next idea, example, or implementation step.",
         ]
     rendered = "\n".join(f"- {point}" for point in points)
     return "### Key Idea\n" + rendered
+
+
+def _subject_label(section_input: WriterSectionInput) -> str:
+    text = " ".join(
+        part
+        for part in (
+            section_input.section_title,
+            section_input.chapter_title,
+            section_input.central_thesis,
+        )
+        if part
+    ).lower()
+    if any(signal in text for signal in ("rag", "retrieval", "embedding", "vector")):
+        return "the RAG system"
+    if any(signal in text for signal in ("transformer", "attention", "model", "neural")):
+        return "the model architecture"
+    if any(signal in text for signal in ("equation", "matrix", "calculus", "probability", "proof")):
+        return "the mathematical argument"
+    return "the subject"
 
 
 def _render_diagram_hint(suggestion: dict, section_input: WriterSectionInput) -> str:

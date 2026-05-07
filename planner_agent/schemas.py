@@ -203,6 +203,10 @@ class UserBookRequest(BaseModel):
             "When provided, this is injected verbatim into the planner and writer prompts."
         ),
     )
+    urls: List[str] = Field(
+        default_factory=list,
+        description="List of specific URLs to inject into the research state alongside web search or PDFs."
+    )
 
     @model_validator(mode="before")
     @classmethod

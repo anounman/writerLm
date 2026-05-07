@@ -15,7 +15,7 @@ services:
       PLANNER_GOOGLE_MODEL: ${PLANNER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
       RESEARCHER_GOOGLE_MODEL: ${RESEARCHER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
       NOTES_GOOGLE_MODEL: ${NOTES_GOOGLE_MODEL:-gemini-2.5-flash-lite}
-      WRITER_GOOGLE_MODEL: ${WRITER_GOOGLE_MODEL:-gemma-3-27b-it}
+      WRITER_GOOGLE_MODEL: ${WRITER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
       REVIEWER_GOOGLE_MODEL: ${REVIEWER_GOOGLE_MODEL:-gemini-2.5-flash-lite}
       PLANNER_GROQ_MODEL: ${PLANNER_GROQ_MODEL:-openai/gpt-oss-120b}
       RESEARCHER_GROQ_MODEL: ${RESEARCHER_GROQ_MODEL:-openai/gpt-oss-120b}
@@ -54,6 +54,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:-${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}}
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     image: writerlm-studio:latest
     depends_on:
       backend:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import hmac
 import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -91,3 +92,11 @@ def mask_secret(value: str) -> str:
     if len(cleaned) <= 8:
         return "••••"
     return f"{cleaned[:4]}••••{cleaned[-4:]}"
+
+
+def secret_fingerprint(value: str) -> str:
+    cleaned = value.strip()
+    if not cleaned:
+        return "saved"
+    digest = hmac.new(_fernet_key(), cleaned.encode("utf-8"), hashlib.sha256).hexdigest()
+    return f"key-{digest[:12]}"

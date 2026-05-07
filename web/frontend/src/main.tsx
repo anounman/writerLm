@@ -8,8 +8,13 @@ import {
   Box,
   Check,
   ChevronRight,
+  Code,
   Command,
   Cpu,
+  Plus,
+  Globe,
+  Info,
+  Database,
   Download,
   FileCode2,
   FileText,
@@ -30,7 +35,8 @@ import {
   Trash2,
   Upload,
   UserRound,
-  X
+  X,
+  ArrowUp
 } from "lucide-react";
 import {
   ApiClient,
@@ -39,6 +45,7 @@ import {
   BookRequest,
   GeneratedBook,
   Job,
+  JobStatus,
   PipelineConfig
 } from "./api";
 import "./styles.css";
@@ -75,6 +82,7 @@ const defaultBookRequest: BookRequest = {
   max_section_words: 900,
   force_web_research: false,
   language_request: null,
+  urls: [],
 };
 
 const stageOrder = ["planner_research", "notes_synthesis", "writer", "reviewer", "assembler", "latex_compile"];
@@ -213,7 +221,7 @@ function App() {
   }
 
   if (!isSignedIn) {
-    return <AuthScreen theme={theme} onTheme={setTheme} />;
+    return <LandingPage theme={theme} onTheme={setTheme} />;
   }
 
   if (!token) {
@@ -337,14 +345,15 @@ function App() {
 }
 
 function StudioStats({ jobs, books }: { jobs: Job[]; books: GeneratedBook[] }) {
-  const running = jobs.filter((job) => job.status === "running").length;
+  const running = jobs.filter((job) => effectiveJobStatus(job) === "running").length;
   const completed = jobs.filter((job) => job.status === "completed" || job.status === "completed_with_latex_issue").length;
   const latest = jobs[0];
+  const latestStatus = latest ? effectiveJobStatus(latest) : null;
   const stats = [
     { label: "Active runs", value: String(running), icon: Activity },
     { label: "Generated books", value: String(books.length), icon: BookOpen },
     { label: "Completed jobs", value: String(completed), icon: Check },
-    { label: "Latest status", value: latest ? latest.status.replaceAll("_", " ") : "idle", icon: Cpu }
+    { label: "Latest status", value: latestStatus ? latestStatus.replaceAll("_", " ") : "idle", icon: Cpu }
   ];
 
   return (
@@ -478,34 +487,83 @@ function CommandMenu({
   );
 }
 
-function AuthScreen({ theme, onTheme }: { theme: Theme; onTheme: (theme: Theme) => void }) {
+function LandingPage({ theme, onTheme }: { theme: Theme; onTheme: (theme: Theme) => void }) {
+  const [sampleRequest, setSampleRequest] = useState<any>(null);
+
+  useEffect(() => {
+    fetch("/sample_book_request.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("Sample request not found");
+        return res.json();
+      })
+      .then((data) => setSampleRequest(data))
+      .catch((err) => console.warn("Failed to load sample request:", err));
+  }, []);
+
   return (
-    <div className="auth-screen">
-      <div className="auth-theme">
-        <ThemeToggle theme={theme} onTheme={onTheme} />
-      </div>
-      <motion.div
-        className="auth-panel"
-        initial={{ opacity: 0, scale: 0.97, y: 18 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 260, damping: 24 }}
-        style={animatedStyle}
-      >
-        <div className="auth-symbol"><Sparkles size={26} /></div>
-        <h1>WriterLM Studio</h1>
-        <p>Run the full AI book pipeline from one browser workspace.</p>
-        <div className="auth-actions">
-          <SignInButton mode="modal">
-            <motion.button className="primary-button" type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
-              <ChevronRight size={18} />
-              Log in
-            </motion.button>
-          </SignInButton>
-          <SignUpButton mode="modal">
-            <button className="secondary-button" type="button">Create account</button>
-          </SignUpButton>
+    <div className="landing-layout">
+      <div className="landing-content">
+        <div className="auth-theme" style={{ position: "absolute", top: 18, left: 18 }}>
+          <ThemeToggle theme={theme} onTheme={onTheme} />
         </div>
-      </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 24 }}
+          style={animatedStyle}
+        >
+          <div className="auth-symbol" style={{ marginBottom: 24 }}><Sparkles size={28} /></div>
+          <h1 style={{ marginBottom: 16 }}>WriterLM Studio</h1>
+          <p style={{ color: "var(--muted)", fontSize: "18px", lineHeight: 1.6, marginBottom: 24 }}>
+            Welcome to the AI book production system. 
+            Upload your source materials, configure your pedagogy, and generate high-quality educational textbooks with our autonomous multi-agent pipeline.
+          </p>
+
+          {sampleRequest && (
+            <div style={{ background: "var(--surface-2)", padding: "20px", borderRadius: "10px", border: "1px solid var(--line)", marginBottom: 32, maxWidth: 500 }}>
+              <h3 style={{ fontSize: "14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}><Sparkles size={14}/> Prompt used for this sample</h3>
+              <div style={{ color: "var(--muted)", fontSize: "13px", lineHeight: 1.5 }}>
+                <strong>Topic:</strong> {sampleRequest.topic}<br/>
+                <strong>Audience:</strong> {sampleRequest.audience}<br/>
+                <strong>Goals:</strong>
+                <ul style={{ paddingLeft: 16, marginTop: 4, marginBottom: 0 }}>
+                  {sampleRequest.goals?.map((g: string, i: number) => <li key={i}>{g}</li>)}
+                </ul>
+              </div>
+            </div>
+          )}
+          
+          <div className="auth-actions" style={{ maxWidth: 300 }}>
+            <SignInButton mode="modal">
+              <motion.button className="primary-button" type="button" whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
+                <ChevronRight size={18} />
+                Log in
+              </motion.button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button className="secondary-button" type="button">Create account</button>
+            </SignUpButton>
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="landing-preview" style={{ padding: 0 }}>
+        <motion.div 
+          className="book-viewer"
+          style={{ width: "100%", height: "100%", maxWidth: "none", borderRadius: 0, border: "none", padding: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ type: "spring", stiffness: 220, damping: 24, delay: 0.1 }}
+        >
+          <object data="/sample_book.pdf" type="application/pdf" width="100%" height="100%">
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+              <BookOpen size={32} style={{ color: "var(--subtle)", marginBottom: 16 }} />
+              <strong style={{ display: "block", marginBottom: 8, color: "var(--text)" }}>PDF Preview not available</strong>
+              <span>The sample book has not been configured yet.<br/>Sign in to generate your first book!</span>
+            </div>
+          </object>
+        </motion.div>
+      </div>
     </div>
   );
 }
@@ -542,15 +600,41 @@ function ThemeToggle({ theme, onTheme }: { theme: Theme; onTheme: (theme: Theme)
 }
 
 function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (job: Job) => void; onNotice: (message: string) => void }) {
+  const [promptMode, setPromptMode] = useState(true);
+  const [promptText, setPromptText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [researchProfile, setResearchProfile] = useState<"budget" | "debug" | "full">("budget");
+  const [tooltipVisible, setTooltipVisible] = useState<string | null>(null);
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false);
+  const attachMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (attachMenuRef.current && !attachMenuRef.current.contains(event.target as Node)) {
+        setAttachMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  
   const [request, setRequest] = useState<BookRequest>(defaultBookRequest);
   const [goalText, setGoalText] = useState(defaultBookRequest.goals.join("\n"));
+  const [urlText, setUrlText] = useState(defaultBookRequest.urls.join("\n"));
   const [submitting, setSubmitting] = useState(false);
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const promptFileInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasPdfs = pdfFiles.length > 0;
   const webResearchEnabled = !hasPdfs || request.force_web_research;
+
+  const RESEARCH_PROFILES: { id: "budget" | "debug" | "full"; label: string; description: string }[] = [
+    { id: "budget", label: "Budget", description: "Fast and cost-efficient. Great for quick iterations and testing ideas." },
+    { id: "debug", label: "Debug", description: "Intermediate depth with extra logging. Use when you want to trace the research process." },
+    { id: "full", label: "Full", description: "Maximum research depth and quality. Best for the final, production-quality book." },
+  ];
 
   function addFiles(incoming: FileList | File[]) {
     const valid = Array.from(incoming).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
@@ -565,10 +649,41 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
     setPdfFiles(prev => prev.filter(f => f.name !== name));
   }
 
+  async function submitPrompt(e: React.FormEvent) {
+    e.preventDefault();
+    if (!promptText.trim()) return;
+    setParsing(true);
+    try {
+      const [parsed, currentConfig] = await Promise.all([
+        api.parsePrompt(promptText),
+        api.config()
+      ]);
+      await api.saveConfig({ ...currentConfig, research_execution_profile: researchProfile });
+      
+      const newRequest = { ...defaultBookRequest, ...parsed };
+      setRequest(newRequest);
+      if (parsed.goals && Array.isArray(parsed.goals)) {
+        setGoalText(parsed.goals.join("\n"));
+      }
+      if (parsed.urls && Array.isArray(parsed.urls)) {
+        setUrlText(parsed.urls.join("\n"));
+      }
+      setPromptMode(false);
+    } catch (err) {
+      onNotice(err instanceof Error ? err.message : "Failed to parse prompt.");
+    } finally {
+      setParsing(false);
+    }
+  }
+
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setSubmitting(true);
-    const finalRequest = { ...request, goals: goalText.split("\n").map(item => item.trim()).filter(Boolean) };
+    const finalRequest = {
+      ...request,
+      goals: goalText.split("\n").map(item => item.trim()).filter(Boolean),
+      urls: urlText.split("\n").map(item => item.trim()).filter(Boolean),
+    };
     try {
       const job = hasPdfs
         ? await api.createJobWithPdfs(finalRequest, pdfFiles)
@@ -581,147 +696,328 @@ function CreateBook({ api, onCreated, onNotice }: { api: ApiClient; onCreated: (
     }
   }
 
-  return (
-    <form className="studio-grid" onSubmit={submit}>
-      <section className="control-panel wide">
-        <PanelTitle icon={Sparkles} title="Book Request" meta="Generation brief" />
-        <div className="form-grid">
-          <label className="span-2">Topic<textarea value={request.topic} onChange={(e) => setRequest({ ...request, topic: e.target.value })} rows={3} /></label>
-          <label>Audience<input value={request.audience} onChange={(e) => setRequest({ ...request, audience: e.target.value })} /></label>
-          <label>Tone<input value={request.tone} onChange={(e) => setRequest({ ...request, tone: e.target.value })} /></label>
-          <label>
-            Book type
-            <select value={request.book_type} onChange={(e) => setRequest({ ...request, book_type: e.target.value as BookType })}>
-              {bookTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <small>{bookTypeOptions.find((option) => option.value === request.book_type)?.hint}</small>
-          </label>
-          <label>
-            Theory / practice
-            <select value={request.theory_practice_balance} onChange={(e) => setRequest({ ...request, theory_practice_balance: e.target.value as TheoryPracticeBalance })}>
-              {balanceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <small>{balanceOptions.find((option) => option.value === request.theory_practice_balance)?.hint}</small>
-          </label>
-          <label>
-            Teaching style
-            <select value={request.pedagogy_style} onChange={(e) => setRequest({ ...request, pedagogy_style: e.target.value as PedagogyStyle })}>
-              {pedagogyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <small>{pedagogyOptions.find((option) => option.value === request.pedagogy_style)?.hint}</small>
-          </label>
-          <label>
-            Uploaded sources
-            <select value={request.source_usage} onChange={(e) => setRequest({ ...request, source_usage: e.target.value as SourceUsage })}>
-              {sourceUsageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <small>{sourceUsageOptions.find((option) => option.value === request.source_usage)?.hint}</small>
-          </label>
-          <label className="span-2">
-            Exercise handling
-            <select value={request.exercise_strategy} onChange={(e) => setRequest({ ...request, exercise_strategy: e.target.value as ExerciseStrategy })}>
-              {exerciseStrategyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-            </select>
-            <small>{exerciseStrategyOptions.find((option) => option.value === request.exercise_strategy)?.hint}</small>
-          </label>
-          <label className="span-2">Goals<textarea value={goalText} onChange={(e) => setGoalText(e.target.value)} rows={5} /></label>
-          <label className="span-2">
-            Language request
-            <textarea
-              value={request.language_request || ""}
-              onChange={(e) => setRequest({ ...request, language_request: e.target.value || null })}
-              rows={2}
-              placeholder="Optional. Describe language mixing, e.g. &quot;Explain all theory in English, write exam examples and formulas in German.&quot; Leave blank for English only."
-            />
-            <small>Injected verbatim into the planner and writer prompts. Supports any bilingual or multilingual instruction.</small>
-          </label>
-          {(request.project_based || request.book_type === "implementation_guide") && (
-            <label className="span-2">Running project<input value={request.running_project_description || ""} onChange={(e) => setRequest({ ...request, running_project_description: e.target.value || null })} /></label>
-          )}
-        </div>
-      </section>
-
-      <section className="control-panel wide">
-        <PanelTitle
-          icon={Upload}
-          title="Research Sources"
-          meta={hasPdfs ? `${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""} attached` : "Web research is the default source"}
-        />
-        <motion.div
-          className={`pdf-dropzone${isDragging ? " dragging" : ""}${hasPdfs ? " has-files" : ""}`}
-          onClick={() => fileInputRef.current?.click()}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
-          whileHover={{ y: -2, scale: 1.002 }}
-          transition={{ type: "spring", stiffness: 360, damping: 26 }}
-          style={animatedStyle}
+  if (promptMode) {
+    return (
+      <div className="prompt-hero">
+        <motion.h1 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,application/pdf"
-            multiple
-            style={{ display: "none" }}
-            onChange={(e) => e.target.files && addFiles(e.target.files)}
+          Where ideas become reality
+        </motion.h1>
+        <motion.p 
+          initial={{ opacity: 0, y: 10 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          Build fully functional textbooks and guides through simple conversations
+        </motion.p>
+        
+        <motion.form 
+          className="prompt-input-container" 
+          onSubmit={submitPrompt}
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.5, delay: 0.3 }}
+        >
+          <textarea 
+            className="prompt-textarea" 
+            placeholder="Write me a book about..."
+            value={promptText}
+            onChange={(e) => setPromptText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                submitPrompt(e);
+              }
+            }}
           />
-          {hasPdfs ? (
-            <ul className="pdf-file-list" onClick={(e) => e.stopPropagation()}>
+
+          {/* PDF strip inside the card */}
+          {hasPdfs && (
+            <div className="prompt-pdf-strip">
               {pdfFiles.map(f => (
-                <li key={f.name}>
-                  <FileText size={15} />
-                  <span>{f.name}</span>
-                  <span className="pdf-size">{(f.size / 1024).toFixed(0)} KB</span>
-                  <button type="button" className="icon-button" onClick={() => removeFile(f.name)}><Trash2 size={14} /></button>
-                </li>
+                <span key={f.name} className="prompt-pdf-chip">
+                  <FileText size={13} />
+                  {f.name}
+                  <button type="button" onClick={() => setPdfFiles(prev => prev.filter(p => p.name !== f.name))}><X size={12} /></button>
+                </span>
               ))}
-              <li className="pdf-add-more" onClick={() => fileInputRef.current?.click()}>
-                <Upload size={14} />
-                <span>Add more PDFs</span>
-              </li>
-            </ul>
-          ) : (
-            <div className="dropzone-prompt">
-              <Upload size={28} />
-              <strong>Drop PDF files here</strong>
-              <span>or click to browse &nbsp;·&nbsp; Only PDF files accepted</span>
             </div>
           )}
-        </motion.div>
-        <div className="source-mode">
-          <div>
-            <strong>{webResearchEnabled ? "Web research on" : "PDF-only research"}</strong>
-            <span>{hasPdfs ? "Uploaded PDFs stay primary; web search only supplements them when this is on." : "At least one source is required, so web research stays on until PDFs are attached."}</span>
-          </div>
-          <label className="toggle-switch">
+
+          <div className="prompt-actions">
+            <div className="prompt-attach-wrapper" ref={attachMenuRef}>
+              <button
+                type="button"
+                className="prompt-attach-btn"
+                onClick={() => setAttachMenuOpen(!attachMenuOpen)}
+                title="Add attachment"
+              >
+                <Plus size={18} />
+              </button>
+              
+              {attachMenuOpen && (
+                <div className="prompt-attach-menu">
+                  <button type="button" onClick={() => { promptFileInputRef.current?.click(); setAttachMenuOpen(false); }}>
+                    <FileText size={16} /> Attach PDF {hasPdfs ? `(${pdfFiles.length})` : ""}
+                  </button>
+                  <label>
+                    <Globe size={16} /> Web Search
+                    <div className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={webResearchEnabled}
+                        disabled={!hasPdfs}
+                        onChange={(e) => setRequest({ ...request, force_web_research: e.target.checked })}
+                      />
+                      <span />
+                    </div>
+                  </label>
+                </div>
+              )}
+            </div>
+
             <input
-              type="checkbox"
-              checked={webResearchEnabled}
-              disabled={!hasPdfs}
-              onChange={(e) => setRequest({ ...request, force_web_research: e.target.checked })}
+              ref={promptFileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => {
+                if (!e.target.files) return;
+                const valid = Array.from(e.target.files).filter(f => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"));
+                if (!valid.length) { onNotice("Only PDF files are accepted."); return; }
+                setPdfFiles(prev => {
+                  const existing = new Set(prev.map(p => p.name));
+                  return [...prev, ...valid.filter(f => !existing.has(f.name))];
+                });
+              }}
             />
-            <span />
-          </label>
-        </div>
-      </section>
+            <button type="submit" disabled={parsing || !promptText.trim()} className="prompt-submit">
+              {parsing ? <RefreshCw className="spinning" size={18} /> : <ArrowUp size={18} />}
+            </button>
+          </div>
+        </motion.form>
 
-      <section className="control-panel">
-        <PanelTitle icon={Box} title="Density" meta="Content targets" />
-        <Segmented label="Code" value={request.code_density} options={["high", "medium", "low"]} onChange={(value) => setRequest({ ...request, code_density: value })} />
-        <Segmented label="Examples" value={request.example_density} options={["high", "medium", "low"]} onChange={(value) => setRequest({ ...request, example_density: value })} />
-        <Segmented label="Diagrams" value={request.diagram_density} options={["high", "medium", "low"]} onChange={(value) => setRequest({ ...request, diagram_density: value })} />
-      </section>
+        {/* Research budget selector */}
+        <motion.div
+          className="prompt-budget-row"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.4 }}
+        >
+          <span className="prompt-budget-label">Research depth</span>
+          {RESEARCH_PROFILES.map(p => (
+            <div key={p.id} className="prompt-budget-item">
+              <button
+                type="button"
+                className={`prompt-budget-btn${researchProfile === p.id ? " selected" : ""}`}
+                onClick={() => setResearchProfile(p.id)}
+              >
+                {p.label}
+              </button>
+              <span
+                className="prompt-budget-info"
+                onMouseEnter={() => setTooltipVisible(p.id)}
+                onMouseLeave={() => setTooltipVisible(null)}
+              >
+                <Info size={13} />
+                {tooltipVisible === p.id && (
+                  <span className="prompt-budget-tooltip">{p.description}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </motion.div>
 
-      <section className="control-panel">
-        <PanelTitle icon={Settings} title="Shape" meta="Planner constraints" />
-        <label className="toggle-row"><span>Project-based</span><input type="checkbox" checked={request.project_based} onChange={(e) => setRequest({ ...request, project_based: e.target.checked })} /></label>
-        <label>Max section words<input type="number" min={150} max={2000} value={request.max_section_words || ""} onChange={(e) => setRequest({ ...request, max_section_words: e.target.value ? Number(e.target.value) : null })} /></label>
-        <motion.button className="primary-button full" disabled={submitting} whileHover={{ y: submitting ? 0 : -1 }} whileTap={{ scale: submitting ? 1 : 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
-          <Play size={18} />
-          {submitting ? "Starting" : hasPdfs ? `Start - ${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""}${request.force_web_research ? " + web" : ""}` : "Start generation"}
-        </motion.button>
-      </section>
+        <motion.div 
+          className="prompt-suggestions"
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <button type="button" onClick={() => setPromptText("Write an advanced implementation guide for React Native with high code density.")}>
+            <Terminal size={14} /> React Native Guide
+          </button>
+          <button type="button" onClick={() => setPromptText("Create a beginner-friendly Python textbook with lots of diagrams and simple examples.")}>
+            <Code size={14} /> Python Basics
+          </button>
+          <button type="button" onClick={() => setPromptText("Write a conceptual guide on distributed systems architecture for senior engineers.")}>
+            <Database size={14} /> Systems Architecture
+          </button>
+          <button type="button" onClick={() => setPromptMode(false)}>
+            <Settings size={14} /> Manual Configuration
+          </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="create-book-container">
+      <div className="create-book-header">
+        <h2>Review Configuration</h2>
+        <button className="secondary-button" onClick={() => setPromptMode(true)}>
+          <RefreshCw size={14} /> Edit Prompt
+        </button>
+      </div>
+      <form className="studio-grid" onSubmit={submit}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <section className="control-panel wide">
+          <PanelTitle icon={Sparkles} title="Book Request" meta="Generation brief" />
+          <div className="form-grid">
+            <label className="span-2">Topic<textarea value={request.topic} onChange={(e) => setRequest({ ...request, topic: e.target.value })} rows={3} /></label>
+            <label>Audience<input value={request.audience} onChange={(e) => setRequest({ ...request, audience: e.target.value })} /></label>
+            <label>Tone<input value={request.tone} onChange={(e) => setRequest({ ...request, tone: e.target.value })} /></label>
+            <label>
+              Book type
+              <select value={request.book_type} onChange={(e) => setRequest({ ...request, book_type: e.target.value as BookType })}>
+                {bookTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <small>{bookTypeOptions.find((option) => option.value === request.book_type)?.hint}</small>
+            </label>
+            <label>
+              Theory / practice
+              <select value={request.theory_practice_balance} onChange={(e) => setRequest({ ...request, theory_practice_balance: e.target.value as TheoryPracticeBalance })}>
+                {balanceOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <small>{balanceOptions.find((option) => option.value === request.theory_practice_balance)?.hint}</small>
+            </label>
+            <label>
+              Teaching style
+              <select value={request.pedagogy_style} onChange={(e) => setRequest({ ...request, pedagogy_style: e.target.value as PedagogyStyle })}>
+                {pedagogyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <small>{pedagogyOptions.find((option) => option.value === request.pedagogy_style)?.hint}</small>
+            </label>
+            <label>
+              Uploaded sources
+              <select value={request.source_usage} onChange={(e) => setRequest({ ...request, source_usage: e.target.value as SourceUsage })}>
+                {sourceUsageOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <small>{sourceUsageOptions.find((option) => option.value === request.source_usage)?.hint}</small>
+            </label>
+            <label className="span-2">
+              Exercise handling
+              <select value={request.exercise_strategy} onChange={(e) => setRequest({ ...request, exercise_strategy: e.target.value as ExerciseStrategy })}>
+                {exerciseStrategyOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <small>{exerciseStrategyOptions.find((option) => option.value === request.exercise_strategy)?.hint}</small>
+            </label>
+            <label className="span-2">Goals<textarea value={goalText} onChange={(e) => setGoalText(e.target.value)} rows={5} /></label>
+            <label className="span-2">
+              Language request
+              <textarea
+                value={request.language_request || ""}
+                onChange={(e) => setRequest({ ...request, language_request: e.target.value || null })}
+                rows={2}
+                placeholder="Optional. Describe language mixing, e.g. &quot;Explain all theory in English, write exam examples and formulas in German.&quot; Leave blank for English only."
+              />
+              <small>Injected verbatim into the planner and writer prompts. Supports any bilingual or multilingual instruction.</small>
+            </label>
+            {(request.project_based || request.book_type === "implementation_guide") && (
+              <label className="span-2">Running project<input value={request.running_project_description || ""} onChange={(e) => setRequest({ ...request, running_project_description: e.target.value || null })} /></label>
+            )}
+            <label className="span-2">
+              Target URLs
+              <textarea
+                value={urlText}
+                onChange={(e) => setUrlText(e.target.value)}
+                rows={3}
+                placeholder="Optional. Enter specific URLs to scrape (one per line). These will be injected into the research state directly."
+              />
+              <small>Allows you to force the researcher to consume specific web pages.</small>
+            </label>
+          </div>
+        </section>
+
+        <section className="control-panel">
+          <PanelTitle icon={Box} title="Density" meta="Content targets" />
+          <Segmented label="Code" value={request.code_density} options={["low", "medium", "high"]} onChange={(value) => setRequest({ ...request, code_density: value })} />
+          <Segmented label="Examples" value={request.example_density} options={["low", "medium", "high"]} onChange={(value) => setRequest({ ...request, example_density: value })} />
+          <Segmented label="Diagrams" value={request.diagram_density} options={["low", "medium", "high"]} onChange={(value) => setRequest({ ...request, diagram_density: value })} />
+        </section>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <section className="control-panel wide">
+          <PanelTitle
+            icon={Upload}
+            title="Research Sources"
+            meta={hasPdfs ? `${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""} attached` : "Web research is the default source"}
+          />
+          <motion.div
+            className={`pdf-dropzone${isDragging ? " dragging" : ""}${hasPdfs ? " has-files" : ""}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
+            whileHover={{ y: -2, scale: 1.002 }}
+            transition={{ type: "spring", stiffness: 360, damping: 26 }}
+            style={animatedStyle}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              multiple
+              style={{ display: "none" }}
+              onChange={(e) => e.target.files && addFiles(e.target.files)}
+            />
+            {hasPdfs ? (
+              <ul className="pdf-file-list" onClick={(e) => e.stopPropagation()}>
+                {pdfFiles.map(f => (
+                  <li key={f.name}>
+                    <FileText size={15} />
+                    <span>{f.name}</span>
+                    <span className="pdf-size">{(f.size / 1024).toFixed(0)} KB</span>
+                    <button type="button" className="icon-button" onClick={() => removeFile(f.name)}><Trash2 size={14} /></button>
+                  </li>
+                ))}
+                <li className="pdf-add-more" onClick={() => fileInputRef.current?.click()}>
+                  <Upload size={14} />
+                  <span>Add more PDFs</span>
+                </li>
+              </ul>
+            ) : (
+              <div className="dropzone-prompt">
+                <Upload size={28} />
+                <strong>Drop PDF files here</strong>
+                <span>or click to browse &nbsp;·&nbsp; Only PDF files accepted</span>
+              </div>
+            )}
+          </motion.div>
+          <div className="source-mode">
+            <div>
+              <strong>{webResearchEnabled ? "Web research on" : "PDF-only research"}</strong>
+              <span>{hasPdfs ? "Uploaded PDFs stay primary; web search only supplements them when this is on." : "At least one source is required, so web research stays on until PDFs are attached."}</span>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={webResearchEnabled}
+                disabled={!hasPdfs}
+                onChange={(e) => setRequest({ ...request, force_web_research: e.target.checked })}
+              />
+              <span />
+            </label>
+          </div>
+        </section>
+
+        <section className="control-panel">
+          <PanelTitle icon={Settings} title="Shape" meta="Planner constraints" />
+          <label className="toggle-row"><span>Project-based</span><input type="checkbox" checked={request.project_based} onChange={(e) => setRequest({ ...request, project_based: e.target.checked })} /></label>
+          <label>Max section words<input type="number" min={150} max={2000} value={request.max_section_words || ""} onChange={(e) => setRequest({ ...request, max_section_words: e.target.value ? Number(e.target.value) : null })} /></label>
+          <motion.button className="primary-button full" disabled={submitting} whileHover={{ y: submitting ? 0 : -1 }} whileTap={{ scale: submitting ? 1 : 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 30 }}>
+            <Play size={18} />
+            {submitting ? "Starting" : hasPdfs ? `Start - ${pdfFiles.length} PDF${pdfFiles.length > 1 ? "s" : ""}${request.force_web_research ? " + web" : ""}` : "Start generation"}
+          </motion.button>
+        </section>
+      </div>
     </form>
+    </div>
   );
 }
 
@@ -741,7 +1037,9 @@ function ProgressPage({
   onNotice: (message: string) => void;
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const canStop = selectedJob?.status === "queued" || selectedJob?.status === "running";
+  const selectedStatus = selectedJob ? effectiveJobStatus(selectedJob) : null;
+  const canStop = selectedStatus === "queued" || selectedStatus === "running";
+  const showJobError = Boolean(selectedJob?.error_message && selectedStatus !== "queued" && selectedStatus !== "running");
 
   async function stopSelectedJob() {
     if (!selectedJob) return;
@@ -761,7 +1059,7 @@ function ProgressPage({
           <button key={job.id} className={selectedJob?.id === job.id ? "job-row active" : "job-row"} onClick={() => onSelect(job.id)}>
             <span>Job #{job.id}</span>
             <small>{String(job.request_payload.topic || "Untitled")}</small>
-            <StatusPill status={job.status} />
+            <StatusPill status={effectiveJobStatus(job)} />
           </button>
         ))}
         {!jobs.length && <EmptyState title="No jobs yet" text="Start a book request to see the pipeline timeline." />}
@@ -776,7 +1074,7 @@ function ProgressPage({
                 <h2>{String(selectedJob.request_payload.topic || `Job #${selectedJob.id}`)}</h2>
               </div>
               <div className="job-hero-actions">
-                <StatusPill status={selectedJob.status} />
+                <StatusPill status={selectedStatus || selectedJob.status} />
                 {canStop && (
                   <motion.button className="secondary-button" type="button" onClick={stopSelectedJob} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}>
                     <X size={16} />
@@ -785,6 +1083,18 @@ function ProgressPage({
                 )}
               </div>
             </div>
+            {showJobError && selectedJob.error_message && (
+              <motion.div
+                className="job-error"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                style={animatedStyle}
+              >
+                <X size={16} />
+                <span>{selectedJob.error_message}</span>
+              </motion.div>
+            )}
             <div className="stage-stack">
               {stageOrder.map((stageKey, index) => {
                 const stage = selectedJob.stages?.[stageKey];
@@ -1031,31 +1341,36 @@ function ConfigPage({ api, onNotice }: { api: ApiClient; onNotice: (message: str
 
   return (
     <div className="config-layout">
-      <section className="control-panel">
-        <PanelTitle icon={Settings} title="Provider" meta="Model routing" />
-        <Segmented label="LLM" value={config.llm_provider} options={["google", "groq"]} onChange={(value) => update("llm_provider", value)} />
-        <label>Research profile<select value={config.research_execution_profile} onChange={(e) => update("research_execution_profile", e.target.value as PipelineConfig["research_execution_profile"])}><option>budget</option><option>debug</option><option>full</option></select></label>
-      </section>
-      <section className="control-panel wide">
-        <PanelTitle icon={Terminal} title="Models" meta="Per-layer defaults" />
-        <div className="model-grid">
-          {(["planner", "researcher", "notes", "writer", "reviewer"] as const).map((layer) => (
-            <React.Fragment key={layer}>
-              <label>{layer} Google<input value={String(config[`${layer}_google_model` as keyof PipelineConfig] || "")} onChange={(e) => update(`${layer}_google_model` as keyof PipelineConfig, e.target.value as never)} /></label>
-              <label>{layer} Groq<input value={String(config[`${layer}_groq_model` as keyof PipelineConfig] || "")} onChange={(e) => update(`${layer}_groq_model` as keyof PipelineConfig, e.target.value as never)} /></label>
-            </React.Fragment>
-          ))}
-        </div>
-      </section>
-      <section className="control-panel">
-        <PanelTitle icon={Timer} title="Runtime" meta="Execution controls" />
-        <label className="toggle-row"><span>Parallel sections</span><input type="checkbox" checked={config.parallel_section_pipeline} onChange={(e) => update("parallel_section_pipeline", e.target.checked)} /></label>
-        <label>Concurrency<input type="number" min={1} max={12} value={config.section_pipeline_concurrency} onChange={(e) => update("section_pipeline_concurrency", Number(e.target.value))} /></label>
-        <label className="toggle-row"><span>Compile LaTeX</span><input type="checkbox" checked={config.compile_latex} onChange={(e) => update("compile_latex", e.target.checked)} /></label>
-        <label className="toggle-row"><span>Strict compile</span><input type="checkbox" checked={config.strict_latex_compile} onChange={(e) => update("strict_latex_compile", e.target.checked)} /></label>
-        <label>LaTeX engine<select value={config.latex_engine} onChange={(e) => update("latex_engine", e.target.value as PipelineConfig["latex_engine"])}><option>pdflatex</option><option>xelatex</option><option>lualatex</option></select></label>
-        <motion.button className="primary-button full" onClick={() => api.saveConfig(config).then(setConfig).then(() => onNotice("Configuration saved."))} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}><Save size={17} />Save config</motion.button>
-      </section>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <section className="control-panel">
+          <PanelTitle icon={Settings} title="Provider" meta="Model routing" />
+          <Segmented label="LLM" value={config.llm_provider} options={["google", "groq"]} onChange={(value) => update("llm_provider", value)} />
+          <label>Research profile<select value={config.research_execution_profile} onChange={(e) => update("research_execution_profile", e.target.value as PipelineConfig["research_execution_profile"])}><option>budget</option><option>debug</option><option>full</option></select></label>
+        </section>
+        <section className="control-panel">
+          <PanelTitle icon={Timer} title="Runtime" meta="Execution controls" />
+          <label className="toggle-row"><span>Parallel sections</span><input type="checkbox" checked={config.parallel_section_pipeline} onChange={(e) => update("parallel_section_pipeline", e.target.checked)} /></label>
+          <label>Concurrency<input type="number" min={1} max={12} value={config.section_pipeline_concurrency} onChange={(e) => update("section_pipeline_concurrency", Number(e.target.value))} /></label>
+          <label className="toggle-row"><span>Compile LaTeX</span><input type="checkbox" checked={config.compile_latex} onChange={(e) => update("compile_latex", e.target.checked)} /></label>
+          <label className="toggle-row"><span>Strict compile</span><input type="checkbox" checked={config.strict_latex_compile} onChange={(e) => update("strict_latex_compile", e.target.checked)} /></label>
+          <label>LaTeX engine<select value={config.latex_engine} onChange={(e) => update("latex_engine", e.target.value as PipelineConfig["latex_engine"])}><option>pdflatex</option><option>xelatex</option><option>lualatex</option></select></label>
+          <motion.button className="primary-button full" onClick={() => api.saveConfig(config).then(setConfig).then(() => onNotice("Configuration saved."))} whileHover={{ y: -1 }} whileTap={{ scale: 0.98 }}><Save size={17} />Save config</motion.button>
+        </section>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <section className="control-panel wide">
+          <PanelTitle icon={Terminal} title="Models" meta="Per-layer defaults" />
+          <div className="model-grid">
+            {(["planner", "researcher", "notes", "writer", "reviewer"] as const).map((layer) => (
+              <React.Fragment key={layer}>
+                <label>{layer} Google<input value={String(config[`${layer}_google_model` as keyof PipelineConfig] || "")} onChange={(e) => update(`${layer}_google_model` as keyof PipelineConfig, e.target.value as never)} /></label>
+                <label>{layer} Groq<input value={String(config[`${layer}_groq_model` as keyof PipelineConfig] || "")} onChange={(e) => update(`${layer}_groq_model` as keyof PipelineConfig, e.target.value as never)} /></label>
+              </React.Fragment>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
@@ -1082,6 +1397,13 @@ function Segmented<T extends string>({ label, value, options, onChange }: { labe
 
 function StatusPill({ status }: { status: string }) {
   return <span className={`status-pill ${status}`}>{status.replaceAll("_", " ")}</span>;
+}
+
+function effectiveJobStatus(job: Job): JobStatus {
+  const stages = Object.values(job.stages || {});
+  if (stages.some((stage) => stage.status === "running")) return "running";
+  if (job.status === "queued" && stages.some((stage) => stage.status === "completed")) return "running";
+  return job.status;
 }
 
 function stageIcon(status: string) {

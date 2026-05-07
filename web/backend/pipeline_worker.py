@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,8 +15,23 @@ from web.backend.models import BookJob, GeneratedBook
 from web.backend.pipeline_jobs import RUNS_DIR
 
 
+STALE_PROCESS_MESSAGES = {
+    "Job process is no longer running.",
+    "Job process exited unexpectedly. Check worker.log for details.",
+    "Job worker exited before starting. Check worker.log for details.",
+}
+
+
 def utciso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _write_worker_state(run_dir: Path, payload: dict[str, Any]) -> None:
+    state = {"updated_at": utciso(), "pid": os.getpid(), **payload}
+    try:
+        (run_dir / "worker_state.json").write_text(json.dumps(state, indent=2), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _stage_update(
@@ -41,6 +58,13 @@ def _stage_update(
     stages[stage] = entry
     job.stages = stages
     job.current_stage = stage
+    if status in {"running", "completed"} and (
+        job.status in {"queued", "running"}
+        or job.error_message in STALE_PROCESS_MESSAGES
+    ):
+        job.status = "running"
+        job.error_message = None
+        job.completed_at = None
     db.add(job)
     db.commit()
     db.refresh(job)
@@ -67,7 +91,7 @@ def run_job(job_id: int) -> None:
         if job is None:
             return
 
-        run_dir = RUNS_DIR / f"web_job_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        run_dir = Path(job.run_dir) if job.run_dir else RUNS_DIR / f"web_job_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         run_dir.mkdir(parents=True, exist_ok=True)
 
         job.status = "running"
@@ -76,11 +100,16 @@ def run_job(job_id: int) -> None:
         db.add(job)
         db.commit()
         db.refresh(job)
+        _write_worker_state(run_dir, {"job_id": job.id, "status": "running", "stage": job.current_stage})
+
+        request_path = run_dir / "user_request.json"
+        request_path.write_text(json.dumps(dict(job.request_payload or {}), indent=2), encoding="utf-8")
 
         def progress(stage: str, status: str, **kwargs: Any) -> None:
             fresh_job = db.get(BookJob, job_id)
             if fresh_job is None:
                 return
+            _write_worker_state(run_dir, {"job_id": job_id, "status": status, "stage": stage})
             _stage_update(db, fresh_job, stage, status, details=kwargs.get("details"), seconds=kwargs.get("seconds"))
 
         from web.backend.web_pipeline import run_web_pipeline
@@ -115,6 +144,7 @@ def run_job(job_id: int) -> None:
         )
         db.add(book)
         db.commit()
+        _write_worker_state(run_dir, {"job_id": job_id, "status": fresh_job.status, "stage": fresh_job.current_stage})
     except Exception as exc:
         job = db.get(BookJob, job_id)
         if job is not None:
@@ -123,6 +153,8 @@ def run_job(job_id: int) -> None:
                 error_path.write_text(traceback.format_exc(), encoding="utf-8")
             except Exception:
                 pass
+            if job.run_dir:
+                _write_worker_state(Path(job.run_dir), {"job_id": job_id, "status": "failed", "stage": job.current_stage, "error": str(exc)})
             _mark_job_failed(db, job, str(exc))
     finally:
         db.close()

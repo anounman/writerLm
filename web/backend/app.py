@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import signal
 import shutil
@@ -11,6 +12,7 @@ from pathlib import Path
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from web.backend.database import get_db, init_db
@@ -29,7 +31,14 @@ from web.backend.schemas import (
     UserLogin,
     UserOut,
 )
-from web.backend.security import create_access_token, encrypt_secret, mask_secret, password_hash, verify_password
+from web.backend.security import (
+    create_access_token,
+    decrypt_secret,
+    encrypt_secret,
+    password_hash,
+    secret_fingerprint,
+    verify_password,
+)
 
 
 app = FastAPI(title="WriterLM Studio API", version="0.1.0")
@@ -50,6 +59,11 @@ app.add_middleware(
 ACTIVE_JOB_STATUSES = {"queued", "running"}
 TERMINAL_JOB_STATUSES = {"completed", "completed_with_latex_issue", "failed", "stopped"}
 SUPPORTED_API_KEY_PROVIDERS = {"google", "groq", "tavily", "firecrawl"}
+STALE_PROCESS_MESSAGES = {
+    "Job process is no longer running.",
+    "Job process exited unexpectedly. Check worker.log for details.",
+    "Job worker exited before starting. Check worker.log for details.",
+}
 
 
 def _safe_pdf_filename(filename: str | None) -> str:
@@ -65,16 +79,6 @@ def _utciso() -> str:
 
 def _pid_is_alive(pid: int | None) -> bool:
     if not pid:
-        return False
-
-    try:
-        waited_pid, _ = os.waitpid(pid, os.WNOHANG)
-        if waited_pid == pid:
-            return False
-        return True
-    except ChildProcessError:
-        pass
-    except OSError:
         return False
 
     try:
@@ -126,11 +130,99 @@ def _mark_job_stopped(db: Session, job: BookJob, message: str = "Job was stopped
     return job
 
 
+def _mark_job_failed(db: Session, job: BookJob, message: str) -> BookJob:
+    now = datetime.now(timezone.utc)
+    stages = dict(job.stages or {})
+    active_stage = job.current_stage
+
+    for stage_name, entry in list(stages.items()):
+        stage_entry = dict(entry or {})
+        if stage_entry.get("status") == "running" or stage_name == active_stage:
+            if stage_entry.get("status") != "completed":
+                stage_entry["status"] = "failed"
+                stage_entry["completed_at"] = _utciso()
+                stage_entry["details"] = {
+                    **(stage_entry.get("details") or {}),
+                    "message": message,
+                }
+                stages[stage_name] = stage_entry
+
+    job.status = "failed"
+    job.current_stage = "failed"
+    job.completed_at = now
+    job.error_message = message
+    job.stages = stages
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def _has_running_stage(job: BookJob) -> bool:
+    return any((entry or {}).get("status") == "running" for entry in (job.stages or {}).values())
+
+
+def _read_worker_state(job: BookJob) -> dict | None:
+    if not job.run_dir:
+        return None
+    try:
+        state_path = Path(job.run_dir) / "worker_state.json"
+        if not state_path.exists():
+            return None
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if state.get("job_id") != job.id:
+        return None
+    return state
+
+
+def _restore_live_job(db: Session, job: BookJob, *, stage: str | None = None) -> BookJob:
+    stages = dict(job.stages or {})
+    job.status = "running"
+    running_stage = stage or next(
+        (stage_name for stage_name, entry in stages.items() if (entry or {}).get("status") == "running"),
+        None,
+    )
+    if running_stage:
+        job.current_stage = running_stage
+        stage_entry = dict(stages.get(running_stage) or {})
+        stage_entry.setdefault("label", running_stage.replace("_", " ").title())
+        stage_entry["status"] = "running"
+        stage_entry.setdefault("started_at", _utciso())
+        stage_entry["completed_at"] = None
+        details = dict(stage_entry.get("details") or {})
+        if details.get("message") in STALE_PROCESS_MESSAGES:
+            details.pop("message", None)
+        stage_entry["details"] = details
+        stages[running_stage] = stage_entry
+    job.completed_at = None
+    if job.error_message in STALE_PROCESS_MESSAGES:
+        job.error_message = None
+    job.stages = stages
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
 def _reconcile_job_status(db: Session, job: BookJob) -> BookJob:
+    if job.status in TERMINAL_JOB_STATUSES and _has_running_stage(job) and _pid_is_alive(job.process_id):
+        return _restore_live_job(db, job)
+    worker_state = _read_worker_state(job)
+    if (
+        job.status in TERMINAL_JOB_STATUSES
+        and worker_state
+        and worker_state.get("status") == "running"
+        and _pid_is_alive(job.process_id)
+    ):
+        return _restore_live_job(db, job, stage=str(worker_state.get("stage") or job.current_stage or "queued"))
     if job.status not in ACTIVE_JOB_STATUSES:
         return job
     if job.process_id and not _pid_is_alive(job.process_id):
-        return _mark_job_stopped(db, job, "Job process is no longer running.")
+        if job.current_stage == "queued" or job.started_at is None:
+            return _mark_job_failed(db, job, "Job worker exited before starting. Check worker.log for details.")
+        return _mark_job_failed(db, job, "Job process exited unexpectedly. Check worker.log for details.")
     return job
 
 
@@ -148,9 +240,38 @@ def _stop_process(pid: int | None) -> None:
             return
 
 
+def _safe_key_hint(row: ApiKey) -> str:
+    if row.key_hint.startswith("key-") or row.key_hint == "saved":
+        return row.key_hint
+    return "saved"
+
+
+def _normalize_api_key_hints() -> None:
+    from web.backend.database import SessionLocal
+
+    db = SessionLocal()
+    try:
+        rows = db.query(ApiKey).all()
+        changed = False
+        for row in rows:
+            if row.key_hint.startswith("key-") or row.key_hint == "saved":
+                continue
+            try:
+                row.key_hint = secret_fingerprint(decrypt_secret(row.encrypted_value))
+            except Exception:
+                row.key_hint = "saved"
+            db.add(row)
+            changed = True
+        if changed:
+            db.commit()
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    _normalize_api_key_hints()
 
 
 @app.get("/health")
@@ -192,7 +313,7 @@ def list_api_keys(user: User = Depends(current_user), db: Session = Depends(get_
         ApiKeyOut(
             id=row.id,
             provider=row.provider,
-            key_hint=row.key_hint,
+            key_hint=_safe_key_hint(row),
             created_at=row.created_at,
             updated_at=row.updated_at,
         )
@@ -216,7 +337,7 @@ def upsert_api_key(
     if row is None:
         row = ApiKey(user_id=user.id, provider=provider, encrypted_value="", key_hint="")
     row.encrypted_value = encrypt_secret(payload.value)
-    row.key_hint = mask_secret(payload.value)
+    row.key_hint = secret_fingerprint(payload.value)
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -245,6 +366,19 @@ def update_config(payload: PipelineConfig, user: User = Depends(current_user), d
     db.add(config)
     db.commit()
     return payload
+
+
+class ParsePromptRequest(BaseModel):
+    prompt: str
+
+
+@app.post("/jobs/parse-prompt")
+def parse_prompt(payload: ParsePromptRequest, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    from web.backend.llm_util import parse_user_prompt
+    try:
+        return parse_user_prompt(db, user, payload.prompt)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/jobs", response_model=JobOut)

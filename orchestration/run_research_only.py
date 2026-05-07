@@ -150,7 +150,7 @@ def save_section_packet(*, run_dir: Path, packet: SectionResearchPacket) -> None
     )
 
 
-def build_researcher_workflow():
+def build_researcher_workflow(*, user_urls: list[str] | None = None):
     from researcher.services.firecrawl_client import FirecrawlClient
     from researcher.services.llm_structured import GroqStructuredLLM
     from researcher.services.pdf_extractor import PDFExtractor
@@ -203,6 +203,7 @@ def build_researcher_workflow():
         pdf_extractor=pdf_extractor,
         firecrawl_client=firecrawl_client,
         user_documents=user_documents or None,
+        user_urls=user_urls,
         web_research_enabled=web_research_enabled,
     )
 
@@ -350,7 +351,9 @@ def main() -> None:
         resume=args.resume,
     )
     book_plan = load_book_plan(book_plan_path)
-    researcher_workflow = build_researcher_workflow()
+    # The book plan doesn't natively carry urls in this testing script right now,
+    # but we can pass None safely, since it's just research_only for saved plans.
+    researcher_workflow = build_researcher_workflow(user_urls=None)
 
     user_pdf_count = (
         len(researcher_workflow.inject_user_documents_node.user_documents)

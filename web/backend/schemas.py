@@ -80,7 +80,7 @@ class PipelineConfig(BaseModel):
     planner_google_model: str = "gemini-2.5-flash-lite"
     researcher_google_model: str = "gemini-2.5-flash-lite"
     notes_google_model: str = "gemini-2.5-flash-lite"
-    writer_google_model: str = "gemma-3-27b-it"
+    writer_google_model: str = "gemini-2.5-flash-lite"
     reviewer_google_model: str = "gemini-2.5-flash-lite"
     planner_groq_model: str = "openai/gpt-oss-120b"
     researcher_groq_model: str = "openai/gpt-oss-120b"
@@ -116,6 +116,10 @@ class BookRequest(BaseModel):
     force_web_research: bool = Field(
         default=False,
         description="When True, run web research even if user PDFs are present (combined mode).",
+    )
+    urls: list[str] = Field(
+        default_factory=list,
+        description="Optional user-provided source URLs to include in web research.",
     )
     language_request: str | None = Field(
         default=None,

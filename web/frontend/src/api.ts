@@ -63,6 +63,7 @@ export interface BookRequest {
   diagram_density: "high" | "medium" | "low";
   max_section_words: number | null;
   force_web_research: boolean;
+  urls: string[];
   /** Free-form language instruction, e.g. "Explain theory in English, write exam examples in German." */
   language_request?: string | null;
 }
@@ -186,6 +187,13 @@ export class ApiClient {
     return this.request<PipelineConfig>("/config", {
       method: "PUT",
       body: JSON.stringify(config)
+    });
+  }
+
+  parsePrompt(prompt: string) {
+    return this.request<Partial<BookRequest>>("/jobs/parse-prompt", {
+      method: "POST",
+      body: JSON.stringify({ prompt })
     });
   }
 

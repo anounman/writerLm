@@ -77,7 +77,8 @@ DEFAULT_PLANNER_INPUT: dict[str, Any] = {
         "code_density": "low",
         "example_density": "high",
         "diagram_density": "medium"
-    }
+    },
+    "urls": []
 }
 
 RUNS_DIR = REPO_ROOT / "runs"
@@ -160,7 +161,7 @@ def resolve_run_llm_config_summary() -> dict[str, dict[str, str]]:
     return summary
 
 
-def build_researcher_workflow() -> ResearcherWorkflow:
+def build_researcher_workflow(*, user_urls: list[str] | None = None) -> ResearcherWorkflow:
     llm_config = resolve_openai_compatible_config(
         layer="researcher",
         default_models=RESEARCH_DEFAULT_MODELS,
@@ -209,6 +210,7 @@ def build_researcher_workflow() -> ResearcherWorkflow:
         pdf_extractor=pdf_extractor,
         firecrawl_client=firecrawl_client,
         user_documents=user_documents or None,
+        user_urls=user_urls,
         web_research_enabled=web_research_enabled,
     )
 
@@ -399,7 +401,7 @@ def main() -> None:
     planner_input = DEFAULT_PLANNER_INPUT
 
     planner_workflow = PlannerWorkflow()
-    researcher_workflow = build_researcher_workflow()
+    researcher_workflow = build_researcher_workflow(user_urls=planner_input.get("urls"))
     pipeline = PlannerResearchPipeline(
         planner_workflow=planner_workflow,
         researcher_workflow=researcher_workflow,
