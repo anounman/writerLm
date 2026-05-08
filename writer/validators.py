@@ -123,9 +123,9 @@ def _ensure_required_diagram(task: WriterSectionTask, draft: SectionDraft) -> No
     )
     elements = suggestion.get("elements") or [
         task.section_title,
-        "Example",
-        "Implementation",
-        "Result",
+        "Key concept",
+        "Critical dependency",
+        "Reader-facing outcome",
     ]
     element_text = ", ".join(str(item) for item in elements if item)
 

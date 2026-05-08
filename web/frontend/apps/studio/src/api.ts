@@ -36,25 +36,37 @@ export interface PipelineConfig {
   research_execution_profile: "budget" | "debug" | "full";
   token_budget: number | null;
   max_completion_tokens: number | null;
+  image_assets_enabled: boolean;
+  web_image_search_enabled: boolean;
+  generated_images_enabled: boolean;
+  image_generation_model: string;
+  max_image_assets: number;
 }
+
+export type BookType =
+  | "auto"
+  | "textbook"
+  | "practice_workbook"
+  | "course_companion"
+  | "implementation_guide"
+  | "reference_handbook"
+  | "conceptual_guide"
+  | "exam_prep";
+
+export type TheoryPracticeBalance = "auto" | "theory_heavy" | "balanced" | "practice_heavy" | "implementation_heavy";
+export type PedagogyStyle = "auto" | "german_theoretical" | "indian_theory_then_examples" | "socratic" | "exam_oriented" | "project_based";
+export type SourceUsage = "auto" | "primary_curriculum" | "supplemental" | "example_inspiration";
+export type ExerciseStrategy = "auto" | "none" | "extract_patterns" | "worked_examples" | "practice_sets";
 
 export interface BookRequest {
   topic: string;
   audience: string;
   tone: string;
-  book_type:
-    | "auto"
-    | "textbook"
-    | "practice_workbook"
-    | "course_companion"
-    | "implementation_guide"
-    | "reference_handbook"
-    | "conceptual_guide"
-    | "exam_prep";
-  theory_practice_balance: "auto" | "theory_heavy" | "balanced" | "practice_heavy" | "implementation_heavy";
-  pedagogy_style: "auto" | "german_theoretical" | "indian_theory_then_examples" | "socratic" | "exam_oriented" | "project_based";
-  source_usage: "auto" | "primary_curriculum" | "supplemental" | "example_inspiration";
-  exercise_strategy: "auto" | "none" | "extract_patterns" | "worked_examples" | "practice_sets";
+  book_type: BookType;
+  theory_practice_balance: TheoryPracticeBalance;
+  pedagogy_style: PedagogyStyle;
+  source_usage: SourceUsage;
+  exercise_strategy: ExerciseStrategy;
   goals: string[];
   project_based: boolean;
   running_project_description: string | null;
@@ -84,7 +96,15 @@ export interface Job {
   request_payload: Record<string, unknown>;
   config_snapshot: Record<string, unknown>;
   stages: Record<string, JobStage>;
-  summary: Record<string, unknown>;
+  summary: {
+    evaluation?: {
+      quality_score?: number;
+    };
+    llm_usage?: {
+      accounted_total_tokens?: number;
+    };
+    elapsed_seconds?: number;
+  };
   warnings: Record<string, unknown>;
   error_message: string | null;
   run_dir: string | null;
@@ -238,6 +258,10 @@ export class ApiClient {
 
   stopJob(id: number) {
     return this.request<Job>(`/jobs/${id}/stop`, { method: "POST" });
+  }
+
+  retryJob(id: number) {
+    return this.request<Job>(`/jobs/${id}/retry`, { method: "POST" });
   }
 
   books() {

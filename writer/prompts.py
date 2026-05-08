@@ -14,7 +14,7 @@ You must NOT introduce information beyond the provided input.
 
 CORE DESIGN PRINCIPLE:
 You are writing the right kind of book for the user's request. A math textbook should be rigorous, notation-clean, and example-driven. A practice workbook should teach through worked examples and exercises. A coding handbook should be runnable and implementation-driven. A conceptual guide should prioritize intuition and coherent explanation.
-Every section must feel like a hands-on tutorial, not a Wikipedia article.
+Every section must feel like the requested book type, not a generic stitched-together article.
 
 CORE BOUNDARIES
 - Use ONLY the provided section input.
@@ -53,7 +53,7 @@ For implementation/software books, prefer:
    - Example: "Think of an embedding like a GPS coordinate for meaning..."
 
 3. CODE EXAMPLE (when must_include_code is true or code_snippets are provided)
-   - Include actual Python code blocks using ```python fenced syntax.
+   - Include actual code blocks in the language implied by the provided code_snippets and implementation_strategy.
    - Code must be clean, commented, and runnable.
    - Show the MINIMAL code that demonstrates the concept.
    - Build on code from previous sections when there is a builds_on reference.
@@ -84,7 +84,7 @@ For implementation/software books, prefer:
 === CONTENT EMBEDDING RULES ===
 
 CODE BLOCKS:
-- Use ```python for Python code, ```bash for shell commands, ```text for output.
+- Use a fence that matches the chosen language or notation: `python`, `typescript`, `javascript`, `bash`, `json`, `yaml`, `text`, `latex`, or another clearly appropriate language.
 - Code blocks must be self-contained or reference clearly what was built before.
 - Include brief inline comments for non-obvious lines.
 - NEVER use pseudocode when real code is available in code_snippets.
@@ -96,15 +96,24 @@ DIAGRAM HINTS:
   Elements: [element1, element2, ...]
 - Place these where the diagram should appear in the flow of the text.
 - Also populate the diagram_hints output field with structured data.
+- Avoid placeholder visual language such as "this diagram should illustrate" or vague filler labels.
 
 === STYLE RULES ===
 - Write in clean, direct technical prose.
 - Address the reader as "you" — conversational but professional.
 - Prefer precise explanation over broad summary.
 - Prefer mechanism, implication, or trade-off over generic definition.
-- Prefer beginner-friendly explanation and practical relevance over academic survey tone.
+- Match the requested audience depth and pedagogy instead of defaulting to beginner/intermediate software tone.
 - Avoid filler phrases: "it is important to note", "overall", "in conclusion", "it is essential to understand"
 - Do not sound like an encyclopedia entry or generic AI-generated essay.
+
+CONTINUITY RULES
+- You are continuing one coherent manuscript. Respect the book_state_summary, continuity_rules, chapter_dependencies, and implementation_strategy from the input.
+- Reuse the same terminology, notation, examples, and project framing unless the input explicitly changes them.
+- Do not restart the project from zero in later sections.
+- Do not silently switch implementation stacks, programming languages, notation systems, or case-study structures.
+- If the input indicates a project-based book, explicitly connect this section to what the reader already built.
+- If the input indicates an advanced audience, include trade-offs, validation steps, failure modes, and realistic constraints when the material supports them.
 
 UNCERTAINTY RULES
 - If synthesis_status is READY: write confidently, preserve caveats where present.
@@ -122,6 +131,8 @@ A strong output should feel like:
 - precise notation for math and science content
 - worked examples and exercises when the user wants practice-heavy learning
 - code-driven only when the subject genuinely needs code
+- continuous with the rest of the manuscript
+- consistent in terminology, examples, and implementation strategy
 - concise but deep: explains WHY, not just WHAT
 - NOT a wall of text. NOT an encyclopedia. NOT a blog post summary.
 """.strip()
@@ -228,6 +239,18 @@ def build_writer_user_prompt(section_input: WriterSectionInput) -> str:
             for item in section_input.reference_links
         )
 
+    continuity_rules = (
+        "\n".join(f"- {item}" for item in section_input.continuity_rules)
+        if section_input.continuity_rules
+        else "- None"
+    )
+
+    chapter_dependencies = (
+        "\n".join(f"- {item}" for item in section_input.chapter_dependencies)
+        if section_input.chapter_dependencies
+        else "- None"
+    )
+
     return f"""
 WRITE SECTION DRAFT
 
@@ -278,16 +301,31 @@ ALLOWED SOURCE IDS
 REFERENCE LINKS (use only these in Further Reading)
 {reference_links}
 
+BOOK STATE SUMMARY
+{section_input.book_state_summary or 'None'}
+
+CONTINUITY RULES
+{continuity_rules}
+
+CHAPTER DEPENDENCIES
+{chapter_dependencies}
+
+IMPLEMENTATION / STORY STRATEGY
+{section_input.implementation_strategy or 'None'}
+
 === TASK ===
 Write a section draft using the structure that fits this section. For math/course material, use definition -> intuition -> method -> worked example -> mistakes -> exercise. For implementation material, use concept -> intuition -> code -> step-by-step -> output -> mistakes -> exercise.
 
 REQUIRED BEHAVIOR
 - Follow the 8-part structure. Skip parts only if the input material genuinely cannot support them.
-- If must_include_code is true: you MUST include at least one ```python code block.
+- If must_include_code is true: you MUST include at least one fenced code block in the most appropriate language for the section.
+- The code fence language should match the provided code snippets and implementation strategy, not default blindly to Python.
 - If must_include_diagram is true: you MUST include at least one DIAGRAM: hint.
 - If code_snippets are provided: adapt and embed them in the section. Do not ignore them.
 - If diagram_suggestions are provided: embed DIAGRAM: hints at appropriate points.
 - If implementation_steps are provided: create a numbered step-by-step walkthrough.
+- Continue the live manuscript state: reuse terminology, notation, assumptions, examples, and project framing from BOOK STATE SUMMARY when relevant.
+- Do not contradict CONTINUITY RULES or CHAPTER DEPENDENCIES.
 - Include expected output/result after code examples where possible.
 - Frame caveats as "Common Mistakes" with actionable fixes.
 - End with a mini exercise when appropriate.

@@ -297,6 +297,7 @@ class LatexCompiler:
 
 def parse_latex_issues(log_text: str) -> list[LatexIssue]:
     issues: list[LatexIssue] = []
+    log_text = log_text.replace("Packa\nge ", "Package ")
     lines = log_text.splitlines()
 
     for index, line in enumerate(lines):
@@ -487,6 +488,7 @@ def _sanitize_tex_file(source_path: Path, output_dir: Path) -> Path:
     # Apply the explicit replacement table first.
     for unicode_char, ascii_replacement in _UNICODE_SAFE_MAP.items():
         raw = raw.replace(unicode_char, ascii_replacement)
+    raw = _sanitize_lstlisting_languages(raw)
 
     # Final safety pass: replace any remaining non-ASCII characters.
     sanitized = "".join(
@@ -503,3 +505,33 @@ def _sanitize_tex_file(source_path: Path, output_dir: Path) -> Path:
         return source_path
 
     return sanitized_path
+
+
+def _sanitize_lstlisting_languages(tex: str) -> str:
+    """Drop lstlisting language options that are not portable in TeX Live."""
+    unsupported = {
+        "javascript",
+        "js",
+        "typescript",
+        "ts",
+        "jsx",
+        "tsx",
+        "json",
+        "yaml",
+        "yml",
+        "markdown",
+        "md",
+    }
+
+    def replace(match: re.Match[str]) -> str:
+        language = match.group("language").strip().lower()
+        if language in unsupported:
+            return r"\begin{lstlisting}"
+        return match.group(0)
+
+    return re.sub(
+        r"\\begin\{lstlisting\}\[language=(?P<language>[^\]\s,]+)\]",
+        replace,
+        tex,
+        flags=re.IGNORECASE,
+    )

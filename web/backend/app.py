@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 from web.backend.database import get_db, init_db
 from web.backend.deps import current_user
 from web.backend.models import ApiKey, BookJob, GeneratedBook, User
-from web.backend.pipeline_jobs import default_config, get_or_create_user_config, launch_job
+from web.backend.pipeline_jobs import default_config, get_or_create_user_config, launch_job, launch_retry_job
 from web.backend.schemas import (
     ApiKeyOut,
     ApiKeyUpsert,
@@ -456,6 +456,19 @@ def get_job(job_id: int, user: User = Depends(current_user), db: Session = Depen
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
     return _reconcile_job_status(db, job)
+
+
+@app.post("/jobs/{job_id}/retry", response_model=JobOut)
+def retry_job(job_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    source_job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
+    if source_job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if source_job.status not in {"failed", "stopped", "completed_with_latex_issue"}:
+        raise HTTPException(status_code=400, detail="Only failed, stopped, or LaTeX-issue jobs can be retried.")
+    try:
+        return launch_retry_job(db, user=user, source_job=source_job)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.post("/jobs/{job_id}/stop", response_model=JobOut)

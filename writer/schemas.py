@@ -94,6 +94,22 @@ class WriterSectionInput(BaseModel):
         default_factory=list,
         description="Reader-facing links: {source_id, title, url}.",
     )
+    book_state_summary: str = Field(
+        default="",
+        description="Compact summary of the live book state this section must continue.",
+    )
+    continuity_rules: List[str] = Field(
+        default_factory=list,
+        description="Hard continuity rules and forbidden contradictions for this section.",
+    )
+    chapter_dependencies: List[str] = Field(
+        default_factory=list,
+        description="Specific earlier sections/examples that this section must build on.",
+    )
+    implementation_strategy: Optional[str] = Field(
+        default=None,
+        description="Chosen implementation/story strategy for the full manuscript.",
+    )
 
 
 # -----------------------------

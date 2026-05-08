@@ -192,6 +192,16 @@ def normalize_section_note(
             _fallback_diagram_suggestion(note, synthesis_input)
         )
 
+    if synthesis_input is not None:
+        if not note.book_state_summary:
+            note.book_state_summary = synthesis_input.book_state_summary
+        if not note.continuity_rules:
+            note.continuity_rules = list(synthesis_input.continuity_rules)
+        if not note.chapter_dependencies:
+            note.chapter_dependencies = list(synthesis_input.chapter_dependencies)
+        if note.implementation_strategy is None:
+            note.implementation_strategy = synthesis_input.implementation_strategy
+
     # --- source links for further reading ---
     if synthesis_input is not None and not note.reference_links:
         allowed_reference_ids = set(note.allowed_citation_source_ids or [])

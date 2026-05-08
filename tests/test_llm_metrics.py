@@ -63,7 +63,8 @@ def test_records_reported_usage(tmp_path) -> None:
     assert "llm_call" in metrics_path.read_text(encoding="utf-8")
 
 
-def test_budget_guard_blocks_before_call(tmp_path) -> None:
+def test_budget_guard_blocks_before_call(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("WRITERLM_ENABLE_TOKEN_BUDGET", "1")
     configure_llm_metrics(
         path=tmp_path / "llm_metrics.jsonl",
         token_budget=5,
@@ -86,7 +87,8 @@ def test_budget_guard_blocks_before_call(tmp_path) -> None:
     assert summary["last_budget_error"]["operation"] == "oversized_prompt"
 
 
-def test_budget_guard_tracks_in_flight_reservations(tmp_path) -> None:
+def test_budget_guard_tracks_in_flight_reservations(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("WRITERLM_ENABLE_TOKEN_BUDGET", "1")
     messages = [{"role": "user", "content": "x" * 40}]
     configure_llm_metrics(
         path=tmp_path / "llm_metrics.jsonl",

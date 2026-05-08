@@ -131,7 +131,7 @@ def _subject_label(section_input: WriterSectionInput) -> str:
         part
         for part in (
             section_input.section_title,
-            section_input.chapter_title,
+            getattr(section_input, "chapter_title", ""),
             section_input.central_thesis,
         )
         if part
@@ -183,8 +183,8 @@ def _expected_output_for_snippet(snippet: dict) -> str:
         )
     return (
         "The printed output is your first test. It should be small, boring, and easy to "
-        "inspect. In a RAG project, boring output is good: it means the pipeline stage is "
-        "predictable enough to connect to the next stage."
+        "inspect. Predictable output is good: it means this step is stable enough to "
+        "connect to the next idea, example, or implementation step."
     )
 
 
@@ -193,7 +193,7 @@ def _render_steps(section_input: WriterSectionInput) -> str:
     for index, step in enumerate(section_input.implementation_steps, start=1):
         action = step.get("action", "Do the next step")
         detail = step.get("detail", "")
-        why = " This matters because each RAG component should fail loudly and locally."
+        why = " This matters because each step should fail loudly and locally."
         lines.append(f"{step.get('step_number', index)}. {action}: {detail}{why}".strip())
     return "\n".join(lines)
 

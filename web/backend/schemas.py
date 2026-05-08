@@ -95,6 +95,11 @@ class PipelineConfig(BaseModel):
     research_execution_profile: Literal["budget", "debug", "full"] = "budget"
     token_budget: int | None = Field(default=None, ge=1000)
     max_completion_tokens: int | None = Field(default=None, ge=256)
+    image_assets_enabled: bool = True
+    web_image_search_enabled: bool = True
+    generated_images_enabled: bool = True
+    image_generation_model: str = "gemini-2.5-flash-image"
+    max_image_assets: int = Field(default=4, ge=0, le=24)
 
 
 class BookRequest(BaseModel):

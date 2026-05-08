@@ -49,6 +49,8 @@ def load_json(path: Path) -> dict[str, Any]:
 
 def build_tasks_from_research_bundle(
     bundle: dict[str, Any],
+    *,
+    book_state: dict[str, Any] | None = None,
 ) -> list[NotesSynthesizerSectionTask]:
     tasks: list[NotesSynthesizerSectionTask] = []
 
@@ -88,6 +90,7 @@ def build_tasks_from_research_bundle(
                     "chapter_goal": chapter_goal,
                     "key_concepts": _as_string_list(section.get("key_questions")),
                     "content_requirements": section.get("content_requirements") or {},
+                    "book_state": book_state or {},
                 }
 
     chapters = bundle.get("chapters")
@@ -126,6 +129,7 @@ def build_tasks_from_research_bundle(
                     "chapter_title": chapter_title,
                     "chapter_id": chapter_id,
                     "key_concepts": [],
+                    "book_state": book_state or {},
                 }
 
             research_section = {

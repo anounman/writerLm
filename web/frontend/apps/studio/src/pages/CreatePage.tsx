@@ -1,0 +1,363 @@
+import React, { useState, useRef } from "react";
+import { FileText, X, ArrowRight, RefreshCw, Upload, Play, Plus, Globe, Check } from "lucide-react";
+import { Button, Card, Input } from "@writerlm/ui";
+import { ApiClient, BookRequest, Job } from "../api";
+
+interface CreatePageProps {
+  api: ApiClient;
+  onCreated: (job: Job) => void;
+  onNotice: (message: string) => void;
+}
+
+const defaultBookRequest: BookRequest = {
+  topic: "", audience: "Professionals and students", tone: "Technical and clear",
+  book_type: "auto", theory_practice_balance: "balanced", pedagogy_style: "auto",
+  source_usage: "auto", exercise_strategy: "extract_patterns", goals: [],
+  project_based: false, running_project_description: null, code_density: "medium",
+  example_density: "high", diagram_density: "medium", max_section_words: 900,
+  force_web_research: true, language_request: null, urls: [],
+};
+
+export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
+  const [promptMode, setPromptMode] = useState(true);
+  const [promptText, setPromptText] = useState("");
+  const [parsing, setParsing] = useState(false);
+  const [request, setRequest] = useState<BookRequest>(defaultBookRequest);
+  const [goalText, setGoalText] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [pdfFiles, setPdfFiles] = useState<File[]>([]);
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const promptFileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const hasPdfs = pdfFiles.length > 0;
+  // Web research is always on when no PDFs; user can toggle when PDFs present
+  const webResearchActive = request.force_web_research || !hasPdfs;
+
+  async function handlePromptSubmit(e?: React.SyntheticEvent) {
+    e?.preventDefault();
+    if (!promptText.trim()) return;
+    setParsing(true);
+    try {
+      const parsed = await api.parsePrompt(promptText);
+      setRequest(r => ({ ...r, ...parsed, force_web_research: webResearchActive }));
+      if (parsed.goals?.length) setGoalText(parsed.goals.join("\n"));
+      setPromptMode(false);
+    } catch {
+      onNotice("Could not parse prompt — switching to manual mode.");
+      setPromptMode(false);
+    } finally { setParsing(false); }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    const finalReq = { ...request, force_web_research: webResearchActive, goals: goalText.split("\n").map(s => s.trim()).filter(Boolean) };
+    try {
+      const job = hasPdfs ? await api.createJobWithPdfs(finalReq, pdfFiles) : await api.createJob(finalReq);
+      onCreated(job);
+    } catch (err) {
+      onNotice(err instanceof Error ? err.message : "Could not start job.");
+    } finally { setSubmitting(false); }
+  }
+
+  const addFiles = (fl: FileList | File[]) => {
+    const valid = Array.from(fl).filter(f => f.name.toLowerCase().endsWith(".pdf"));
+    if (!valid.length) { onNotice("Only PDF files are accepted."); return; }
+    setPdfFiles(prev => {
+      const existing = new Set(prev.map(f => f.name));
+      const next = [...prev, ...valid.filter(f => !existing.has(f.name))];
+      if (prev.length === 0 && next.length > 0) setRequest(r => ({ ...r, force_web_research: false }));
+      return next;
+    });
+  };
+
+  const removeFile = (name: string) => setPdfFiles(prev => {
+    const next = prev.filter(f => f.name !== name);
+    if (next.length === 0) setRequest(r => ({ ...r, force_web_research: true }));
+    return next;
+  });
+
+  // ── Prompt mode ──────────────────────────────────────────
+  if (promptMode) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] px-4">
+        <div className="w-full max-w-2xl">
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">What do you want to build?</h1>
+            <p className="text-sm text-muted-foreground">Describe your book or technical document and we'll configure the pipeline.</p>
+          </div>
+
+          {/* Chat-style input */}
+          <div className="rounded-xl border border-border bg-card overflow-hidden shadow-lg">
+            <textarea
+              className="w-full min-h-[120px] bg-transparent border-none outline-none p-4 text-sm text-foreground placeholder:text-muted-foreground resize-none leading-relaxed"
+              placeholder="e.g. Write a comprehensive guide on Kubernetes architecture for senior DevOps engineers with hands-on labs…"
+              value={promptText}
+              onChange={e => setPromptText(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handlePromptSubmit(); } }}
+            />
+
+            {/* Attachments pills */}
+            {(hasPdfs || webResearchActive) && (
+              <div className="flex items-center gap-2 px-4 py-2 border-t border-border bg-secondary/30">
+                {webResearchActive && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-full">
+                    <Globe size={10} /> Web
+                    {hasPdfs && <button onClick={() => setRequest(r => ({ ...r, force_web_research: false }))} className="ml-1 hover:text-success/70"><X size={10}/></button>}
+                  </span>
+                )}
+                {hasPdfs && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground border border-border px-2 py-0.5 rounded-full">
+                    <FileText size={10} /> {pdfFiles.length} PDF{pdfFiles.length > 1 ? "s" : ""}
+                    <button onClick={() => { setPdfFiles([]); setRequest(r => ({ ...r, force_web_research: true })); }} className="ml-1 hover:text-foreground"><X size={10}/></button>
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Toolbar */}
+            <div className="flex items-center justify-between p-3 border-t border-border">
+              <div className="relative">
+                <Button variant="ghost" size="icon" onClick={() => setShowAttachMenu(!showAttachMenu)}>
+                  <Plus size={15} />
+                </Button>
+                {showAttachMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowAttachMenu(false)} />
+                    <div className="absolute bottom-10 left-0 z-20 w-48 bg-popover border border-border rounded-lg shadow-xl py-1 overflow-hidden">
+                      <button
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors text-left"
+                        onClick={() => { promptFileRef.current?.click(); setShowAttachMenu(false); }}
+                      >
+                        <FileText size={13} className="text-muted-foreground" /> Attach PDF
+                      </button>
+                      <button
+                        disabled={!hasPdfs}
+                        className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors text-left ${hasPdfs ? "text-foreground hover:bg-accent" : "text-muted-foreground/50 cursor-not-allowed"}`}
+                        onClick={() => { if (!hasPdfs) return; setRequest(r => ({ ...r, force_web_research: !r.force_web_research })); setShowAttachMenu(false); }}
+                      >
+                        <span className="flex items-center gap-2.5"><Globe size={13} className="text-muted-foreground" /> Web search</span>
+                        {webResearchActive && <Check size={13} className="text-success" />}
+                      </button>
+                    </div>
+                  </>
+                )}
+                <input ref={promptFileRef} type="file" accept=".pdf" multiple className="hidden" onChange={e => e.target.files && addFiles(e.target.files)} />
+              </div>
+
+              <Button size="sm" disabled={parsing || !promptText.trim()} onClick={handlePromptSubmit}>
+                {parsing ? <RefreshCw size={13} className="animate-spin" /> : <><span>Continue</span><ArrowRight size={13} /></>}
+              </Button>
+            </div>
+          </div>
+
+          <p className="text-center mt-4">
+            <button className="text-xs text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline" onClick={() => setPromptMode(false)}>
+              Switch to manual setup
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Manual mode ──────────────────────────────────────────
+  return (
+    <div className="px-5 max-w-4xl mx-auto">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
+        <h2 className="text-base font-semibold text-foreground">Configuration</h2>
+        <Button variant="ghost" size="sm" onClick={() => setPromptMode(true)}>← Back to prompt</Button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left 2/3 */}
+        <div className="lg:col-span-2 space-y-5">
+          <Card>
+            <div className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Subject</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Topic *</label>
+                  <textarea
+                    className="w-full bg-input border border-input rounded-md p-3 text-sm text-foreground focus:ring-1 focus:ring-ring outline-none min-h-[72px] resize-none"
+                    value={request.topic} onChange={e => setRequest(r => ({ ...r, topic: e.target.value }))}
+                    placeholder="e.g. Kubernetes architecture for DevOps engineers"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Audience</label>
+                    <Input value={request.audience} onChange={e => setRequest(r => ({ ...r, audience: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Tone</label>
+                    <Input value={request.tone} onChange={e => setRequest(r => ({ ...r, tone: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Language</label>
+                    <Input value={request.language_request || ""} placeholder="e.g. Spanish" onChange={e => setRequest(r => ({ ...r, language_request: e.target.value || null }))} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Pedagogy & Style</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Book Type</label>
+                    <select className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none" value={request.book_type} onChange={e => setRequest(r => ({ ...r, book_type: e.target.value as any }))}>
+                      <option value="auto">Auto</option><option value="textbook">Textbook</option><option value="tutorial">Tutorial</option><option value="reference">Reference</option><option value="guide">Guide</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Theory/Practice</label>
+                    <select className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none" value={request.theory_practice_balance} onChange={e => setRequest(r => ({ ...r, theory_practice_balance: e.target.value as any }))}>
+                      <option value="balanced">Balanced</option><option value="theory_heavy">Theory Heavy</option><option value="practice_heavy">Practice Heavy</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Pedagogy Style</label>
+                    <select className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none" value={request.pedagogy_style} onChange={e => setRequest(r => ({ ...r, pedagogy_style: e.target.value as any }))}>
+                      <option value="auto">Auto</option><option value="conversational">Conversational</option><option value="academic">Academic</option><option value="direct">Direct</option><option value="socratic">Socratic</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Source Usage</label>
+                    <select className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none" value={request.source_usage} onChange={e => setRequest(r => ({ ...r, source_usage: e.target.value as any }))}>
+                      <option value="auto">Auto</option><option value="strict">Strict</option><option value="liberal">Liberal</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Exercises</label>
+                    <select className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none" value={request.exercise_strategy} onChange={e => setRequest(r => ({ ...r, exercise_strategy: e.target.value as any }))}>
+                      <option value="none">None</option><option value="extract_patterns">Extract Patterns</option><option value="create_new">Create New</option><option value="mixed">Mixed</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="pt-2 border-t border-border">
+                  <label className="flex items-center gap-2 cursor-pointer mb-3 mt-2">
+                    <input type="checkbox" checked={request.project_based} onChange={e => setRequest(r => ({ ...r, project_based: e.target.checked }))} className="accent-foreground" />
+                    <span className="text-sm font-medium text-foreground">Project-based running example</span>
+                  </label>
+                  {request.project_based && (
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground block mb-1.5">Project Description</label>
+                      <Input value={request.running_project_description || ""} onChange={e => setRequest(r => ({ ...r, running_project_description: e.target.value || null }))} placeholder="e.g. Build a task management API..." />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Source Material</h3>
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-muted-foreground transition-colors cursor-pointer"
+                onClick={() => fileRef.current?.click()}
+              >
+                <input ref={fileRef} type="file" accept=".pdf" multiple className="hidden" onChange={e => e.target.files && addFiles(e.target.files)} />
+                <Upload size={20} className="mx-auto text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  {hasPdfs ? <span className="text-foreground font-medium">{pdfFiles.length} file{pdfFiles.length > 1 ? "s" : ""} selected</span> : "Drop PDFs here or click to browse"}
+                </p>
+                {!hasPdfs && <p className="text-xs text-muted-foreground mt-1">Supports .pdf files up to 50MB</p>}
+              </div>
+              {hasPdfs && (
+                <div className="mt-3 space-y-1.5">
+                  {pdfFiles.map(f => (
+                    <div key={f.name} className="flex items-center gap-2 px-3 py-2 rounded-md bg-secondary text-sm">
+                      <FileText size={13} className="text-muted-foreground flex-none" />
+                      <span className="flex-1 truncate text-foreground">{f.name}</span>
+                      <button onClick={() => removeFile(f.name)} className="text-muted-foreground hover:text-foreground flex-none"><X size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+
+        {/* Right sidebar */}
+        <div className="space-y-5">
+          <Card>
+            <div className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Settings</h3>
+              <div className="space-y-4">
+                {/* Web research toggle */}
+                <label className="flex items-center justify-between cursor-pointer group">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Web research</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{!hasPdfs ? "Required (no PDFs)" : "Optional"}</p>
+                  </div>
+                  <div className={`relative w-8 h-4.5 rounded-full transition-colors flex-none ${webResearchActive ? "bg-success" : "bg-muted"} ${!hasPdfs ? "opacity-60" : ""}`}
+                    onClick={() => hasPdfs && setRequest(r => ({ ...r, force_web_research: !r.force_web_research }))}>
+                    <div className={`absolute top-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform ${webResearchActive ? "translate-x-4" : "translate-x-0.5"}`} />
+                  </div>
+                </label>
+
+                <div className="h-px bg-border" />
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Code density</label>
+                  <select
+                    className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none"
+                    value={request.code_density}
+                    onChange={e => setRequest(r => ({ ...r, code_density: e.target.value as any }))}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Example density</label>
+                  <select
+                    className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none"
+                    value={request.example_density}
+                    onChange={e => setRequest(r => ({ ...r, example_density: e.target.value as any }))}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Diagram density</label>
+                  <select
+                    className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none"
+                    value={request.diagram_density}
+                    onChange={e => setRequest(r => ({ ...r, diagram_density: e.target.value as any }))}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+                
+                <div className="h-px bg-border" />
+                
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Max section words</label>
+                  <Input type="number" min={100} max={3000} step={100} value={request.max_section_words ?? ""} onChange={e => setRequest(r => ({ ...r, max_section_words: parseInt(e.target.value) || 900 }))} className="text-xs" />
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Button type="submit" size="lg" disabled={submitting} className="w-full">
+            {submitting ? <RefreshCw size={14} className="animate-spin" /> : <Play size={14} />}
+            {submitting ? "Starting…" : "Start pipeline"}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}

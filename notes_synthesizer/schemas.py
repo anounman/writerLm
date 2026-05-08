@@ -186,6 +186,22 @@ class SectionSynthesisInput(BaseModel):
         default=None,
         description="Planner hint for diagram type.",
     )
+    book_state_summary: str = Field(
+        default="",
+        description="Compact summary of the live manuscript state that this section should continue.",
+    )
+    continuity_rules: List[str] = Field(
+        default_factory=list,
+        description="Hard continuity rules and forbidden contradictions for this section.",
+    )
+    chapter_dependencies: List[str] = Field(
+        default_factory=list,
+        description="Specific earlier concepts, sections, or milestones this section should build on.",
+    )
+    implementation_strategy: Optional[str] = Field(
+        default=None,
+        description="Chosen implementation/story strategy for the whole book.",
+    )
 
     @field_validator("key_concepts", "evidence_items", "writing_guidance", "open_questions", "available_source_ids")
     @classmethod
@@ -350,6 +366,22 @@ class SectionNoteArtifact(BaseModel):
         default_factory=list,
         description="Best source links the writer can include as further reading.",
     )
+    book_state_summary: str = Field(
+        default="",
+        description="The book state summary this section was generated against.",
+    )
+    continuity_rules: List[str] = Field(
+        default_factory=list,
+        description="Continuity rules the downstream writer must preserve.",
+    )
+    chapter_dependencies: List[str] = Field(
+        default_factory=list,
+        description="Earlier chapters/sections/examples this section should explicitly build on.",
+    )
+    implementation_strategy: Optional[str] = Field(
+        default=None,
+        description="Chosen implementation/story strategy for the full manuscript.",
+    )
 
     @field_validator(
         "core_points",
@@ -357,6 +389,8 @@ class SectionNoteArtifact(BaseModel):
         "unresolved_gaps",
         "writer_guidance",
         "allowed_citation_source_ids",
+        "continuity_rules",
+        "chapter_dependencies",
     )
     @classmethod
     def strip_and_remove_empty(cls, value: List[str]) -> List[str]:

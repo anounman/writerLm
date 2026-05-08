@@ -49,7 +49,15 @@ class PlannerResearchPipeline:
         one combined bundle for the next layer.
         """
         book_plan = self.planner_workflow.run(planner_input)
+        return self.run_from_book_plan(book_plan)
 
+    def run_from_book_plan(self, book_plan: BookPlan) -> BookResearchBundle:
+        """
+        Execute only the researcher against an existing planner-produced book plan.
+
+        This is used by web job retry/resume flows when book_plan.json exists but
+        research_bundle.json does not.
+        """
         all_chapter_bundles: list[ChapterResearchBundle] = []
         all_warnings: list[str] = []
         all_errors: list[str] = []

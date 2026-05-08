@@ -155,7 +155,8 @@ def _render_preamble() -> str:
             "\\hypersetup{colorlinks=true,linkcolor=brandblue,urlcolor=brandteal,citecolor=brandgreen}",
             "\\hypersetup{hypertexnames=false}",
             "\\Urlmuskip=0mu plus 1mu",
-            "\\emergencystretch=3em",
+            "\\emergencystretch=8em",
+            "\\sloppy",
             "",
             "% Code listing style",
             "\\definecolor{codebg}{RGB}{248,250,252}",
@@ -174,7 +175,9 @@ def _render_preamble() -> str:
             "  stringstyle=\\color{codestring},",
             "  showstringspaces=false,",
             "  breaklines=true,",
-            "  breakatwhitespace=true,",
+            "  breakatwhitespace=false,",
+            "  columns=fullflexible,",
+            "  keepspaces=true,",
             "  tabsize=4,",
             "  numbers=left,",
             "  numberstyle=\\tiny\\color{gray},",
@@ -299,6 +302,8 @@ def _render_content_blocks(text: str) -> str:
             rendered_blocks.append(segment_content)
         elif segment_type == "diagram":
             rendered_blocks.append(segment_content)
+        elif segment_type == "image":
+            rendered_blocks.append(segment_content)
         else:
             blocks = _split_blocks(segment_content)
             index = 0
@@ -339,7 +344,7 @@ def _render_content_blocks(text: str) -> str:
 
 
 def _split_code_and_text(text: str) -> list[tuple[str, str]]:
-    """Split text into segments: ('text', content), ('code', latex), ('diagram', latex)."""
+    """Split text into segments: ('text', content), ('code', latex), ('diagram', latex), ('image', latex)."""
     segments: list[tuple[str, str]] = []
     lines = text.split("\n")
     i = 0
@@ -366,8 +371,9 @@ def _split_code_and_text(text: str) -> list[tuple[str, str]]:
 
             code_content = "\n".join(code_lines)
             latex_lang = _map_language_to_lstlisting(lang_hint)
+            language_option = f"[language={latex_lang}]" if latex_lang else ""
             latex_code = (
-                f"\\begin{{lstlisting}}[language={latex_lang}]\n"
+                f"\\begin{{lstlisting}}{language_option}\n"
                 f"{code_content}\n"
                 f"\\end{{lstlisting}}"
             )
@@ -394,6 +400,21 @@ def _split_code_and_text(text: str) -> list[tuple[str, str]]:
             segments.append(("diagram", latex_diagram))
             continue
 
+        if line.strip().startswith("IMAGE:"):
+            if current_text_lines:
+                segments.append(("text", "\n".join(current_text_lines)))
+                current_text_lines = []
+
+            image_path = line.strip()[len("IMAGE:"):].strip()
+            meta_lines: list[str] = []
+            i += 1
+            while i < len(lines) and lines[i].strip() and not lines[i].strip().startswith(("DIAGRAM:", "IMAGE:", "```")):
+                meta_lines.append(lines[i].strip())
+                i += 1
+
+            segments.append(("image", _render_image_block(image_path=image_path, meta_lines=meta_lines)))
+            continue
+
         current_text_lines.append(line)
         i += 1
 
@@ -401,6 +422,31 @@ def _split_code_and_text(text: str) -> list[tuple[str, str]]:
         segments.append(("text", "\n".join(current_text_lines)))
 
     return segments
+
+
+def _render_image_block(*, image_path: str, meta_lines: list[str]) -> str:
+    caption = "Illustration"
+    source = ""
+    for line in meta_lines:
+        if line.lower().startswith("caption:"):
+            caption = line.split(":", 1)[1].strip() or caption
+        elif line.lower().startswith("source:"):
+            source = line.split(":", 1)[1].strip()
+
+    safe_caption = _escape_latex_with_urls(caption)
+    safe_source = _escape_latex_with_urls(source)
+    safe_path = image_path.replace("\\", "/")
+    source_line = f"\\\\{{\\footnotesize Source: {safe_source}}}" if safe_source else ""
+    return "\n".join(
+        [
+            "\\begin{figure}[H]",
+            "\\centering",
+            f"\\includegraphics[width=0.92\\linewidth,height=0.42\\textheight,keepaspectratio]{{\\detokenize{{{safe_path}}}}}",
+            source_line,
+            f"\\caption{{{safe_caption}}}",
+            "\\end{figure}",
+        ]
+    )
 
 
 def _render_diagram_hint(*, diagram_hint: str, desc_lines: list[str]) -> str:
@@ -508,9 +554,17 @@ def _map_language_to_lstlisting(lang_hint: str) -> str:
         "bash": "bash",
         "sh": "bash",
         "shell": "bash",
-        "javascript": "JavaScript",
-        "js": "JavaScript",
-        "json": "Python",
+        "javascript": "",
+        "js": "",
+        "typescript": "",
+        "ts": "",
+        "jsx": "",
+        "tsx": "",
+        "json": "",
+        "yaml": "",
+        "yml": "",
+        "markdown": "",
+        "md": "",
         "sql": "SQL",
         "text": "",
         "output": "",

@@ -11,9 +11,19 @@ outputs/
 tmp_pdf_eval/*
 outputs/*
 
-
-web/frontend/node_modules/*
+# Frontend
+web/frontend/node_modules/
 web/frontend/dist/
+web/frontend/apps/*/node_modules/
+web/frontend/apps/*/dist/
+web/frontend/packages/*/dist/
+web/frontend/packages/*/node_modules/
+web/frontend/design-system/
+
+# Vite / build caches
+**/.vite/
 
 # User-uploaded source PDFs — keep the folder, ignore contents
 inputs/pdfs/*.pdf
+.agent/*
+.codex/*

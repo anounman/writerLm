@@ -270,14 +270,14 @@ def _extract_evidence_statements(evidence_items: Any) -> List[str]:
 
         parts: List[str] = []
 
-        for key in ("claim", "statement", "fact", "summary", "description", "note"):
+        for key in ("content", "claim", "statement", "fact", "summary", "description", "note"):
             value = item.get(key)
             cleaned = _as_clean_string(value)
             if cleaned:
                 parts.append(cleaned)
                 break
 
-        for key in ("relevance", "reason", "importance"):
+        for key in ("relevance_note", "relevance", "reason", "importance"):
             value = item.get(key)
             cleaned = _as_clean_string(value)
             if cleaned:
@@ -352,11 +352,22 @@ def build_section_synthesis_input(
     must_include_code = False
     must_include_diagram = False
     suggested_diagram_type = None
+    book_state_summary = ""
+    continuity_rules: list[str] = []
+    chapter_dependencies: list[str] = []
+    implementation_strategy = None
 
     if isinstance(content_reqs, dict):
         must_include_code = bool(content_reqs.get("must_include_code", False))
         must_include_diagram = bool(content_reqs.get("must_include_diagram", False))
         suggested_diagram_type = _as_clean_string(content_reqs.get("suggested_diagram_type"))
+
+    book_state = planner_section.get("book_state")
+    if isinstance(book_state, dict):
+        book_state_summary = _as_clean_string(book_state.get("book_state_summary")) or ""
+        continuity_rules = _extract_list_of_strings(book_state.get("continuity_rules"))
+        chapter_dependencies = _extract_list_of_strings(book_state.get("chapter_dependencies"))
+        implementation_strategy = _as_clean_string(book_state.get("implementation_strategy"))
 
     return SectionSynthesisInput(
         section_id=section_id,
@@ -373,4 +384,8 @@ def build_section_synthesis_input(
         must_include_code=must_include_code,
         must_include_diagram=must_include_diagram,
         suggested_diagram_type=suggested_diagram_type,
+        book_state_summary=book_state_summary,
+        continuity_rules=continuity_rules,
+        chapter_dependencies=chapter_dependencies,
+        implementation_strategy=implementation_strategy,
     )

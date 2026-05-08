@@ -1,0 +1,21 @@
+{
+  "topic": "HMI 2 practice handbook with theory",
+  "audience": "Beginner to intermediate students preparing from course notes and exercise sheets",
+  "tone": "Clear, rigorous, and friendly",
+  "book_type": "practice_workbook",
+  "theory_practice_balance": "balanced",
+  "pedagogy_style": "german_theoretical",
+  "source_usage": "primary_curriculum",
+  "exercise_strategy": "extract_patterns",
+  "goals": [
+    "explain the theory with a clear mathematical structure",
+    "teach the methods needed to solve the uploaded exercise sheets",
+    "create original worked examples inspired by the source questions"
+  ],
+  "project_based": false,
+  "code_density": "low",
+  "example_density": "high",
+  "diagram_density": "medium",
+  "max_section_words": 900,
+  "force_web_research": false
+}

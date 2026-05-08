@@ -51,7 +51,11 @@ class AssembleResearchPacketNode:
             objective=state.research_task.objective,
             key_concepts=key_concepts,
             evidence_items=state.evidence_items,
-            sources=state.source_registry,
+            sources=[
+                source
+                for source in state.source_registry
+                if source.evidence_ids and not any("fetch_failed" in note for note in source.reliability_notes)
+            ],
             coverage_report=state.coverage_report,
             open_questions=open_questions,
             writing_guidance=writing_guidance,

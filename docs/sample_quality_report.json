@@ -1,0 +1,67 @@
+{
+  "profile": "full",
+  "book": {
+    "title": "Sample Production Guide",
+    "audience": "advanced practitioners",
+    "depth": "advanced"
+  },
+  "project_state": {
+    "project_name": "ProductionAwsProject",
+    "implementation_strategy": "AWS CDK v2",
+    "services": [
+      "iam",
+      "lambda",
+      "s3",
+      "vpc"
+    ],
+    "environments": [
+      "dev",
+      "staging",
+      "prod"
+    ],
+    "resource_names": [
+      "PlatformStack"
+    ],
+    "diagrams": [
+      "[architecture] - Request flow through VPC, Lambda, and S3"
+    ],
+    "assumptions": [
+      "AWS implementation should use one primary infrastructure strategy unless the request explicitly asks for alternatives."
+    ]
+  },
+  "gate": {
+    "overall_score": 82.4,
+    "critical_issues": 0,
+    "warnings": 3,
+    "issue_count_by_category": {
+      "audience_depth": 1,
+      "source_grounding": 1,
+      "diagram_quality": 1
+    }
+  },
+  "scores": {
+    "code_validity": 100,
+    "aws_correctness": 100,
+    "source_grounding": 90,
+    "project_continuity": 100,
+    "diagram_quality": 92,
+    "audience_depth": 91,
+    "unresolved_placeholders": 100,
+    "hallucination_risk": 91,
+    "repeated_sections": 100,
+    "broken_examples": 100
+  },
+  "trace": {
+    "stages_ran": [
+      "project_state_inference",
+      "source_map_build",
+      "code_validation",
+      "aws_resource_validation",
+      "diagram_qa",
+      "audience_depth_check",
+      "placeholder_scan",
+      "deterministic_repair"
+    ]
+  }
+}
+

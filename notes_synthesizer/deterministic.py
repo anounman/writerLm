@@ -155,10 +155,10 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "virtual environment" in text or "project setup" in text:
         return CodeSnippet(
             language="bash",
-            description="Create an isolated Python workspace for the RAG project.",
+            description="Create an isolated Python workspace for the project.",
             code=(
-                "mkdir rag-from-scratch\n"
-                "cd rag-from-scratch\n"
+                "mkdir project-workspace\n"
+                "cd project-workspace\n"
                 "python -m venv .venv\n"
                 ".venv\\Scripts\\activate  # Windows PowerShell\n"
                 "python -m pip install --upgrade pip\n"
@@ -170,11 +170,11 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "install" in text or "libraries" in text:
         return CodeSnippet(
             language="bash",
-            description="Install a small but practical dependency set for a local RAG prototype.",
+            description="Install the minimum dependency set and capture a reproducible environment snapshot.",
             code=(
-                "pip install langchain langchain-community faiss-cpu sentence-transformers python-dotenv\n"
+                "pip install -r requirements.txt\n"
                 "pip freeze > requirements.txt\n"
-                "python -c \"import faiss, dotenv; print('RAG dependencies ready')\"\n"
+                "python -c \"print('Dependencies ready')\"\n"
             ),
             source_ids=[],
         )
@@ -187,9 +187,9 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
                 "import os\n"
                 "from dotenv import load_dotenv\n\n"
                 "load_dotenv()\n"
-                "api_key = os.getenv('GOOGLE_API_KEY') or os.getenv('OPENAI_API_KEY')\n"
+                "api_key = os.getenv('SERVICE_API_KEY') or os.getenv('OPENAI_API_KEY')\n"
                 "if not api_key:\n"
-                "    raise RuntimeError('Set GOOGLE_API_KEY or OPENAI_API_KEY in .env')\n"
+                "    raise RuntimeError('Set the required API key in .env before running this step')\n"
                 "print('API key loaded safely:', bool(api_key))\n"
             ),
             source_ids=[],
@@ -242,7 +242,7 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "chunk" in text:
         return CodeSnippet(
             language="python",
-            description="Create overlapping chunks so retrieval keeps nearby context.",
+            description="Split a long text into overlapping chunks while preserving nearby context.",
             code=(
                 "def chunk_text(text, chunk_size=500, overlap=80):\n"
                 "    chunks = []\n"
@@ -252,7 +252,7 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
                 "        chunks.append(text[start:end])\n"
                 "        start = max(end - overlap, start + 1)\n"
                 "    return chunks\n\n"
-                "sample = 'Retrieval augmented generation connects documents to model answers. ' * 20\n"
+                "sample = 'This is a repeated sample paragraph for testing chunking behavior. ' * 20\n"
                 "print(len(chunk_text(sample)))\n"
             ),
             source_ids=[],
@@ -261,11 +261,11 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "embedding" in text:
         return CodeSnippet(
             language="python",
-            description="Generate embeddings for chunks with a local sentence-transformer model.",
+            description="Generate vector embeddings for short text examples.",
             code=(
                 "from sentence_transformers import SentenceTransformer\n\n"
                 "model = SentenceTransformer('all-MiniLM-L6-v2')\n"
-                "chunks = ['RAG retrieves context.', 'Embeddings turn text into vectors.']\n"
+                "chunks = ['Embeddings capture semantic similarity.', 'Vectors can power search and clustering.']\n"
                 "vectors = model.encode(chunks, normalize_embeddings=True)\n"
                 "print(vectors.shape)\n"
             ),
@@ -291,14 +291,14 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "save" in text and "index" in text:
         return CodeSnippet(
             language="python",
-            description="Persist a FAISS index and the chunk metadata beside it.",
+            description="Persist an index and the related metadata beside it.",
             code=(
                 "import json\n"
                 "import faiss\n\n"
-                "faiss.write_index(index, 'rag.index')\n"
-                "with open('chunks.json', 'w', encoding='utf-8') as file:\n"
+                "faiss.write_index(index, 'project.index')\n"
+                "with open('items.json', 'w', encoding='utf-8') as file:\n"
                 "    json.dump(chunks, file, indent=2)\n\n"
-                "loaded_index = faiss.read_index('rag.index')\n"
+                "loaded_index = faiss.read_index('project.index')\n"
                 "print('Vectors in index:', loaded_index.ntotal)\n"
             ),
             source_ids=[],
@@ -307,13 +307,13 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "retrieval" in text or "query" in text:
         return CodeSnippet(
             language="python",
-            description="Retrieve the most relevant chunks for a user question.",
+            description="Retrieve the most relevant items for a user query.",
             code=(
                 "def retrieve(question, embed_fn, index, chunks, k=3):\n"
                 "    query_vector = embed_fn([question]).astype('float32')\n"
                 "    distances, ids = index.search(query_vector, k)\n"
                 "    return [chunks[i] for i in ids[0] if i != -1]\n\n"
-                "context = retrieve('How does chunking affect RAG?', embed_fn, index, chunks)\n"
+                "context = retrieve('Which items are most relevant to the query?', embed_fn, index, chunks)\n"
                 "print('\\n---\\n'.join(context))\n"
             ),
             source_ids=[],
@@ -324,7 +324,7 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
             language="python",
             description="Build a grounded prompt that separates context from the user question.",
             code=(
-                "def build_rag_prompt(question, context_chunks):\n"
+                "def build_grounded_prompt(question, context_chunks):\n"
                 "    context = '\\n\\n'.join(context_chunks)\n"
                 "    return f\"\"\"\n"
                 "Use only the context below to answer.\n\n"
@@ -354,13 +354,13 @@ def _fallback_code_snippet(section_input: SectionSynthesisInput) -> CodeSnippet:
     if "streamlit" in text or "user interface" in text or "ui" in text:
         return CodeSnippet(
             language="python",
-            description="Create a minimal Streamlit interface for asking questions.",
+            description="Create a minimal Streamlit interface for a user-facing query flow.",
             code=(
                 "import streamlit as st\n\n"
-                "st.title('Local RAG Assistant')\n"
-                "question = st.text_input('Ask a question about your documents')\n"
+                "st.title('Project Assistant')\n"
+                "question = st.text_input('Enter your question')\n"
                 "if question:\n"
-                "    answer = rag_answer(question)\n"
+                "    answer = generate_answer(question)\n"
                 "    st.write(answer)\n"
             ),
             source_ids=[],

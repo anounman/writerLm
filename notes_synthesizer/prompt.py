@@ -116,6 +116,15 @@ Output quality rules:
 
 ---
 
+Book continuity rules:
+- Continue the same book, not an isolated standalone article.
+- Respect the provided book_state_summary, continuity_rules, chapter_dependencies, and implementation strategy.
+- Reuse established terminology and assumptions when they are already part of the live manuscript state.
+- If the book is project-based, keep the same running project or running example unless the planner explicitly advances it.
+- If you detect a continuity risk, record it in writer_guidance or unresolved_gaps instead of silently changing direction.
+
+---
+
 Failure modes to avoid:
 - Generic summaries with no insight
 - Repetition of the same idea across multiple fields
@@ -213,6 +222,18 @@ Allowed Citation Source IDs:
 Source References:
 {source_references}
 
+Book State Summary:
+{section_input.book_state_summary or 'None'}
+
+Continuity Rules:
+{chr(10).join(f"- {item}" for item in section_input.continuity_rules) if section_input.continuity_rules else '- None'}
+
+Chapter Dependencies:
+{chr(10).join(f"- {item}" for item in section_input.chapter_dependencies) if section_input.chapter_dependencies else '- None'}
+
+Implementation Strategy:
+{section_input.implementation_strategy or 'None'}
+
 Task:
 Create a compact, writer-ready section note artifact.
 
@@ -235,4 +256,5 @@ PRACTICAL CONTENT INSTRUCTIONS:
 - When the section involves building something: produce implementation_steps with sequential, actionable steps.
 - Always include code_snippets and diagram_suggestions when they would help the reader understand, even if not strictly required.
 - Set must_include_code and must_include_diagram on the output to match the planner requirements.
+- Copy book_state_summary, continuity_rules, chapter_dependencies, and implementation_strategy into the output so the Writer preserves the same manuscript state.
 """.strip()

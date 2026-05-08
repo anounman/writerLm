@@ -15,9 +15,54 @@ load_dotenv(REPO_ROOT / ".env")
 ProgressCallback = Callable[[str, str], None]
 
 
+RESUME_CHECKPOINTS = {
+    "book_plan": ("book_plan.json", "book.json"),
+    "research_bundle": ("research_bundle.json",),
+    "notes_bundle": ("notes_bundle.json",),
+    "writer_bundle": ("writer_bundle.json",),
+    "review_bundle": ("review_bundle.json",),
+    "book_tex": ("book.tex",),
+}
+
+
 def write_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"Expected JSON object in {path}")
+    return payload
+
+
+def detect_resume_checkpoint(run_dir: Path) -> str | None:
+    if (run_dir / "book.tex").exists():
+        return "book_tex"
+    if (run_dir / "review_bundle.json").exists():
+        return "review_bundle"
+    if (run_dir / "writer_bundle.json").exists() and (run_dir / "notes_bundle.json").exists():
+        return "writer_bundle"
+    if (run_dir / "notes_bundle.json").exists():
+        return "notes_bundle"
+    if (run_dir / "research_bundle.json").exists():
+        return "research_bundle"
+    if (run_dir / "book_plan.json").exists() or (run_dir / "book.json").exists():
+        return "book_plan"
+    return None
+
+
+def checkpoint_label(checkpoint: str | None) -> str:
+    labels = {
+        "book_plan": "book plan",
+        "research_bundle": "research bundle",
+        "notes_bundle": "notes bundle",
+        "writer_bundle": "writer bundle",
+        "review_bundle": "review bundle",
+        "book_tex": "LaTeX manuscript",
+    }
+    return labels.get(checkpoint or "", "no checkpoint")
 
 
 def run_web_pipeline(
@@ -25,8 +70,10 @@ def run_web_pipeline(
     planner_input: dict[str, Any],
     run_dir: Path,
     progress: Callable[..., None],
+    resume_from_dir: Path | None = None,
 ) -> dict[str, Any]:
     from assembler.compiler import compile_latex_file
+    from assembler.image_assets import prepare_image_assets_for_review_bundle
     from assembler.io import (
         save_assembly_bundle,
         save_book_plan,
@@ -36,14 +83,18 @@ def run_web_pipeline(
     from assembler.orchestrator import run_assembler
     from llm_metrics import configure_llm_metrics, get_llm_metrics_summary
     from notes_synthesizer.llm import GroqStructuredLLM as NotesGroqStructuredLLM
+    from notes_synthesizer.schemas import NotesSynthesisBundle
     from orchestration.evaluate_latex_book import evaluate_latex_book, write_outputs as write_evaluation_outputs
+    from orchestration.continuity_section_pipeline import run_continuity_section_pipeline
     from orchestration.parallel_section_pipeline import ParallelSectionPipelineConfig, run_parallel_section_pipeline
-    from orchestration.planner_research_pipeline import PlannerResearchPipeline
+    from orchestration.planner_research_pipeline import BookResearchBundle, PlannerResearchPipeline
+    from orchestration.quality_gate import run_quality_gate
     from orchestration.run_assembler_only import resolve_book_plan_for_review
     from orchestration.run_full_pipeline import (
         NOTES_DEFAULT_MODELS,
         WRITER_DEFAULT_MODELS,
         build_researcher_workflow,
+        full_profile_enabled,
         latex_compile_enabled,
         parallel_section_pipeline_enabled,
         run_notes_layer,
@@ -52,10 +103,13 @@ def run_web_pipeline(
     )
     from llm_provider import get_legacy_model_env_names_by_provider, resolve_openai_compatible_config
     from planner_agent import PlannerWorkflow
+    from planner_agent.schemas import BookPlan
     from reviewer.io import build_reviewer_tasks, save_review_bundle
     from reviewer.llm_client import build_reviewer_llm_client
     from reviewer.orchestrator import run_reviewer
+    from reviewer.schemas import ReviewBundle
     from writer.llm import GroqStructuredLLM as WriterGroqStructuredLLM
+    from writer.schemas import WriterOutputBundle
 
     start_time = time.time()
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -67,6 +121,9 @@ def run_web_pipeline(
     notes_bundle_path = run_dir / "notes_bundle.json"
     writer_bundle_path = run_dir / "writer_bundle.json"
     review_bundle_path = run_dir / "review_bundle.json"
+    image_assets_path = run_dir / "image_assets.json"
+    book_state_path = run_dir / "book_state.json"
+    quality_report_path = run_dir / "quality_report.json"
     section_summary_path = run_dir / "section_pipeline_summary.json"
     assembly_bundle_path = run_dir / "assembly_bundle.json"
     latex_path = run_dir / "book.tex"
@@ -77,35 +134,243 @@ def run_web_pipeline(
     run_summary_path = run_dir / "run_summary.json"
 
     stage_timings: dict[str, float] = {}
-
-    progress("planner_research", "running")
-    stage_start = time.perf_counter()
-    planner_workflow = PlannerWorkflow()
-    researcher_workflow = build_researcher_workflow()
-    pipeline = PlannerResearchPipeline(
-        planner_workflow=planner_workflow,
-        researcher_workflow=researcher_workflow,
+    resume_checkpoint = detect_resume_checkpoint(resume_from_dir) if resume_from_dir else None
+    if (
+        resume_from_dir
+        and resume_checkpoint in {"notes_bundle", "writer_bundle", "review_bundle"}
+        and full_profile_enabled()
+        and not (resume_from_dir / "book_state.json").exists()
+        and (resume_from_dir / "research_bundle.json").exists()
+    ):
+        resume_checkpoint = "research_bundle"
+    resume_details = (
+        {"resumed_from": str(resume_from_dir), "checkpoint": checkpoint_label(resume_checkpoint)}
+        if resume_from_dir and resume_checkpoint
+        else None
     )
-    research_bundle = pipeline.run(planner_input)
-    stage_timings["planner_research"] = round(time.perf_counter() - stage_start, 2)
-    book_plan = research_bundle.book_plan
-    save_book_plan(book_plan, book_plan_path)
-    save_book_plan(book_plan, canonical_book_path)
-    research_bundle_payload = research_bundle.model_dump(mode="json")
-    write_json(research_bundle_path, research_bundle_payload)
-    progress(
-        "planner_research",
-        "completed",
-        seconds=stage_timings["planner_research"],
-        details={
+
+    book_plan = None
+    research_bundle = None
+    research_bundle_payload = None
+    notes_bundle = None
+    writer_bundle = None
+    review_bundle = None
+    section_pipeline_summary: dict[str, Any] = {}
+
+    if resume_from_dir and not resume_checkpoint:
+        raise RuntimeError(f"No resumable checkpoint found in {resume_from_dir}")
+
+    if resume_checkpoint == "book_tex":
+        source_book_plan_path = resume_from_dir / "book_plan.json"
+        if not source_book_plan_path.exists():
+            source_book_plan_path = resume_from_dir / "book.json"
+        if source_book_plan_path.exists():
+            book_plan = BookPlan.model_validate(load_json(source_book_plan_path))
+            save_book_plan(book_plan, book_plan_path)
+            save_book_plan(book_plan, canonical_book_path)
+        latex_path.write_text((resume_from_dir / "book.tex").read_text(encoding="utf-8"), encoding="utf-8")
+        for stage in ("planner_research", "notes_synthesis", "writer", "reviewer", "assembler"):
+            progress(stage, "completed", details=resume_details)
+
+    elif resume_checkpoint == "review_bundle":
+        review_bundle = ReviewBundle.model_validate(load_json(resume_from_dir / "review_bundle.json"))
+        save_review_bundle(review_bundle, review_bundle_path)
+        source_book_plan_path = resume_from_dir / "book_plan.json"
+        if not source_book_plan_path.exists():
+            source_book_plan_path = resume_from_dir / "book.json"
+        book_plan = BookPlan.model_validate(load_json(source_book_plan_path))
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+        for stage in ("planner_research", "notes_synthesis", "writer", "reviewer"):
+            progress(stage, "completed", details=resume_details)
+
+    elif resume_checkpoint == "writer_bundle":
+        notes_bundle = NotesSynthesisBundle.model_validate(load_json(resume_from_dir / "notes_bundle.json"))
+        writer_bundle = WriterOutputBundle.model_validate(load_json(resume_from_dir / "writer_bundle.json"))
+        write_json(notes_bundle_path, notes_bundle.model_dump(mode="json"))
+        write_json(writer_bundle_path, writer_bundle.model_dump(mode="json"))
+        source_book_plan_path = resume_from_dir / "book_plan.json"
+        if not source_book_plan_path.exists():
+            source_book_plan_path = resume_from_dir / "book.json"
+        book_plan = BookPlan.model_validate(load_json(source_book_plan_path))
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+        for stage in ("planner_research", "notes_synthesis", "writer"):
+            progress(stage, "completed", details=resume_details)
+
+    elif resume_checkpoint == "notes_bundle":
+        notes_bundle = NotesSynthesisBundle.model_validate(load_json(resume_from_dir / "notes_bundle.json"))
+        write_json(notes_bundle_path, notes_bundle.model_dump(mode="json"))
+        source_book_plan_path = resume_from_dir / "book_plan.json"
+        if not source_book_plan_path.exists():
+            source_book_plan_path = resume_from_dir / "book.json"
+        book_plan = BookPlan.model_validate(load_json(source_book_plan_path))
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+        for stage in ("planner_research", "notes_synthesis"):
+            progress(stage, "completed", details=resume_details)
+
+    elif resume_checkpoint == "research_bundle":
+        research_bundle_payload = load_json(resume_from_dir / "research_bundle.json")
+        research_bundle = BookResearchBundle.model_validate(research_bundle_payload)
+        book_plan = research_bundle.book_plan
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+        write_json(research_bundle_path, research_bundle_payload)
+        progress("planner_research", "completed", details={
+            **(resume_details or {}),
             "chapters": book_plan.get_chapter_count(),
             "researched_sections": sum(len(ch.section_packets) for ch in research_bundle.chapters),
             "warnings": len(research_bundle.warnings),
             "errors": len(research_bundle.errors),
-        },
-    )
+        })
 
-    if parallel_section_pipeline_enabled():
+    elif resume_checkpoint == "book_plan":
+        source_book_plan_path = resume_from_dir / "book_plan.json"
+        if not source_book_plan_path.exists():
+            source_book_plan_path = resume_from_dir / "book.json"
+        book_plan = BookPlan.model_validate(load_json(source_book_plan_path))
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+
+    if research_bundle_payload is None and resume_from_dir and (resume_from_dir / "research_bundle.json").exists():
+        research_bundle_payload = load_json(resume_from_dir / "research_bundle.json")
+        write_json(research_bundle_path, research_bundle_payload)
+        if research_bundle is None:
+            research_bundle = BookResearchBundle.model_validate(research_bundle_payload)
+    if resume_from_dir and (resume_from_dir / "book_state.json").exists():
+        book_state_path.write_text((resume_from_dir / "book_state.json").read_text(encoding="utf-8"), encoding="utf-8")
+
+    if (
+        research_bundle_payload is None
+        and notes_bundle is None
+        and writer_bundle is None
+        and review_bundle is None
+        and latex_path.exists() is False
+    ):
+        progress("planner_research", "running", details=resume_details)
+        stage_start = time.perf_counter()
+        planner_workflow = PlannerWorkflow()
+        researcher_workflow = build_researcher_workflow()
+        pipeline = PlannerResearchPipeline(
+            planner_workflow=planner_workflow,
+            researcher_workflow=researcher_workflow,
+        )
+        research_bundle = pipeline.run_from_book_plan(book_plan) if book_plan is not None else pipeline.run(planner_input)
+        stage_timings["planner_research"] = round(time.perf_counter() - stage_start, 2)
+        book_plan = research_bundle.book_plan
+        save_book_plan(book_plan, book_plan_path)
+        save_book_plan(book_plan, canonical_book_path)
+        research_bundle_payload = research_bundle.model_dump(mode="json")
+        write_json(research_bundle_path, research_bundle_payload)
+        progress(
+            "planner_research",
+            "completed",
+            seconds=stage_timings["planner_research"],
+            details={
+                "chapters": book_plan.get_chapter_count(),
+                "researched_sections": sum(len(ch.section_packets) for ch in research_bundle.chapters),
+                "warnings": len(research_bundle.warnings),
+                "errors": len(research_bundle.errors),
+            },
+        )
+
+    if review_bundle is not None:
+        section_pipeline_summary = {
+            "mode": "resume_from_review_bundle",
+            "failed_sections": 0,
+            "checkpoint": checkpoint_label(resume_checkpoint),
+        }
+    elif writer_bundle is not None and notes_bundle is not None:
+        progress("reviewer", "running", details=resume_details)
+        reviewer_tasks = build_reviewer_tasks(
+            notes_bundle=notes_bundle,
+            writer_bundle=writer_bundle,
+        )
+        stage_start = time.perf_counter()
+        review_bundle = run_reviewer(tasks=reviewer_tasks, llm_client=build_reviewer_llm_client())
+        stage_timings["reviewer"] = round(time.perf_counter() - stage_start, 2)
+        progress("reviewer", "completed", seconds=stage_timings["reviewer"])
+        section_pipeline_summary = {"mode": "resume_from_writer_bundle", "failed_sections": 0}
+    elif notes_bundle is not None:
+        progress("writer", "running", details=resume_details)
+        stage_start = time.perf_counter()
+        writer_state = run_writer_layer(
+            notes_bundle_payload=notes_bundle.model_dump(mode="json"),
+            book_title=book_plan.title,
+            run_id=run_dir.name,
+        )
+        stage_timings["writer"] = round(time.perf_counter() - stage_start, 2)
+        progress("writer", "completed", seconds=stage_timings["writer"])
+
+        writer_bundle = writer_state.output_bundle
+        if writer_bundle is None:
+            raise RuntimeError("Writer completed without an output bundle.")
+
+        progress("reviewer", "running")
+        reviewer_tasks = build_reviewer_tasks(
+            notes_bundle=notes_bundle,
+            writer_bundle=writer_bundle,
+        )
+        stage_start = time.perf_counter()
+        review_bundle = run_reviewer(tasks=reviewer_tasks, llm_client=build_reviewer_llm_client())
+        stage_timings["reviewer"] = round(time.perf_counter() - stage_start, 2)
+        progress("reviewer", "completed", seconds=stage_timings["reviewer"])
+        section_pipeline_summary = {"mode": "resume_from_notes_bundle", "failed_sections": 0}
+    elif full_profile_enabled():
+        notes_llm_config = resolve_openai_compatible_config(
+            layer="notes",
+            default_models=NOTES_DEFAULT_MODELS,
+            legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
+        )
+        writer_llm_config = resolve_openai_compatible_config(
+            layer="writer",
+            default_models=WRITER_DEFAULT_MODELS,
+            legacy_env_names_by_provider=get_legacy_model_env_names_by_provider(),
+        )
+        progress("notes_synthesis", "running")
+        progress("writer", "running")
+        progress("reviewer", "running")
+        stage_start = time.perf_counter()
+        section_pipeline_result = run_continuity_section_pipeline(
+            research_bundle_payload=research_bundle_payload,
+            planner_input=planner_input,
+            book_plan=book_plan,
+            book_title=book_plan.title,
+            run_id=run_dir.name,
+            run_dir=run_dir,
+            notes_llm_factory=lambda: NotesGroqStructuredLLM(
+                api_key=notes_llm_config.api_key,
+                model=notes_llm_config.model,
+                base_url=notes_llm_config.base_url,
+            ),
+            writer_llm_factory=lambda: WriterGroqStructuredLLM(
+                api_key=writer_llm_config.api_key,
+                model=writer_llm_config.model,
+                base_url=writer_llm_config.base_url,
+            ),
+            reviewer_llm_client_factory=build_reviewer_llm_client,
+            config=ParallelSectionPipelineConfig(max_workers=1),
+        )
+        section_seconds = round(time.perf_counter() - stage_start, 2)
+        stage_timings["continuity_section_pipeline"] = section_seconds
+        notes_state = section_pipeline_result.notes_state
+        writer_state = section_pipeline_result.writer_state
+        review_bundle = section_pipeline_result.review_bundle
+        section_pipeline_summary = section_pipeline_result.summary
+        shared_details = {
+            "mode": section_pipeline_summary.get("mode"),
+            "completed_sections": section_pipeline_summary.get("completed_sections"),
+            "failed_sections": section_pipeline_summary.get("failed_sections"),
+            "book_state_path": str(section_pipeline_result.book_state_path) if section_pipeline_result.book_state_path else None,
+        }
+        final_status = "failed" if section_pipeline_summary.get("failed_sections") else "completed"
+        progress("notes_synthesis", final_status, seconds=section_seconds, details=shared_details)
+        progress("writer", final_status, seconds=section_seconds, details=shared_details)
+        progress("reviewer", final_status, seconds=section_seconds, details=shared_details)
+        notes_bundle = section_pipeline_result.notes_state.output_bundle
+        writer_bundle = section_pipeline_result.writer_state.output_bundle
+    elif parallel_section_pipeline_enabled():
         notes_llm_config = resolve_openai_compatible_config(
             layer="notes",
             default_models=NOTES_DEFAULT_MODELS,
@@ -152,6 +417,8 @@ def run_web_pipeline(
         progress("notes_synthesis", final_status, seconds=section_seconds, details=shared_details)
         progress("writer", final_status, seconds=section_seconds, details=shared_details)
         progress("reviewer", final_status, seconds=section_seconds, details=shared_details)
+        notes_bundle = section_pipeline_result.notes_state.output_bundle
+        writer_bundle = section_pipeline_result.writer_state.output_bundle
     else:
         progress("notes_synthesis", "running")
         stage_start = time.perf_counter()
@@ -191,21 +458,85 @@ def run_web_pipeline(
         stage_timings["reviewer"] = round(time.perf_counter() - stage_start, 2)
         progress("reviewer", "completed", seconds=stage_timings["reviewer"])
         section_pipeline_summary = {"mode": "sequential_layer_pipeline", "failed_sections": 0}
+        notes_bundle = notes_bundle_for_writer
+        writer_bundle = writer_bundle_for_review
 
     write_json(section_summary_path, section_pipeline_summary)
 
-    notes_bundle = notes_state.output_bundle
-    writer_bundle = writer_state.output_bundle
-    if notes_bundle is None or writer_bundle is None:
-        raise RuntimeError("Section pipeline did not produce notes/writer bundles.")
-    write_json(notes_bundle_path, notes_bundle.model_dump(mode="json"))
-    write_json(writer_bundle_path, writer_bundle.model_dump(mode="json"))
+    if review_bundle is None:
+        raise RuntimeError("Section pipeline did not produce a review bundle.")
+    if notes_bundle is not None and writer_bundle is not None:
+        write_json(notes_bundle_path, notes_bundle.model_dump(mode="json"))
+        write_json(writer_bundle_path, writer_bundle.model_dump(mode="json"))
+    elif notes_bundle is not None or writer_bundle is not None:
+        raise RuntimeError("Section pipeline produced an incomplete notes/writer checkpoint.")
     save_review_bundle(review_bundle, review_bundle_path)
 
     failed_section_count = int(section_pipeline_summary.get("failed_sections") or 0)
     if failed_section_count:
         failed_section_ids = section_pipeline_summary.get("failed_section_ids") or []
         raise RuntimeError(f"Section pipeline failed before assembly: {failed_section_ids}")
+
+    progress("quality_gate", "running")
+    stage_start = time.perf_counter()
+    quality_gate_result = run_quality_gate(
+        book_plan=book_plan,
+        review_bundle=review_bundle,
+        research_bundle_payload=research_bundle_payload,
+        run_dir=run_dir,
+        profile=os.getenv("RESEARCH_EXECUTION_PROFILE", "budget"),
+    )
+    stage_timings["quality_gate"] = round(time.perf_counter() - stage_start, 2)
+    review_bundle = quality_gate_result.review_bundle
+    save_review_bundle(review_bundle, review_bundle_path)
+    write_json(quality_report_path, quality_gate_result.report)
+    if quality_gate_result.report.get("failed"):
+        progress(
+            "quality_gate",
+            "failed",
+            seconds=stage_timings["quality_gate"],
+            details={
+                "overall_score": quality_gate_result.report["gate"]["overall_score"],
+                "critical_issues": quality_gate_result.report["gate"]["critical_issues"],
+                "warnings": quality_gate_result.report["gate"]["warnings"],
+                "quality_report": str(quality_report_path),
+            },
+        )
+        raise RuntimeError(
+            "Full-profile quality gate failed: "
+            f"{quality_gate_result.report['gate']['critical_issues']} critical issues remain. "
+            f"See {quality_report_path}."
+        )
+    progress(
+        "quality_gate",
+        "completed",
+        seconds=stage_timings["quality_gate"],
+        details={
+            "overall_score": quality_gate_result.report["gate"]["overall_score"],
+            "critical_issues": quality_gate_result.report["gate"]["critical_issues"],
+            "warnings": quality_gate_result.report["gate"]["warnings"],
+        },
+    )
+
+    progress("image_assets", "running")
+    stage_start = time.perf_counter()
+    image_asset_result = prepare_image_assets_for_review_bundle(
+        review_bundle=review_bundle,
+        run_dir=run_dir,
+        book_title=book_plan.title,
+    )
+    stage_timings["image_assets"] = round(time.perf_counter() - stage_start, 2)
+    save_review_bundle(review_bundle, review_bundle_path)
+    progress(
+        "image_assets",
+        "completed",
+        seconds=stage_timings["image_assets"],
+        details={
+            "enabled": image_asset_result.enabled,
+            "created": len(image_asset_result.created),
+            "warnings": len(image_asset_result.warnings),
+        },
+    )
 
     progress("assembler", "running")
     stage_start = time.perf_counter()
@@ -241,6 +572,10 @@ def run_web_pipeline(
         stage_timings["latex_compile"] = round(time.perf_counter() - stage_start, 2)
         save_latex_compile_result(latex_compile_result, latex_compile_result_path)
         latex_status = "completed" if latex_compile_result.succeeded else "failed"
+        latex_issues = sorted(
+            latex_compile_result.issues,
+            key=lambda issue: 0 if issue.severity == "error" else 1,
+        )
         progress(
             "latex_compile",
             latex_status,
@@ -248,7 +583,7 @@ def run_web_pipeline(
             details={
                 "status": latex_compile_result.status,
                 "pdf_path": latex_compile_result.pdf_path,
-                "issues": [issue.message for issue in latex_compile_result.issues[:5]],
+                "issues": [f"{issue.severity}: {issue.message}" for issue in latex_issues[:5]],
             },
         )
         if strict_latex_compile_enabled() and not latex_compile_result.succeeded:
@@ -272,6 +607,9 @@ def run_web_pipeline(
         "notes_bundle": str(notes_bundle_path),
         "writer_bundle": str(writer_bundle_path),
         "review_bundle": str(review_bundle_path),
+        "image_assets": str(image_assets_path),
+        "book_state": str(book_state_path) if book_state_path.exists() else None,
+        "quality_report": str(quality_report_path) if quality_report_path.exists() else None,
         "section_pipeline_summary": str(section_summary_path),
         "assembly_bundle": str(assembly_bundle_path),
         "latex": str(latex_path),
@@ -291,6 +629,7 @@ def run_web_pipeline(
             "weak_section_count": evaluation["weak_section_count"],
             "recommendations": evaluation["recommendations"],
         },
+        "quality_gate": json.loads(quality_report_path.read_text(encoding="utf-8")) if quality_report_path.exists() else None,
         "latex_compile": latex_compile_result.model_dump() if latex_compile_result else None,
     }
     write_json(run_summary_path, {**summary, "artifacts": artifacts})
@@ -299,8 +638,8 @@ def run_web_pipeline(
         "book_status": book_status,
         "summary": summary,
         "warnings": {
-            "research": research_bundle.warnings,
-            "research_errors": research_bundle.errors,
+            "research": research_bundle.warnings if research_bundle is not None else [],
+            "research_errors": research_bundle.errors if research_bundle is not None else [],
         },
         "artifacts": artifacts,
     }

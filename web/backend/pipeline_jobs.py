@@ -13,6 +13,7 @@ from planner_agent.document_context import build_source_context_from_pdf_dir
 from web.backend.models import ApiKey, BookJob, User, UserConfig
 from web.backend.schemas import BookRequest, PipelineConfig
 from web.backend.security import decrypt_secret
+from web.backend.web_pipeline import checkpoint_label, detect_resume_checkpoint
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -77,6 +78,87 @@ def launch_job(db: Session, *, user: User, request: BookRequest, user_pdf_dir: P
     env = _build_job_environment(db, user=user, config=config_payload, request=request, user_pdf_dir=user_pdf_dir)
     env["WRITERLM_WEB_JOB_ID"] = str(job.id)
     env["WRITERLM_WEB_USER_ID"] = str(user.id)
+
+    command = [
+        sys.executable,
+        "-m",
+        "web.backend.pipeline_worker",
+        "--job-id",
+        str(job.id),
+    ]
+    worker_log = run_dir / "worker.log"
+    with worker_log.open("ab", buffering=0) as log_file:
+        process = subprocess.Popen(
+            command,
+            cwd=str(REPO_ROOT),
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    job.process_id = process.pid
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def launch_retry_job(db: Session, *, user: User, source_job: BookJob) -> BookJob:
+    if source_job.user_id != user.id:
+        raise ValueError("Cannot retry another user's job.")
+    if not source_job.run_dir:
+        raise ValueError("This job has no run directory to resume from.")
+
+    source_run_dir = Path(source_job.run_dir)
+    checkpoint = detect_resume_checkpoint(source_run_dir)
+    if checkpoint is None:
+        raise ValueError("No resumable checkpoint was found for this job.")
+
+    config = get_or_create_user_config(db, user)
+    config_payload = PipelineConfig.model_validate({**default_config(), **(config.settings or {})}).model_dump()
+    _validate_required_keys(
+        db,
+        user=user,
+        config=config_payload,
+        has_user_pdfs=False,
+        force_web=bool((source_job.request_payload or {}).get("force_web_research")),
+    )
+
+    stages = _initial_stages()
+    job = BookJob(
+        user_id=user.id,
+        status="queued",
+        current_stage="queued",
+        request_payload=dict(source_job.request_payload or {}),
+        config_snapshot={
+            **config_payload,
+            "retry_of_job_id": source_job.id,
+            "resume_checkpoint": checkpoint,
+            "resume_from_run_dir": str(source_run_dir),
+        },
+        stages=stages,
+        summary={
+            "retry_of_job_id": source_job.id,
+            "resume_checkpoint": checkpoint,
+            "resume_checkpoint_label": checkpoint_label(checkpoint),
+        },
+        warnings={},
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    run_dir = RUNS_DIR / f"web_job_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    job.run_dir = str(run_dir)
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    env = _build_job_environment(db, user=user, config=config_payload)
+    env["WRITERLM_WEB_JOB_ID"] = str(job.id)
+    env["WRITERLM_WEB_USER_ID"] = str(user.id)
+    env["WRITERLM_RESUME_FROM_RUN_DIR"] = str(source_run_dir)
 
     command = [
         sys.executable,
@@ -174,6 +256,12 @@ def _build_job_environment(
             "WRITERLM_STRICT_LATEX_COMPILE": _bool_env(config["strict_latex_compile"]),
             "LATEX_ENGINE": config["latex_engine"],
             "RESEARCH_EXECUTION_PROFILE": config["research_execution_profile"],
+            "WRITERLM_IMAGE_ASSETS_ENABLED": _bool_env(config["image_assets_enabled"]),
+            "WRITERLM_WEB_IMAGE_SEARCH_ENABLED": _bool_env(config["web_image_search_enabled"]),
+            "WRITERLM_GENERATED_IMAGES_ENABLED": _bool_env(config["generated_images_enabled"]),
+            "WRITERLM_IMAGE_MODEL": config["image_generation_model"],
+            "WRITERLM_MAX_IMAGE_ASSETS": str(config["max_image_assets"]),
+            "WRITERLM_STRICT_FULL_QA": "1",
         }
     )
 
@@ -260,6 +348,8 @@ def _initial_stages() -> dict:
             ("notes_synthesis", "Notes Synthesis"),
             ("writer", "Writer"),
             ("reviewer", "Reviewer"),
+            ("quality_gate", "Quality Gate"),
+            ("image_assets", "Image Assets"),
             ("assembler", "Assembler"),
             ("latex_compile", "LaTeX Compiler"),
         ]
