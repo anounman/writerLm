@@ -13,7 +13,8 @@
     "tailwindcss": "^4.3.0"
   },
   "scripts": {
-    "dev": "nodemon --watch apps/studio --watch packages/ui --ext ts,tsx,js,jsx,json --exec \"npm run dev --workspace=apps/studio\""
+    "dev": "nodemon --watch apps/studio --watch packages/ui --ext ts,tsx,js,jsx,json --exec \"npm run dev --workspace=apps/studio\"",
+    "build": "npm run build --workspace apps/studio"
   },
   "overrides": {
     "vite": {
