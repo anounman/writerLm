@@ -256,7 +256,10 @@ def infer_project_state(book_plan: BookPlan, review_bundle: ReviewBundle) -> Pro
             *(section.section_output.reviewed_content for section in review_bundle.sections),
         ]
     ).lower()
-    is_aws = "aws" in corpus or any(term in corpus for term in AWS_SERVICE_TERMS)
+    # Require explicit 'aws' mention AND at least 2 AWS service terms to avoid false positives
+    # (ML books frequently mention 'lambda', 'rds', 'eks' in non-AWS contexts)
+    aws_service_hits = sum(1 for term in AWS_SERVICE_TERMS if term in corpus)
+    is_aws = "aws" in corpus and aws_service_hits >= 2
     strategy_counts = {
         "AWS CDK v2": corpus.count("aws-cdk-lib") + corpus.count("cdk v2") + corpus.count("construct"),
         "Terraform": corpus.count("terraform") + corpus.count(".tf"),
@@ -345,7 +348,11 @@ def analyze_section(
 ) -> list[QualityIssue]:
     issues: list[QualityIssue] = []
     lowered = content.lower()
-    is_aws_book = "aws" in f"{book_plan.title} {book_plan.audience} {content}".lower()
+    # Use the same strict detection as infer_project_state to avoid false positives from
+    # ML terms like 'lambda' / 'rds' / 'eks' being mistaken for AWS service references.
+    aws_context = f"{book_plan.title} {book_plan.audience} {content}".lower()
+    aws_service_hits_section = sum(1 for term in AWS_SERVICE_TERMS if term in aws_context)
+    is_aws_book = "aws" in aws_context and aws_service_hits_section >= 2
     strict_profile = profile == "full"
     section_sources = source_map.get("section_sources", {}).get(section_id, [])
     has_research_sources = bool(source_map.get("source_count"))
