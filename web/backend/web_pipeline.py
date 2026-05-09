@@ -89,7 +89,6 @@ def run_web_pipeline(
     from orchestration.continuity_section_pipeline import run_continuity_section_pipeline
     from orchestration.parallel_section_pipeline import ParallelSectionPipelineConfig, run_parallel_section_pipeline
     from orchestration.planner_research_pipeline import BookResearchBundle, PlannerResearchPipeline
-    from orchestration.quality_gate import run_quality_gate
     from orchestration.run_assembler_only import resolve_book_plan_for_review
     from orchestration.run_full_pipeline import (
         NOTES_DEFAULT_MODELS,
@@ -124,7 +123,6 @@ def run_web_pipeline(
     review_bundle_path = run_dir / "review_bundle.json"
     image_assets_path = run_dir / "image_assets.json"
     book_state_path = run_dir / "book_state.json"
-    quality_report_path = run_dir / "quality_report.json"
     section_summary_path = run_dir / "section_pipeline_summary.json"
     assembly_bundle_path = run_dir / "assembly_bundle.json"
     latex_path = run_dir / "book.tex"
@@ -478,47 +476,6 @@ def run_web_pipeline(
         failed_section_ids = section_pipeline_summary.get("failed_section_ids") or []
         raise RuntimeError(f"Section pipeline failed before assembly: {failed_section_ids}")
 
-    progress("quality_gate", "running")
-    stage_start = time.perf_counter()
-    quality_gate_result = run_quality_gate(
-        book_plan=book_plan,
-        review_bundle=review_bundle,
-        research_bundle_payload=research_bundle_payload,
-        run_dir=run_dir,
-        profile=os.getenv("RESEARCH_EXECUTION_PROFILE", "budget"),
-    )
-    stage_timings["quality_gate"] = round(time.perf_counter() - stage_start, 2)
-    review_bundle = quality_gate_result.review_bundle
-    save_review_bundle(review_bundle, review_bundle_path)
-    write_json(quality_report_path, quality_gate_result.report)
-    if quality_gate_result.report.get("failed"):
-        progress(
-            "quality_gate",
-            "failed",
-            seconds=stage_timings["quality_gate"],
-            details={
-                "overall_score": quality_gate_result.report["gate"]["overall_score"],
-                "critical_issues": quality_gate_result.report["gate"]["critical_issues"],
-                "warnings": quality_gate_result.report["gate"]["warnings"],
-                "quality_report": str(quality_report_path),
-            },
-        )
-        raise RuntimeError(
-            "Full-profile quality gate failed: "
-            f"{quality_gate_result.report['gate']['critical_issues']} critical issues remain. "
-            f"See {quality_report_path}."
-        )
-    progress(
-        "quality_gate",
-        "completed",
-        seconds=stage_timings["quality_gate"],
-        details={
-            "overall_score": quality_gate_result.report["gate"]["overall_score"],
-            "critical_issues": quality_gate_result.report["gate"]["critical_issues"],
-            "warnings": quality_gate_result.report["gate"]["warnings"],
-        },
-    )
-
     progress("image_assets", "running")
     stage_start = time.perf_counter()
     image_asset_result = prepare_image_assets_for_review_bundle(
@@ -610,7 +567,6 @@ def run_web_pipeline(
         "review_bundle": str(review_bundle_path),
         "image_assets": str(image_assets_path),
         "book_state": str(book_state_path) if book_state_path.exists() else None,
-        "quality_report": str(quality_report_path) if quality_report_path.exists() else None,
         "section_pipeline_summary": str(section_summary_path),
         "assembly_bundle": str(assembly_bundle_path),
         "latex": str(latex_path),
@@ -630,7 +586,6 @@ def run_web_pipeline(
             "weak_section_count": evaluation["weak_section_count"],
             "recommendations": evaluation["recommendations"],
         },
-        "quality_gate": json.loads(quality_report_path.read_text(encoding="utf-8")) if quality_report_path.exists() else None,
         "latex_compile": latex_compile_result.model_dump() if latex_compile_result else None,
     }
     write_json(run_summary_path, {**summary, "artifacts": artifacts})

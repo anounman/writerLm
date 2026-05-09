@@ -348,7 +348,6 @@ def _initial_stages() -> dict:
             ("notes_synthesis", "Notes Synthesis"),
             ("writer", "Writer"),
             ("reviewer", "Reviewer"),
-            ("quality_gate", "Quality Gate"),
             ("image_assets", "Image Assets"),
             ("assembler", "Assembler"),
             ("latex_compile", "LaTeX Compiler"),

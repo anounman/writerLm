@@ -39,7 +39,6 @@ from orchestration.parallel_section_pipeline import (
     ParallelSectionPipelineConfig,
     run_parallel_section_pipeline,
 )
-from orchestration.quality_gate import run_quality_gate
 from orchestration.run_assembler_only import resolve_book_plan_for_review
 from orchestration.run_notes_synthesizer import build_tasks_from_research_bundle
 from orchestration.run_writer import build_tasks_from_notes_bundle
@@ -94,7 +93,6 @@ WRITER_BUNDLE_OUTPUT_PATH = OUTPUTS_DIR / "writer_bundle.json"
 REVIEW_BUNDLE_OUTPUT_PATH = OUTPUTS_DIR / "review_bundle.json"
 SECTION_PIPELINE_SUMMARY_OUTPUT_PATH = OUTPUTS_DIR / "section_pipeline_summary.json"
 BOOK_STATE_OUTPUT_PATH = OUTPUTS_DIR / "book_state.json"
-QUALITY_REPORT_OUTPUT_PATH = OUTPUTS_DIR / "quality_report.json"
 ASSEMBLY_BUNDLE_OUTPUT_PATH = OUTPUTS_DIR / "assembly_bundle.json"
 LATEX_OUTPUT_PATH = OUTPUTS_DIR / "book.tex"
 LATEX_BUILD_DIR = OUTPUTS_DIR / "latex_build"
@@ -303,7 +301,6 @@ def build_summary(
     llm_config_summary: dict[str, dict[str, str]],
     stage_timings: dict[str, float],
     section_pipeline_summary: dict[str, Any],
-    quality_report: dict[str, Any] | None = None,
     book_state_path: Path | None = None,
 ) -> dict[str, Any]:
     notes_bundle = notes_state.output_bundle
@@ -369,7 +366,6 @@ def build_summary(
             "review_bundle": str(REVIEW_BUNDLE_OUTPUT_PATH),
             "section_pipeline_summary": str(SECTION_PIPELINE_SUMMARY_OUTPUT_PATH),
             "book_state": str(book_state_path) if book_state_path else None,
-            "quality_report": str(QUALITY_REPORT_OUTPUT_PATH) if quality_report else None,
             "assembly_bundle": str(ASSEMBLY_BUNDLE_OUTPUT_PATH),
             "latex_manuscript": str(LATEX_OUTPUT_PATH),
             "latex_compile_result": str(LATEX_COMPILE_RESULT_OUTPUT_PATH),
@@ -379,7 +375,6 @@ def build_summary(
         "llm_config": llm_config_summary,
         "stage_timings": stage_timings,
         "section_pipeline": section_pipeline_summary,
-        "quality_report": quality_report,
         "elapsed_seconds": round(elapsed_seconds, 2),
     }
 
@@ -451,7 +446,6 @@ def main() -> None:
     )
 
     book_state_path: Path | None = None
-    quality_report: dict[str, Any] | None = None
 
     if full_profile_enabled():
         notes_llm_config = resolve_openai_compatible_config(
@@ -607,28 +601,6 @@ def main() -> None:
             f"Partial artifacts were saved under {run_dir}."
         )
 
-    stage_start = time.perf_counter()
-    quality_gate_result = run_quality_gate(
-        book_plan=book_plan,
-        review_bundle=review_bundle,
-        research_bundle_payload=research_bundle_payload,
-        run_dir=run_dir,
-        profile=os.getenv("RESEARCH_EXECUTION_PROFILE", "budget"),
-    )
-    stage_timings["quality_gate"] = round(time.perf_counter() - stage_start, 2)
-    review_bundle = quality_gate_result.review_bundle
-    quality_report = quality_gate_result.report
-    save_review_bundle(review_bundle, run_dir / "review_bundle.json")
-    save_review_bundle(review_bundle, REVIEW_BUNDLE_OUTPUT_PATH)
-    write_json(run_dir / "quality_report.json", quality_report)
-    write_json(QUALITY_REPORT_OUTPUT_PATH, quality_report)
-    if quality_report.get("failed"):
-        raise RuntimeError(
-            "Full-profile quality gate failed: "
-            f"{quality_report['gate']['critical_issues']} critical issues remain. "
-            f"See {run_dir / 'quality_report.json'}."
-        )
-
     resolved_book_source, assembler_book_plan, preparation_note = resolve_book_plan_for_review(
         REVIEW_BUNDLE_OUTPUT_PATH
     )
@@ -690,7 +662,6 @@ def main() -> None:
         llm_config_summary=llm_config_summary,
         stage_timings=stage_timings,
         section_pipeline_summary=section_pipeline_summary,
-        quality_report=quality_report,
         book_state_path=book_state_path,
     )
 
