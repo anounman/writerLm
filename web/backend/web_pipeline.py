@@ -89,7 +89,6 @@ def run_web_pipeline(
     from orchestration.continuity_section_pipeline import run_continuity_section_pipeline
     from orchestration.parallel_section_pipeline import ParallelSectionPipelineConfig, run_parallel_section_pipeline
     from orchestration.planner_research_pipeline import BookResearchBundle, PlannerResearchPipeline
-    from orchestration.run_assembler_only import resolve_book_plan_for_review
     from orchestration.run_full_pipeline import (
         NOTES_DEFAULT_MODELS,
         WRITER_DEFAULT_MODELS,
@@ -498,7 +497,11 @@ def run_web_pipeline(
 
     progress("assembler", "running")
     stage_start = time.perf_counter()
-    _, assembler_book_plan, preparation_note = resolve_book_plan_for_review(review_bundle_path)
+    # Use the book_plan already resolved during this job's pipeline run.
+    # DO NOT call resolve_book_plan_for_review() here — that function does a glob
+    # search across all runs/* directories and will find stale book_plan.json files
+    # from previous jobs, causing an "overlap mismatch" assembler failure.
+    assembler_book_plan = book_plan
     save_book_plan(assembler_book_plan, canonical_book_path)
     assembly_artifacts = run_assembler(
         book_plan=assembler_book_plan,
