@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import signal
 import shutil
 import subprocess
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -24,6 +26,7 @@ from web.backend.schemas import (
     ApiKeyUpsert,
     BookRequest,
     GeneratedBookOut,
+    JobArtifactOut,
     JobOut,
     PipelineConfig,
     TokenResponse,
@@ -70,6 +73,18 @@ STALE_PROCESS_MESSAGES = {
     "Job process exited unexpectedly. Check worker.log for details.",
     "Job worker exited before starting. Check worker.log for details.",
 }
+JOB_ARTIFACT_FILES = {
+    "worker_log": "worker.log",
+    "job_error": "job_error.txt",
+    "book": "book.json",
+    "bookstate": "book_state.json",
+    "book_state": "book_state.json",
+    "researchbundle": "research_bundle.json",
+    "research_bundle": "research_bundle.json",
+    "bookplan": "book_plan.json",
+    "book_plan": "book_plan.json",
+    "telemetry": "telemetry.json",
+}
 
 
 def _safe_pdf_filename(filename: str | None) -> str:
@@ -77,6 +92,18 @@ def _safe_pdf_filename(filename: str | None) -> str:
     stem = "".join(char if char.isalnum() or char in {"-", "_"} else "_" for char in Path(original).stem)
     stem = stem.strip("._")[:80] or "source"
     return f"{stem}_{uuid.uuid4().hex[:8]}.pdf"
+
+
+def _safe_download_filename(value: str | None, *, extension: str) -> str:
+    stem = (value or "").strip()
+    if extension and stem.lower().endswith(extension.lower()):
+        stem = stem[: -len(extension)]
+    stem = unicodedata.normalize("NFKC", stem)
+    stem = re.sub(r"[^\w .-]+", "", stem)
+    stem = re.sub(r"\s+", " ", stem).strip(" ._-")
+    if not stem:
+        stem = "book"
+    return f"{stem[:120]}{extension}"
 
 
 def _utciso() -> str:
@@ -181,6 +208,21 @@ def _read_worker_state(job: BookJob) -> dict | None:
     if state.get("job_id") != job.id:
         return None
     return state
+
+
+def _job_artifact_path(job: BookJob, artifact_key: str) -> Path:
+    if not job.run_dir:
+        raise HTTPException(status_code=404, detail="This job does not have a run directory yet.")
+    filename = JOB_ARTIFACT_FILES.get(artifact_key)
+    if filename is None:
+        raise HTTPException(status_code=404, detail="Artifact is not available for download.")
+    run_dir = Path(job.run_dir).resolve()
+    path = (run_dir / filename).resolve()
+    if run_dir not in path.parents and path != run_dir:
+        raise HTTPException(status_code=403, detail="Artifact path is outside the run directory.")
+    if not path.exists() or not path.is_file():
+        raise HTTPException(status_code=404, detail="Artifact file is missing.")
+    return path
 
 
 def _restore_live_job(db: Session, job: BookJob, *, stage: str | None = None) -> BookJob:
@@ -488,6 +530,49 @@ def stop_job(job_id: int, user: User = Depends(current_user), db: Session = Depe
     return _mark_job_stopped(db, job, "Job was stopped by the user.")
 
 
+@app.get("/jobs/{job_id}/artifacts", response_model=list[JobArtifactOut])
+def list_job_artifacts(job_id: int, user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[JobArtifactOut]:
+    job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if not job.run_dir:
+        return []
+
+    artifacts: list[JobArtifactOut] = []
+    seen: set[Path] = set()
+    for key, filename in JOB_ARTIFACT_FILES.items():
+        if key in {"book_state", "research_bundle", "book_plan"}:
+            continue
+        path = (Path(job.run_dir) / filename).resolve()
+        if path in seen or not path.exists() or not path.is_file():
+            continue
+        seen.add(path)
+        stat = path.stat()
+        artifacts.append(
+            JobArtifactOut(
+                key=key,
+                filename=path.name,
+                size_bytes=stat.st_size,
+                updated_at=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+            )
+        )
+    return artifacts
+
+
+@app.get("/jobs/{job_id}/artifacts/{artifact_key}")
+def download_job_artifact(
+    job_id: int,
+    artifact_key: str,
+    user: User = Depends(current_user),
+    db: Session = Depends(get_db),
+):
+    job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    path = _job_artifact_path(job, artifact_key)
+    return FileResponse(path, filename=path.name)
+
+
 @app.get("/books", response_model=list[GeneratedBookOut])
 def list_books(user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[GeneratedBook]:
     return (
@@ -530,4 +615,9 @@ def download_artifact(
         raise HTTPException(status_code=403, detail="Artifact path is outside the run directory.")
     if not path.exists():
         raise HTTPException(status_code=404, detail="Artifact file is missing.")
-    return FileResponse(path, filename=path.name)
+    download_filename = path.name
+    if artifact_name == "pdf":
+        download_filename = _safe_download_filename(book.title, extension=".pdf")
+    elif artifact_name == "latex":
+        download_filename = _safe_download_filename(book.title, extension=".tex")
+    return FileResponse(path, filename=download_filename)

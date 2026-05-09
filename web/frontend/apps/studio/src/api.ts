@@ -116,6 +116,13 @@ export interface Job {
   completed_at: string | null;
 }
 
+export interface JobArtifact {
+  key: string;
+  filename: string;
+  size_bytes: number;
+  updated_at: string;
+}
+
 export interface GeneratedBook {
   id: number;
   job_id: number;
@@ -133,6 +140,55 @@ export interface GeneratedBook {
 const configuredApiBase = (import.meta.env.VITE_API_URL || "").trim().replace(/\/$/, "");
 const API_BASE = configuredApiBase || (import.meta.env.PROD ? "" : "/api");
 type TokenProvider = () => Promise<string | null>;
+
+export class ApiError extends Error {
+  status: number;
+  detail: unknown;
+
+  constructor(message: string, status: number, detail?: unknown) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+export function friendlyApiErrorMessage(error: unknown, fallback = "Something went wrong.") {
+  if (error instanceof ApiError) {
+    if (error.status === 429) return "Rate limit reached. Please wait a while before trying again.";
+    if (error.status === 401) return "Your session has expired. Please sign in again.";
+    if (error.status === 403) return "You do not have permission to perform this action.";
+    if (error.status === 404) return "That item is no longer available.";
+    if (error.status >= 500) return "The server hit a problem. Please try again in a moment.";
+  }
+  if (error instanceof Error) {
+    const text = error.message.toLowerCase();
+    if (text.includes("rate limit") || text.includes("429") || text.includes("quota")) return "Rate limit reached. Please wait a while before trying again.";
+    if (text.includes("api key") || text.includes("unauthorized") || text.includes("permission")) return "Provider access problem. Check your API keys and selected models.";
+    if (text.includes("network") || text.includes("timeout") || text.includes("failed to fetch")) return "Network problem. Please check the connection and try again.";
+  }
+  return fallback;
+}
+
+function errorMessageFromPayload(payload: any, fallback: string) {
+  if (typeof payload?.detail === "string") return payload.detail;
+  if (Array.isArray(payload?.detail)) return payload.detail.map((item: any) => item?.msg || String(item)).join("\n");
+  return fallback;
+}
+
+function filenameFromContentDisposition(contentDisposition: string, fallback: string) {
+  const encodedMatch = contentDisposition.match(/filename\*=([^;]+)/i);
+  if (encodedMatch?.[1]) {
+    const encoded = encodedMatch[1].trim().replace(/^UTF-8''/i, "").replace(/^"|"$/g, "");
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      return encoded;
+    }
+  }
+  const filenameMatch = contentDisposition.match(/(?:^|;\s*)filename="?([^";]+)"?/i);
+  return filenameMatch?.[1] || fallback;
+}
 
 export class ApiClient {
   token: string | null;
@@ -162,7 +218,7 @@ export class ApiClient {
     const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(payload.detail || response.statusText);
+      throw new ApiError(errorMessageFromPayload(payload, response.statusText), response.status, payload.detail);
     }
     if (response.status === 204) return undefined as T;
     return response.json() as Promise<T>;
@@ -244,7 +300,7 @@ export class ApiClient {
       .then(async (response) => {
         if (!response.ok) {
           const payload = await response.json().catch(() => ({ detail: response.statusText }));
-          throw new Error(payload.detail || response.statusText);
+          throw new ApiError(errorMessageFromPayload(payload, response.statusText), response.status, payload.detail);
         }
         return response.json() as Promise<Job>;
       });
@@ -266,6 +322,30 @@ export class ApiClient {
     return this.request<Job>(`/jobs/${id}/retry`, { method: "POST" });
   }
 
+  jobArtifacts(id: number) {
+    return this.request<JobArtifact[]>(`/jobs/${id}/artifacts`);
+  }
+
+  async downloadJobArtifact(jobId: number, artifactKey: string) {
+    if (!API_BASE) {
+      throw new Error("Backend API is not configured. Set VITE_API_URL to your deployed FastAPI backend URL in Vercel.");
+    }
+    const headers = new Headers();
+    const token = await this.authToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const response = await fetch(`${API_BASE}/jobs/${jobId}/artifacts/${artifactKey}`, { headers });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new ApiError(errorMessageFromPayload(payload, response.statusText), response.status, payload.detail);
+    }
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("content-disposition") || "";
+    return {
+      blob,
+      filename: filenameFromContentDisposition(contentDisposition, `${artifactKey}-${jobId}`),
+    };
+  }
+
   books() {
     return this.request<GeneratedBook[]>("/books");
   }
@@ -280,14 +360,13 @@ export class ApiClient {
     const response = await fetch(this.artifactUrl(bookId, artifactName), { headers });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({ detail: response.statusText }));
-      throw new Error(payload.detail || response.statusText);
+      throw new ApiError(errorMessageFromPayload(payload, response.statusText), response.status, payload.detail);
     }
     const blob = await response.blob();
     const contentDisposition = response.headers.get("content-disposition") || "";
-    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
     return {
       blob,
-      filename: filenameMatch?.[1] || `${artifactName}-${bookId}`,
+      filename: filenameFromContentDisposition(contentDisposition, `${artifactName}-${bookId}`),
     };
   }
 

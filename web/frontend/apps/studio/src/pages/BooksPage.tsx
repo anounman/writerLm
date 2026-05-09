@@ -1,7 +1,7 @@
 import React from "react";
 import { Download, FileCode2, BookOpen, Calendar } from "lucide-react";
 import { Button } from "@writerlm/ui";
-import { ApiClient, GeneratedBook } from "../api";
+import { ApiClient, GeneratedBook, friendlyApiErrorMessage } from "../api";
 
 interface BooksPageProps {
   api: ApiClient;
@@ -18,7 +18,7 @@ export function BooksPage({ api, books, onNotice }: BooksPageProps) {
       a.href = url; a.download = filename;
       document.body.appendChild(a); a.click(); a.remove();
       URL.revokeObjectURL(url);
-    } catch (e) { onNotice(e instanceof Error ? e.message : "Download failed."); }
+    } catch (e) { onNotice(friendlyApiErrorMessage(e, "Download failed.")); }
   }
 
   return (

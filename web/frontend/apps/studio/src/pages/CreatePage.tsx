@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { FileText, X, ArrowRight, RefreshCw, Upload, Play, Plus, Globe, Check } from "lucide-react";
 import { Button, Card, Input } from "@writerlm/ui";
-import { ApiClient, BookRequest, CodeDensity, Job } from "../api";
+import { ApiClient, BookRequest, CodeDensity, Job, friendlyApiErrorMessage } from "../api";
 
 interface CreatePageProps {
   api: ApiClient;
@@ -63,8 +63,9 @@ export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
     try {
       const job = hasPdfs ? await api.createJobWithPdfs(finalReq, pdfFiles) : await api.createJob(finalReq);
       onCreated(job);
+      onNotice(`Job #${job.id} started. Book generation can take several hours, so it is okay to come back later.`);
     } catch (err) {
-      onNotice(err instanceof Error ? err.message : "Could not start job.");
+      onNotice(friendlyApiErrorMessage(err, "Could not start job."));
     } finally { setSubmitting(false); }
   }
 

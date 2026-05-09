@@ -157,6 +157,13 @@ class JobOut(BaseModel):
     completed_at: datetime | None
 
 
+class JobArtifactOut(BaseModel):
+    key: str
+    filename: str
+    size_bytes: int
+    updated_at: datetime
+
+
 class GeneratedBookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
