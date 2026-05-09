@@ -57,6 +57,8 @@ export type TheoryPracticeBalance = "auto" | "theory_heavy" | "balanced" | "prac
 export type PedagogyStyle = "auto" | "german_theoretical" | "indian_theory_then_examples" | "socratic" | "exam_oriented" | "project_based";
 export type SourceUsage = "auto" | "primary_curriculum" | "supplemental" | "example_inspiration";
 export type ExerciseStrategy = "auto" | "none" | "extract_patterns" | "worked_examples" | "practice_sets";
+export type CodeDensity = "none" | "low" | "medium" | "high";
+export type ContentDensity = "low" | "medium" | "high";
 
 export interface BookRequest {
   topic: string;
@@ -70,9 +72,9 @@ export interface BookRequest {
   goals: string[];
   project_based: boolean;
   running_project_description: string | null;
-  code_density: "high" | "medium" | "low";
-  example_density: "high" | "medium" | "low";
-  diagram_density: "high" | "medium" | "low";
+  code_density: CodeDensity;
+  example_density: ContentDensity;
+  diagram_density: ContentDensity;
   max_section_words: number | null;
   force_web_research: boolean;
   urls: string[];

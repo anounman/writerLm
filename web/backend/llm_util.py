@@ -28,7 +28,7 @@ Here is the exact structure you MUST output:
   "goals": ["array of specific learning goals or user objectives"],
   "project_based": boolean,
   "running_project_description": "string (optional description of the project) or null",
-  "code_density": "high | medium | low",
+  "code_density": "none | low | medium | high",
   "example_density": "high | medium | low",
   "diagram_density": "high | medium | low",
   "max_section_words": integer (150 to 2000, optional) or null,
@@ -38,6 +38,7 @@ Here is the exact structure you MUST output:
 }
 
 If a specific detail is missing from their prompt, infer a reasonable professional default based on the topic.
+Use code_density="none" for non-technical books unless the user explicitly asks for code. Use "medium" or "high" for technical implementation/programming books when appropriate.
 CRITICAL INSTRUCTION: Under NO circumstances should you inject, invent, or hallucinate URLs. The "urls" array must ONLY contain URLs that the user literally pasted into their prompt. If no URLs are present in the text, return an empty array [].
 
 EXAMPLES:
@@ -88,6 +89,32 @@ Output:
   "code_density": "medium",
   "example_density": "high",
   "diagram_density": "high",
+  "max_section_words": null,
+  "force_web_research": false,
+  "urls": [],
+  "language_request": null
+}
+
+User: "Create a practical handbook about focus and deep work in the age of AI."
+Output:
+{
+  "topic": "Focus and deep work in the age of AI",
+  "audience": "Professionals and students",
+  "tone": "Practical, calm, and professional",
+  "book_type": "conceptual_guide",
+  "theory_practice_balance": "balanced",
+  "pedagogy_style": "auto",
+  "source_usage": "auto",
+  "exercise_strategy": "worked_examples",
+  "goals": [
+    "Build better focus habits",
+    "Use AI tools without fragmenting attention"
+  ],
+  "project_based": false,
+  "running_project_description": null,
+  "code_density": "none",
+  "example_density": "high",
+  "diagram_density": "medium",
   "max_section_words": null,
   "force_web_research": false,
   "urls": [],

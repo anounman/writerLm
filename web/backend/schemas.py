@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 ApiKeyProvider = Literal["google", "groq", "tavily", "firecrawl"]
 Provider = Literal["google", "groq"]
 Density = Literal["high", "medium", "low"]
+CodeDensity = Literal["none", "high", "medium", "low"]
 LatexEngine = Literal["pdflatex", "xelatex", "lualatex"]
 BookType = Literal[
     "auto",
@@ -114,7 +115,7 @@ class BookRequest(BaseModel):
     goals: list[str] = Field(default_factory=list)
     project_based: bool = False
     running_project_description: str | None = None
-    code_density: Density = "low"
+    code_density: CodeDensity = "none"
     example_density: Density = "high"
     diagram_density: Density = "medium"
     max_section_words: int | None = Field(default=None, ge=150, le=2000)

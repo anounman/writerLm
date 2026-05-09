@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { FileText, X, ArrowRight, RefreshCw, Upload, Play, Plus, Globe, Check } from "lucide-react";
 import { Button, Card, Input } from "@writerlm/ui";
-import { ApiClient, BookRequest, Job } from "../api";
+import { ApiClient, BookRequest, CodeDensity, Job } from "../api";
 
 interface CreatePageProps {
   api: ApiClient;
@@ -13,10 +13,17 @@ const defaultBookRequest: BookRequest = {
   topic: "", audience: "Professionals and students", tone: "Technical and clear",
   book_type: "auto", theory_practice_balance: "balanced", pedagogy_style: "auto",
   source_usage: "auto", exercise_strategy: "extract_patterns", goals: [],
-  project_based: false, running_project_description: null, code_density: "medium",
+  project_based: false, running_project_description: null, code_density: "none",
   example_density: "high", diagram_density: "medium", max_section_words: 900,
   force_web_research: true, language_request: null, urls: [],
 };
+
+const CODE_DENSITY_OPTIONS = [
+  { value: "none", label: "None — no code examples" },
+  { value: "low", label: "Low — rare code only when clearly useful" },
+  { value: "medium", label: "Medium — balanced technical examples" },
+  { value: "high", label: "High — code-heavy implementation" },
+] as const;
 
 export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
   const [promptMode, setPromptMode] = useState(true);
@@ -329,15 +336,15 @@ export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
                 <div className="h-px bg-border" />
 
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Code density</label>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Code Density</label>
                   <select
                     className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none"
                     value={request.code_density}
-                    onChange={e => setRequest(r => ({ ...r, code_density: e.target.value as any }))}
+                    onChange={e => setRequest(r => ({ ...r, code_density: e.target.value as CodeDensity }))}
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
+                    {CODE_DENSITY_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
