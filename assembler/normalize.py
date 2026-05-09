@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import re
+
 from planner_agent.schemas import BookPlan
 from reviewer.schemas import ReviewBundle
 
-from .ids import build_chapter_id, build_section_id
+from .ids import build_chapter_id, build_section_id, slugify
 from .schemas import (
     AssemblerPlannerBook,
     AssemblerPlannerChapter,
@@ -83,11 +85,15 @@ def normalize_review_bundle(review_bundle: ReviewBundle) -> list[AssemblerReview
     for result in review_bundle.sections:
         section_input = result.section_input
         section_output = result.section_output
+        section_title = _clean_text(section_output.section_title)
 
         normalized_sections.append(
             AssemblerReviewedSection(
-                section_id=_clean_text(section_output.section_id),
-                section_title=_clean_text(section_output.section_title),
+                section_id=_canonical_review_section_id(
+                    section_id=_clean_text(section_output.section_id),
+                    section_title=section_title,
+                ),
+                section_title=section_title,
                 reviewed_content=_normalize_prose(section_output.reviewed_content),
                 review_status=section_output.review_status,
                 citations_used=_normalize_str_list(section_output.citations_used),
@@ -108,6 +114,29 @@ def build_reviewed_section_map(
     sections: list[AssemblerReviewedSection],
 ) -> dict[str, AssemblerReviewedSection]:
     return {section.section_id: section for section in sections}
+
+
+def _canonical_review_section_id(*, section_id: str, section_title: str) -> str:
+    chapter_match = re.search(r"\bchapter-(\d+)\b", section_id)
+    if chapter_match and section_title:
+        return build_section_id(
+            chapter_number=int(chapter_match.group(1)),
+            section_title=section_title,
+        )
+    return _normalize_section_id_text(section_id)
+
+
+def _normalize_section_id_text(section_id: str) -> str:
+    cleaned = section_id.strip().lower().replace("_", "-")
+    if not cleaned:
+        return ""
+    chapter_section_match = re.match(r"^(chapter-\d+)-section-(.+)$", cleaned)
+    if chapter_section_match:
+        return f"{chapter_section_match.group(1)}-section-{slugify(chapter_section_match.group(2))}"
+    chapter_match = re.match(r"^(chapter-\d+)-(.+)$", cleaned)
+    if chapter_match:
+        return f"{chapter_match.group(1)}-section-{slugify(chapter_match.group(2))}"
+    return slugify(cleaned)
 
 
 def _normalize_prose(text: str) -> str:
