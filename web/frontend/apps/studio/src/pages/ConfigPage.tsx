@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Save, RefreshCw, SlidersHorizontal, Settings2, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { Button, Input } from "@writerlm/ui";
-import { ApiClient, PipelineConfig } from "../api";
+import { ApiClient, PipelineConfig, ProviderModel, friendlyApiErrorMessage } from "../api";
 
 interface ConfigPageProps {
   api: ApiClient;
@@ -21,11 +21,42 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
   );
 }
 
-function ModelInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ModelSelect({
+  label,
+  value,
+  models,
+  loading,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  models: ProviderModel[];
+  loading: boolean;
+  onChange: (v: string) => void;
+}) {
+  const hasCurrent = models.some(model => model.id === value);
   return (
     <div>
       <label className="block text-[10px] font-medium text-muted-foreground mb-1">{label}</label>
-      <Input value={value} onChange={e => onChange(e.target.value)} className="h-7 text-xs font-mono" />
+      {models.length ? (
+        <select
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          className="w-full h-8 bg-input border border-input text-foreground rounded-md px-2 text-xs font-mono outline-none focus:ring-1 focus:ring-ring"
+        >
+          {!hasCurrent && value && <option value={value}>{value}</option>}
+          {models.map(model => (
+            <option key={model.id} value={model.id}>{model.label === model.id ? model.id : `${model.label} - ${model.id}`}</option>
+          ))}
+        </select>
+      ) : (
+        <Input
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={loading ? "Loading models..." : "Enter model id..."}
+          className="h-8 text-xs font-mono"
+        />
+      )}
     </div>
   );
 }
@@ -62,8 +93,30 @@ function Row({ label, description, children }: { label: string; description?: st
 export function ConfigPage({ api, onNotice }: ConfigPageProps) {
   const [config, setConfig] = useState<PipelineConfig | null>(null);
   const [saving, setSaving] = useState(false);
+  const [models, setModels] = useState<{ google: ProviderModel[]; groq: ProviderModel[] }>({ google: [], groq: [] });
+  const [loadingModels, setLoadingModels] = useState<{ google: boolean; groq: boolean }>({ google: false, groq: false });
+  const [modelErrors, setModelErrors] = useState<{ google: string | null; groq: string | null }>({ google: null, groq: null });
 
-  useEffect(() => { api.config().then(setConfig).catch(() => onNotice("Failed to load config.")); }, []);
+  useEffect(() => { api.config().then(setConfig).catch(e => onNotice(friendlyApiErrorMessage(e, "Failed to load config."))); }, []);
+
+  async function loadModels(provider: "google" | "groq") {
+    setLoadingModels(prev => ({ ...prev, [provider]: true }));
+    setModelErrors(prev => ({ ...prev, [provider]: null }));
+    try {
+      const data = await api.providerModels(provider);
+      setModels(prev => ({ ...prev, [provider]: data }));
+    } catch (e) {
+      const message = friendlyApiErrorMessage(e, `Could not load ${provider} models.`);
+      setModelErrors(prev => ({ ...prev, [provider]: message }));
+    } finally {
+      setLoadingModels(prev => ({ ...prev, [provider]: false }));
+    }
+  }
+
+  useEffect(() => {
+    loadModels("google");
+    loadModels("groq");
+  }, [api]);
 
   async function save() {
     if (!config) return;
@@ -72,7 +125,7 @@ export function ConfigPage({ api, onNotice }: ConfigPageProps) {
       const s = await api.saveConfig(config);
       setConfig(s);
       onNotice("Configuration saved.");
-    } catch { onNotice("Failed to save."); }
+    } catch (e) { onNotice(friendlyApiErrorMessage(e, "Failed to save.")); }
     finally { setSaving(false); }
   }
 
@@ -190,16 +243,32 @@ export function ConfigPage({ api, onNotice }: ConfigPageProps) {
             <div className="p-5 space-y-5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">Override default models for each pipeline stage. Use with caution.</p>
               <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Google</p>
-                <ModelInput label="Planner" value={config.planner_google_model} onChange={v => upd({ planner_google_model: v })} />
-                <ModelInput label="Researcher" value={config.researcher_google_model} onChange={v => upd({ researcher_google_model: v })} />
-                <ModelInput label="Writer" value={config.writer_google_model} onChange={v => upd({ writer_google_model: v })} />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Google</p>
+                  <button type="button" onClick={() => loadModels("google")} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                    {loadingModels.google ? "Loading..." : "Refresh"}
+                  </button>
+                </div>
+                {modelErrors.google && <p className="text-[11px] text-red-300 leading-relaxed">{modelErrors.google}</p>}
+                <ModelSelect label="Planner" value={config.planner_google_model} models={models.google} loading={loadingModels.google} onChange={v => upd({ planner_google_model: v })} />
+                <ModelSelect label="Researcher" value={config.researcher_google_model} models={models.google} loading={loadingModels.google} onChange={v => upd({ researcher_google_model: v })} />
+                <ModelSelect label="Notes" value={config.notes_google_model} models={models.google} loading={loadingModels.google} onChange={v => upd({ notes_google_model: v })} />
+                <ModelSelect label="Writer" value={config.writer_google_model} models={models.google} loading={loadingModels.google} onChange={v => upd({ writer_google_model: v })} />
+                <ModelSelect label="Reviewer" value={config.reviewer_google_model} models={models.google} loading={loadingModels.google} onChange={v => upd({ reviewer_google_model: v })} />
               </div>
               <div className="space-y-3">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Groq</p>
-                <ModelInput label="Planner" value={config.planner_groq_model} onChange={v => upd({ planner_groq_model: v })} />
-                <ModelInput label="Researcher" value={config.researcher_groq_model} onChange={v => upd({ researcher_groq_model: v })} />
-                <ModelInput label="Writer" value={config.writer_groq_model} onChange={v => upd({ writer_groq_model: v })} />
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Groq</p>
+                  <button type="button" onClick={() => loadModels("groq")} className="text-[10px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                    {loadingModels.groq ? "Loading..." : "Refresh"}
+                  </button>
+                </div>
+                {modelErrors.groq && <p className="text-[11px] text-red-300 leading-relaxed">{modelErrors.groq}</p>}
+                <ModelSelect label="Planner" value={config.planner_groq_model} models={models.groq} loading={loadingModels.groq} onChange={v => upd({ planner_groq_model: v })} />
+                <ModelSelect label="Researcher" value={config.researcher_groq_model} models={models.groq} loading={loadingModels.groq} onChange={v => upd({ researcher_groq_model: v })} />
+                <ModelSelect label="Notes" value={config.notes_groq_model} models={models.groq} loading={loadingModels.groq} onChange={v => upd({ notes_groq_model: v })} />
+                <ModelSelect label="Writer" value={config.writer_groq_model} models={models.groq} loading={loadingModels.groq} onChange={v => upd({ writer_groq_model: v })} />
+                <ModelSelect label="Reviewer" value={config.reviewer_groq_model} models={models.groq} loading={loadingModels.groq} onChange={v => upd({ reviewer_groq_model: v })} />
               </div>
             </div>
           </div>

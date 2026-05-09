@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 from fastapi import Depends, FastAPI, File, Form, HTTPException, Response, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -29,6 +30,7 @@ from web.backend.schemas import (
     JobArtifactOut,
     JobOut,
     PipelineConfig,
+    ProviderModelOut,
     TokenResponse,
     UserCreate,
     UserLogin,
@@ -316,6 +318,57 @@ def _normalize_api_key_hints() -> None:
         db.close()
 
 
+def _model_label(model_id: str) -> str:
+    return model_id.removeprefix("models/")
+
+
+def _fetch_google_models(api_key: str) -> list[ProviderModelOut]:
+    try:
+        response = httpx.get(
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            params={"key": api_key},
+            timeout=15,
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail="Google model list could not be loaded. Check your Google API key.") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Google model list could not be loaded right now.") from exc
+
+    models = []
+    for item in response.json().get("models", []):
+        name = str(item.get("name") or "").strip()
+        if not name:
+            continue
+        methods = set(item.get("supportedGenerationMethods") or [])
+        if methods and "generateContent" not in methods:
+            continue
+        model_id = name.removeprefix("models/")
+        models.append(ProviderModelOut(id=model_id, label=str(item.get("displayName") or _model_label(model_id))))
+    return sorted(models, key=lambda model: model.id)
+
+
+def _fetch_groq_models(api_key: str) -> list[ProviderModelOut]:
+    try:
+        response = httpx.get(
+            "https://api.groq.com/openai/v1/models",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15,
+        )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail="Groq model list could not be loaded. Check your Groq API key.") from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Groq model list could not be loaded right now.") from exc
+
+    models = []
+    for item in response.json().get("data", []):
+        model_id = str(item.get("id") or "").strip()
+        if model_id:
+            models.append(ProviderModelOut(id=model_id, label=model_id))
+    return sorted(models, key=lambda model: model.id)
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_db()
@@ -414,6 +467,18 @@ def update_config(payload: PipelineConfig, user: User = Depends(current_user), d
     db.add(config)
     db.commit()
     return payload
+
+
+@app.get("/models/{provider}", response_model=list[ProviderModelOut])
+def list_provider_models(provider: str, user: User = Depends(current_user), db: Session = Depends(get_db)) -> list[ProviderModelOut]:
+    if provider not in {"google", "groq"}:
+        raise HTTPException(status_code=404, detail="Provider does not expose LLM models.")
+    api_key = _api_keys_by_provider(db, user=user).get(provider)
+    if not api_key:
+        raise HTTPException(status_code=400, detail=f"Save a {provider.title()} API key before loading models.")
+    if provider == "google":
+        return _fetch_google_models(api_key)
+    return _fetch_groq_models(api_key)
 
 
 class ParsePromptRequest(BaseModel):

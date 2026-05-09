@@ -43,6 +43,11 @@ export interface PipelineConfig {
   max_image_assets: number;
 }
 
+export interface ProviderModel {
+  id: string;
+  label: string;
+}
+
 export type BookType =
   | "auto"
   | "textbook"
@@ -259,6 +264,10 @@ export class ApiClient {
 
   config() {
     return this.request<PipelineConfig>("/config");
+  }
+
+  providerModels(provider: "google" | "groq") {
+    return this.request<ProviderModel[]>(`/models/${provider}`);
   }
 
   saveConfig(config: PipelineConfig) {

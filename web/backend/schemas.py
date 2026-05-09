@@ -164,6 +164,11 @@ class JobArtifactOut(BaseModel):
     updated_at: datetime
 
 
+class ProviderModelOut(BaseModel):
+    id: str
+    label: str
+
+
 class GeneratedBookOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
