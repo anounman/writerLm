@@ -48,11 +48,11 @@ def test_missing_compiler_returns_clear_result() -> None:
 def test_latexmk_success_writes_pdf_result() -> None:
     with TemporaryDirectory() as tmp:
         tex_path = Path(tmp) / "book.tex"
-        build_dir = Path(tmp) / "build"
+        build_dir = (Path(tmp) / "build").resolve()
         tex_path.write_text("\\documentclass{article}\\begin{document}Hi\\end{document}", encoding="utf-8")
 
         def fake_run(command, **kwargs):
-            _write_fake_artifacts(command, tex_path, build_dir, success=True)
+            _write_fake_artifacts(command, build_dir, success=True)
             return subprocess.CompletedProcess(command, 0, stdout="Latexmk: All targets are up-to-date")
 
         with patch("assembler.compiler.shutil.which", return_value="latexmk"), patch(
@@ -68,6 +68,32 @@ def test_latexmk_success_writes_pdf_result() -> None:
     assert result.return_code == 0
 
 
+def test_latexmk_success_renames_pdf_to_title() -> None:
+    with TemporaryDirectory() as tmp:
+        tex_path = Path(tmp) / "book.tex"
+        build_dir = (Path(tmp) / "build").resolve()
+        tex_path.write_text("\\documentclass{article}\\begin{document}Hi\\end{document}", encoding="utf-8")
+
+        def fake_run(command, **kwargs):
+            _write_fake_artifacts(command, build_dir, success=True)
+            return subprocess.CompletedProcess(command, 0, stdout="Latexmk: All targets are up-to-date")
+
+        with patch("assembler.compiler.shutil.which", return_value="latexmk"), patch(
+            "assembler.compiler.subprocess.run",
+            side_effect=fake_run,
+        ):
+            result = LatexCompiler().compile_file(
+                tex_path,
+                build_dir=build_dir,
+                output_pdf_name="Linear Algebra: A Practical Guide?",
+            )
+
+        assert result.status == "success"
+        assert result.pdf_path == str(build_dir / "Linear Algebra A Practical Guide.pdf")
+        assert Path(result.pdf_path).exists()
+        assert not (build_dir / "book_sanitized.pdf").exists()
+
+
 def test_engine_failure_extracts_error_from_log() -> None:
     with TemporaryDirectory() as tmp:
         tex_path = Path(tmp) / "book.tex"
@@ -80,7 +106,7 @@ def test_engine_failure_extracts_error_from_log() -> None:
             return None
 
         def fake_run(command, **kwargs):
-            _write_fake_artifacts(command, tex_path, build_dir, success=False)
+            _write_fake_artifacts(command, build_dir, success=False)
             return subprocess.CompletedProcess(command, 1, stdout="failed")
 
         with patch("assembler.compiler.shutil.which", side_effect=fake_which), patch(
@@ -99,19 +125,19 @@ def test_engine_failure_extracts_error_from_log() -> None:
 
 def _write_fake_artifacts(
     command: list[str],
-    tex_path: Path,
     build_dir: Path,
     *,
     success: bool,
 ) -> None:
     build_dir.mkdir(parents=True, exist_ok=True)
-    log_path = build_dir / f"{tex_path.stem}.log"
+    compiled_tex_path = Path(command[-1])
+    log_path = build_dir / f"{compiled_tex_path.stem}.log"
     if success:
-        (build_dir / f"{tex_path.stem}.pdf").write_bytes(b"%PDF-1.4 fake\n")
-        log_path.write_text("Output written on book.pdf.\n", encoding="utf-8")
+        (build_dir / f"{compiled_tex_path.stem}.pdf").write_bytes(b"%PDF-1.4 fake\n")
+        log_path.write_text(f"Output written on {compiled_tex_path.stem}.pdf.\n", encoding="utf-8")
     else:
         log_path.write_text(
-            "./book.tex:7: Undefined control sequence.\n"
+            f"./{compiled_tex_path.name}:7: Undefined control sequence.\n"
             "l.7 \\bad\n",
             encoding="utf-8",
         )

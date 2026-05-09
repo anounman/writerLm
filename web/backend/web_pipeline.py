@@ -528,7 +528,11 @@ def run_web_pipeline(
     if latex_compile_enabled():
         progress("latex_compile", "running")
         stage_start = time.perf_counter()
-        latex_compile_result = compile_latex_file(latex_path, build_dir=latex_build_dir)
+        latex_compile_result = compile_latex_file(
+            latex_path,
+            build_dir=latex_build_dir,
+            output_pdf_name=book_plan.title,
+        )
         stage_timings["latex_compile"] = round(time.perf_counter() - stage_start, 2)
         save_latex_compile_result(latex_compile_result, latex_compile_result_path)
         latex_status = "completed" if latex_compile_result.succeeded else "failed"

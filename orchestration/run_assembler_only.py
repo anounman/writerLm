@@ -240,6 +240,7 @@ def main() -> None:
     latex_compile_result = compile_latex_file(
         LATEX_OUTPUT_PATH,
         build_dir=LATEX_BUILD_DIR,
+        output_pdf_name=book_plan.title,
     )
     save_latex_compile_result(latex_compile_result, LATEX_COMPILE_RESULT_PATH)
 

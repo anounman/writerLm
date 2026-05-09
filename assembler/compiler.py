@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import unicodedata
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -107,6 +108,7 @@ class LatexCompiler:
         tex_path: str | Path,
         *,
         build_dir: str | Path | None = None,
+        output_pdf_name: str | None = None,
     ) -> LatexCompileResult:
         source_path = Path(tex_path).resolve()
         output_dir = (
@@ -161,6 +163,7 @@ class LatexCompiler:
             command=command,
             source_path=sanitized_path,
             output_dir=output_dir,
+            output_pdf_name=output_pdf_name,
         )
 
     def _build_command(
@@ -215,6 +218,7 @@ class LatexCompiler:
         command: list[str],
         source_path: Path,
         output_dir: Path,
+        output_pdf_name: str | None,
     ) -> LatexCompileResult:
         compiler = Path(command[0]).name
         stdout_chunks: list[str] = []
@@ -258,7 +262,12 @@ class LatexCompiler:
         log_path = _find_log_path(source_path=source_path, output_dir=output_dir)
         log_text = _read_text(log_path) if log_path else ""
         issues = parse_latex_issues(log_text or stdout)
-        pdf_path = output_dir / f"{source_path.stem}.pdf"
+        generated_pdf_path = output_dir / f"{source_path.stem}.pdf"
+        pdf_path = _final_pdf_path(
+            generated_pdf_path=generated_pdf_path,
+            output_dir=output_dir,
+            output_pdf_name=output_pdf_name,
+        )
 
         if timed_out:
             status = "timeout"
@@ -365,10 +374,12 @@ def compile_latex_file(
     *,
     build_dir: str | Path | None = None,
     preferred_engine: str | None = None,
+    output_pdf_name: str | None = None,
 ) -> LatexCompileResult:
     return LatexCompiler(preferred_engine=preferred_engine).compile_file(
         tex_path,
         build_dir=build_dir,
+        output_pdf_name=output_pdf_name,
     )
 
 
@@ -414,6 +425,37 @@ def _find_log_path(*, source_path: Path, output_dir: Path) -> Path | None:
         if candidate.exists():
             return candidate
     return None
+
+
+def _final_pdf_path(
+    *,
+    generated_pdf_path: Path,
+    output_dir: Path,
+    output_pdf_name: str | None,
+) -> Path:
+    if not output_pdf_name:
+        return generated_pdf_path
+
+    target_path = output_dir / _safe_pdf_filename(output_pdf_name)
+    if not generated_pdf_path.exists():
+        return generated_pdf_path
+    if generated_pdf_path != target_path:
+        if target_path.exists():
+            target_path.unlink()
+        generated_pdf_path.replace(target_path)
+    return target_path
+
+
+def _safe_pdf_filename(value: str) -> str:
+    stem = value.strip()
+    if stem.lower().endswith(".pdf"):
+        stem = stem[:-4]
+    stem = unicodedata.normalize("NFKC", stem)
+    stem = re.sub(r"[^\w .-]+", "", stem)
+    stem = re.sub(r"\s+", " ", stem).strip(" ._-")
+    if not stem:
+        stem = "book"
+    return f"{stem[:120]}.pdf"
 
 
 def _read_text(path: Path) -> str:

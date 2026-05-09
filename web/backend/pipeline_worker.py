@@ -4,9 +4,16 @@ import argparse
 import json
 import os
 import traceback
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+warnings.filterwarnings(
+    "ignore",
+    message=r"The default value of `allowed_objects` will change in a future version\..*",
+    module=r"langgraph\.cache\.base\.__init__",
+)
 
 from sqlalchemy.orm import Session
 

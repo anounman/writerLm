@@ -628,6 +628,7 @@ def main() -> None:
         latex_compile_result = compile_latex_file(
             LATEX_OUTPUT_PATH,
             build_dir=LATEX_BUILD_DIR,
+            output_pdf_name=book_plan.title,
         )
         stage_timings["latex_compile"] = round(time.perf_counter() - stage_start, 2)
         save_latex_compile_result(
