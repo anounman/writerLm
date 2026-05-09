@@ -49,6 +49,7 @@ class SourceRegistry:
             extraction_method=ExtractionMethod.UNKNOWN,
             canonical_url=str(source.url),
             domain=self._extract_domain(str(source.url)),
+            metadata={"snippet": source.snippet} if source.snippet else {},
         )
         self._entries[source.source_id] = entry
         return entry
@@ -80,6 +81,7 @@ class SourceRegistry:
                 content_hash=content_hash,
                 canonical_url=canonical_url,
                 domain=domain,
+                metadata=source_document.metadata,
                 relevance_score=relevance_score,
                 quality_score=quality_score,
             )
@@ -99,6 +101,7 @@ class SourceRegistry:
                 "content_hash": content_hash,
                 "canonical_url": canonical_url,
                 "domain": domain or existing.domain,
+                "metadata": {**existing.metadata, **source_document.metadata},
                 "relevance_score": (
                     relevance_score
                     if relevance_score is not None

@@ -200,6 +200,10 @@ class SourceRegistryEntry(BaseModel):
         description="Normalized/canonical URL if available."
     )
     domain: Optional[str] = None
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata like author, date, domain, page count, etc."
+    )
     relevance_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     quality_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     reliability_notes: List[str] = Field(default_factory=list)
