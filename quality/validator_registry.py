@@ -69,7 +69,7 @@ GENERIC_VALIDATORS: tuple[ValidatorSpec, ...] = tuple(
 
 
 OPTIONAL_VALIDATORS: tuple[ValidatorSpec, ...] = (
-    ValidatorSpec("code_validator", "Activated only when the contract expects code or implementation-heavy procedures.", lambda c: c.code_expected or c.implementation_heavy),
+    ValidatorSpec("code_validator", "Activated only when the contract expects code or medium/high code density.", lambda c: (c.code_expected and c.code_density != "none") or c.code_density in {"medium", "high"}),
     ValidatorSpec("formula_validator", "Activated only when the contract expects formulas, proofs, math, or quantitative validation.", lambda c: c.formula_expected),
     ValidatorSpec("chronology_validator", "Activated for history, politics, society, or chronology-heavy books.", lambda c: c.domain in {"history", "politics", "society"}),
     ValidatorSpec("argument_validator", "Activated for philosophy, ethics, or argumentative books.", lambda c: c.domain in {"philosophy", "ethics"} or c.book_type == "argumentative"),
@@ -161,7 +161,7 @@ def validate_section_text(
 
 def _inactive_reason(spec: ValidatorSpec, contract: BookContract) -> str:
     if spec.name == "code_validator":
-        return "Inactive because BookContract does not expect code and is not implementation-heavy."
+        return "Inactive because BookContract does not expect code and code_density is none/low."
     if spec.name == "formula_validator":
         return "Inactive because BookContract does not expect formulas."
     if spec.name == "chronology_validator":
@@ -175,6 +175,13 @@ def _inactive_reason(spec: ValidatorSpec, contract: BookContract) -> str:
 
 def _detect_issues(text: str, contract: BookContract, claim_report: ClaimValidationReport) -> list[ValidatorIssue]:
     issues: list[ValidatorIssue] = []
+    if (contract.code_density == "none" or not contract.code_expected) and _contains_code_artifact(text):
+        issues.append(ValidatorIssue(
+            validator="code_policy",
+            severity="error",
+            message="Final text contains code or programming-only teaching artifacts, but this BookContract does not allow code.",
+            repair_options=["remove_disallowed_code"],
+        ))
     if FORBIDDEN_RE.search(text):
         issues.append(ValidatorIssue(
             validator="placeholder_detection",
@@ -196,14 +203,14 @@ def _detect_issues(text: str, contract: BookContract, claim_report: ClaimValidat
             message="Sensitive-domain advice lacks caution/informational framing.",
             repair_options=["add_uncertainty_framing"],
         ))
-    if not contract.code_expected and not contract.implementation_heavy and re.search(r"\b(?:code validator|syntax validation|runnable code)\b", text, re.I):
+    if not contract.code_expected and re.search(r"\b(?:code validator|syntax validation|runnable code)\b", text, re.I):
         issues.append(ValidatorIssue(
             validator="chapter_alignment",
             severity="error",
             message="Text drifts into code-oriented validation language for a non-technical contract.",
             repair_options=["fix_domain_drift"],
         ))
-    if contract.implementation_heavy and contract.code_expected and "```" not in text and re.search(r"\b(?:run|install|configure|api|command)\b", text, re.I):
+    if contract.implementation_heavy and contract.code_expected and contract.code_density in {"medium", "high"} and "```" not in text and re.search(r"\b(?:run|install|configure|api|command)\b", text, re.I):
         issues.append(ValidatorIssue(
             validator="code_validator",
             severity="error",
@@ -243,8 +250,9 @@ def _detect_issues(text: str, contract: BookContract, claim_report: ClaimValidat
 
 def _dimension_scores(text: str, contract: BookContract, claim_report: ClaimValidationReport, issues: list[ValidatorIssue]) -> dict[str, int]:
     forbidden = bool(FORBIDDEN_RE.search(text))
+    disallowed_code = (contract.code_density == "none" or not contract.code_expected) and _contains_code_artifact(text)
     high_risk = bool(claim_report.high_risk_unsupported_claims)
-    domain_drift = any(issue.validator == "chapter_alignment" and issue.severity == "error" for issue in issues)
+    domain_drift = any(issue.validator in {"chapter_alignment", "code_policy"} and issue.severity == "error" for issue in issues)
     generic_visual = any(issue.validator == "visual_table_relevance" for issue in issues)
     repetition_count = _template_phrase_count(text)
     shallow = _looks_shallow(text)
@@ -261,13 +269,25 @@ def _dimension_scores(text: str, contract: BookContract, claim_report: ClaimVali
         "continuity": 75 if domain_drift else 85,
         "audience_fit": 55 if contract.audience_level == "advanced" and shallow else 82,
         "pedagogy_fit": 70 if shallow else 84,
-        "domain_fit": 50 if domain_drift else 84,
+        "domain_fit": 35 if disallowed_code else 50 if domain_drift else 84,
         "repetition_control": max(35, 90 - repetition_count * 12),
         "placeholder_cleanliness": 25 if forbidden else 95,
         "visual_table_quality": 50 if generic_visual else 80,
-        "example_quality": 65 if _fictional_case_unmarked(text, contract) else 78,
-        "final_polish": 50 if forbidden else 82,
+        "example_quality": 50 if disallowed_code else 65 if _fictional_case_unmarked(text, contract) else 78,
+        "final_polish": 45 if disallowed_code else 50 if forbidden else 82,
     }
+
+
+def _contains_code_artifact(text: str) -> bool:
+    return bool(
+        "```" in text
+        or re.search(r"(?im)^\s*#{1,4}\s*(?:code example|output\s*/\s*expected result)\s*$", text)
+        or re.search(
+            r"\b(?:run the code again|print statement|assertion|fail loudly and locally|expected result is not just that the code runs|working code result|runnable code|terminal command)\b",
+            text,
+            re.I,
+        )
+    )
 
 
 def _looks_like_advice(text: str) -> bool:

@@ -7,8 +7,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 Domain = Literal[
     "technology",
+    "software",
     "software_engineering",
     "engineering",
+    "machine_learning",
+    "data_science",
+    "cloud",
+    "devops",
+    "programming",
     "psychology",
     "mental_health",
     "philosophy",
@@ -24,6 +30,7 @@ Domain = Literal[
     "medicine_adjacent",
     "education",
     "self_help",
+    "productivity",
     "academic_explainer",
     "general_nonfiction",
 ]
@@ -48,6 +55,29 @@ AudienceLevel = Literal["beginner", "intermediate", "advanced", "mixed"]
 EvidenceStandard = Literal["light", "standard", "research_grounded", "academic", "primary_source", "safety_sensitive"]
 FreshnessRequirement = Literal["low", "medium", "high"]
 RiskLevel = Literal["low", "medium", "high"]
+CodeDensity = Literal["none", "low", "medium", "high"]
+
+
+NON_CODE_DOMAINS = {
+    "psychology",
+    "philosophy",
+    "history",
+    "business",
+    "education",
+    "self_help",
+    "productivity",
+    "general_nonfiction",
+}
+TECHNICAL_CODE_DOMAINS = {
+    "software",
+    "software_engineering",
+    "engineering",
+    "machine_learning",
+    "data_science",
+    "cloud",
+    "devops",
+    "programming",
+}
 
 
 class BookContractProfile(BaseModel):
@@ -62,6 +92,7 @@ class BookContractProfile(BaseModel):
     required_evidence_level: str = "standard"
     implementation_heavy: bool = False
     code_validation_needed: bool = False
+    code_density: str = "none"
     formula_validation_needed: bool = False
     academic_source_grounding_needed: bool = False
     legal_medical_financial_caution_needed: bool = False
@@ -86,6 +117,7 @@ class BookContract(BaseModel):
     freshness_requirement: FreshnessRequirement = "medium"
     implementation_heavy: bool = False
     code_expected: bool = False
+    code_density: CodeDensity = "none"
     formula_expected: bool = False
     project_based: bool = False
     research_heavy: bool = False
@@ -117,6 +149,7 @@ class BookContract(BaseModel):
             required_evidence_level=self.evidence_standard,
             implementation_heavy=self.implementation_heavy,
             code_validation_needed=self.code_expected,
+            code_density=self.code_density,
             formula_validation_needed=self.formula_expected,
             academic_source_grounding_needed=self.research_heavy,
             legal_medical_financial_caution_needed=self.sensitive_domain,
@@ -130,6 +163,7 @@ class BookContract(BaseModel):
             f"Audience: {self.audience_level}; depth: {self.expected_depth}",
             f"Tone: {self.tone}; pedagogy: {self.pedagogy_style}",
             f"Evidence: {self.evidence_standard}; freshness: {self.freshness_requirement}; risk: {self.risk_level}",
+            f"Code policy: density={self.code_density}; expected={self.code_expected}; implementation_heavy={self.implementation_heavy}",
             f"Source policy: {self.source_policy}",
             f"Visual policy: {self.visual_policy}",
         ]
@@ -143,6 +177,7 @@ class BookContract(BaseModel):
 
 
 DOMAIN_SIGNALS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("productivity", ("productivity", "focus", "deep work", "time management", "attention management")),
     ("psychology", ("psychology", "mental health", "therapy", "trauma", "diagnosis", "behavior", "cognitive", "emotion", "habit")),
     ("philosophy", ("philosophy", "ethics", "epistemology", "metaphysics", "argument", "stoicism", "kant", "aristotle")),
     ("history", ("history", "historical", "chronology", "revolution", "empire", "war", "ancient", "medieval")),
@@ -152,8 +187,12 @@ DOMAIN_SIGNALS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("math", ("math", "mathematics", "statistics", "probability", "algebra", "calculus", "proof", "formula")),
     ("medicine_adjacent", ("medicine", "medical", "clinical", "health", "nutrition", "sleep", "wellness")),
     ("education", ("education", "teaching", "curriculum", "textbook", "exam prep", "students", "classroom")),
-    ("software_engineering", ("software", "programming", "code", "api", "devops", "database", "python", "javascript", "typescript")),
-    ("technology", ("technology", "cloud", "platform", "cybersecurity", "infrastructure", "kubernetes")),
+    ("machine_learning", ("machine learning", "ml model", "neural network", "embedding", "rag", "fine-tuning")),
+    ("data_science", ("data science", "data analysis", "pandas", "notebook", "dataset")),
+    ("devops", ("devops", "kubernetes", "terraform", "ci/cd", "deployment pipeline")),
+    ("cloud", ("cloud", "infrastructure", "aws", "azure", "gcp")),
+    ("software", ("software", "programming", "code", "api", "rest api", "database", "python", "javascript", "typescript")),
+    ("technology", ("technology", "platform", "cybersecurity")),
     ("engineering", ("engineering", "systems engineering", "mechanical", "electrical", "civil")),
     ("self_help", ("self-help", "personal development", "productivity", "mindset", "confidence")),
     ("academic_explainer", ("academic explainer", "literature review", "research survey", "scholarly")),
@@ -174,10 +213,29 @@ def classify_book_contract(
     tone = str(user_input.get("tone") or "clear and supportive")
     pedagogy_style = _detect_pedagogy(text, book_type, domain)
 
-    code_expected = _has_any(text, ("code", "programming", "api", "devops", "software", "python", "javascript", "typescript", "cli", "command", "configuration"))
+    explicit_code_request = _explicitly_requests_code(text, user_input)
+    user_code_density = _requested_code_density(user_input, text)
+    technical_domain = domain in TECHNICAL_CODE_DOMAINS
+    code_expected = explicit_code_request or (
+        technical_domain
+        and _has_any(text, ("code", "programming", "api", "rest api", "devops", "software", "python", "javascript", "typescript", "cli", "command", "configuration", "authentication"))
+    )
     implementation_heavy = book_type in {"implementation_guide", "implementation_manual", "manual", "project_based", "project_based_book"} or _has_any(
         text, ("implementation guide", "technical manual", "software walkthrough", "devops walkthrough", "procedure manual", "step-by-step implementation")
     ) or (code_expected and _has_any(text, ("hands-on", "walkthrough", "build", "implementation", "project")))
+    code_density = _default_code_density(
+        domain=domain,
+        user_code_density=user_code_density,
+        explicit_code_request=explicit_code_request,
+        implementation_heavy=implementation_heavy,
+    )
+    if domain in NON_CODE_DOMAINS and not explicit_code_request and user_code_density is None:
+        code_expected = False
+        code_density = "none"
+    elif code_density == "none":
+        code_expected = False
+    elif technical_domain or explicit_code_request:
+        code_expected = True
     formula_expected = domain in {"math", "science"} or _has_any(text, ("math", "statistics", "physics", "chemistry", "proof", "formula", "equation", "calculation"))
     project_based = book_type in {"project_based", "project_based_book"} or bool(user_input.get("project_based")) or _has_any(text, ("project-based", "running project", "one project"))
     sensitive_domain = domain in {"psychology", "medicine_adjacent"} or _has_any(
@@ -194,6 +252,7 @@ def classify_book_contract(
         book_type=book_type,
         implementation_heavy=implementation_heavy,
         code_expected=code_expected,
+        code_density=code_density,  # type: ignore[arg-type]
         formula_expected=formula_expected,
         project_based=project_based,
         sensitive_domain=sensitive_domain,
@@ -215,6 +274,7 @@ def classify_book_contract(
         freshness_requirement=freshness_requirement,  # type: ignore[arg-type]
         implementation_heavy=implementation_heavy,
         code_expected=code_expected,
+        code_density=code_density,  # type: ignore[arg-type]
         formula_expected=formula_expected,
         project_based=project_based,
         research_heavy=research_heavy,
@@ -277,6 +337,45 @@ def _has_any(text: str, signals: tuple[str, ...]) -> bool:
         if re.search(r"\b" + re.escape(signal) + r"\b", text, re.I):
             return True
     return False
+
+
+def _requested_code_density(user_input: dict[str, Any], text: str) -> Optional[str]:
+    raw = str(user_input.get("code_density") or user_input.get("codeDensity") or "").casefold().strip()
+    if raw in {"none", "low", "medium", "high"}:
+        return raw
+    match = re.search(r"\bcode[_\s-]?density\s*(?:=|:|is)?\s*(none|low|medium|high)\b", text, re.I)
+    return match.group(1).casefold() if match else None
+
+
+def _explicitly_requests_code(text: str, user_input: dict[str, Any]) -> bool:
+    if bool(user_input.get("code_expected") or user_input.get("include_code") or user_input.get("must_include_code")):
+        return True
+    if re.search(r"\b(?:no|without|avoid|exclude)\s+(?:code|programming|code examples?)\b", text, re.I):
+        return False
+    return bool(re.search(
+        r"\b(?:with|include|including|using|focused)\s+(?:runnable\s+)?(?:code|code examples?|python|javascript|typescript|programming)\b"
+        r"|\b(?:python-focused|code-heavy|programming-focused|coding)\b",
+        text,
+        re.I,
+    ))
+
+
+def _default_code_density(
+    *,
+    domain: str,
+    user_code_density: Optional[str],
+    explicit_code_request: bool,
+    implementation_heavy: bool,
+) -> str:
+    if user_code_density in {"none", "low", "medium", "high"}:
+        return user_code_density
+    if explicit_code_request:
+        return "medium"
+    if domain in NON_CODE_DOMAINS:
+        return "none"
+    if domain in TECHNICAL_CODE_DOMAINS:
+        return "high" if implementation_heavy and domain in {"software", "programming", "devops", "cloud"} else "medium"
+    return "none"
 
 
 def _detect_domain(text: str) -> str:
@@ -511,12 +610,13 @@ def _validator_hints(
     book_type: str,
     implementation_heavy: bool,
     code_expected: bool,
+    code_density: str,
     formula_expected: bool,
     project_based: bool,
     sensitive_domain: bool,
 ) -> list[str]:
     hints = ["source_grounding", "claim_evidence", "continuity", "placeholder_detection"]
-    if code_expected or implementation_heavy:
+    if (code_expected and code_density != "none") or code_density in {"medium", "high"}:
         hints.append("code_validator")
     if formula_expected:
         hints.append("formula_validator")

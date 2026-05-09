@@ -40,8 +40,9 @@ def build_deterministic_section_note(
         or [section_input.section_objective]
     )
 
+    code_allowed = _code_allowed(section_input)
     code_snippets = []
-    if section_input.must_include_code or _looks_implementation_heavy(section_input):
+    if code_allowed and (section_input.must_include_code or _looks_implementation_heavy(section_input)):
         code_snippets.append(_fallback_code_snippet(section_input))
 
     diagram_suggestions = []
@@ -81,19 +82,19 @@ def build_deterministic_section_note(
         must_include_code=section_input.must_include_code,
         must_include_diagram=section_input.must_include_diagram,
         important_caveats=[
-            "Start with the smallest working version before adding abstractions.",
-            "Verify package names, API signatures, and model names against current documentation.",
+            "Start with the smallest usable version before adding complexity.",
+            "Check assumptions against the reader's real context before generalizing.",
         ],
         unresolved_gaps=unresolved_gaps,
         recommended_flow=[
             FlowStep(step_number=1, instruction="Introduce the idea through the running project."),
-            FlowStep(step_number=2, instruction="Show the smallest practical implementation."),
+            FlowStep(step_number=2, instruction="Show the smallest practical action or implementation."),
             FlowStep(step_number=3, instruction="Explain the expected output and common mistakes."),
             FlowStep(step_number=4, instruction="Give the reader one short exercise."),
         ],
         writer_guidance=[
             "Keep theory short and connect it to the project milestone.",
-            "Use the code snippet as a runnable teaching scaffold.",
+            "Use code only when the Book Contract allows it; otherwise use a worksheet, scenario, or checklist.",
             "Place diagrams before code when they explain flow or architecture.",
         ],
         allowed_citation_source_ids=list(section_input.available_source_ids),
@@ -121,6 +122,8 @@ def _pick_example_items(section_input: SectionSynthesisInput) -> list[str]:
 
 
 def _looks_implementation_heavy(section_input: SectionSynthesisInput) -> bool:
+    if not _code_allowed(section_input):
+        return False
     text = " ".join(
         [
             section_input.section_title,
@@ -399,6 +402,8 @@ def _fallback_diagram_suggestion(
 
 
 def _implementation_steps(section_input: SectionSynthesisInput) -> list[ImplementationStep]:
+    if not _code_allowed(section_input):
+        return []
     if not (section_input.must_include_code or _looks_implementation_heavy(section_input)):
         return []
 
@@ -422,3 +427,16 @@ def _implementation_steps(section_input: SectionSynthesisInput) -> list[Implemen
             has_code=True,
         ),
     ]
+
+
+def _code_allowed(section_input: SectionSynthesisInput) -> bool:
+    contract = section_input.book_contract or {}
+    if not contract:
+        return bool(section_input.must_include_code)
+    density = str(contract.get("code_density") or "").casefold()
+    expected = bool(contract.get("code_expected", False))
+    if density == "none" or expected is False:
+        return False
+    if density in {"medium", "high"}:
+        return True
+    return bool(section_input.must_include_code and density == "low")

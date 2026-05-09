@@ -78,3 +78,41 @@ def test_repair_loop_returns_schema_and_remaining_risks() -> None:
     assert "claim_support_summary" in report
     assert "scores" in report
     assert "QA gate" not in repaired[0]["content"]
+
+
+def test_non_code_repair_removes_code_examples_and_filler() -> None:
+    contract = classify_book_contract({
+        "topic": "Create a practical handbook about focus and deep work in the age of AI.",
+    })
+    text = """### Code Example
+
+```python
+print("track habit")
+```
+
+### Output / Expected Result
+
+The expected result is not just that the code runs. Run the code again and add one print statement or assertion.
+"""
+    repaired, report = run_quality_repair_loop(
+        [{"section_id": "s1", "section_title": "Focus", "content": text}],
+        contract,
+        {},
+        max_passes=2,
+    )
+    final = repaired[0]["content"]
+    assert "```" not in final
+    assert "Code Example" not in final
+    assert "run the code again" not in final
+    assert "print statement" not in final
+    assert report["qa_passed"] is True
+
+
+def test_validator_rejects_code_when_density_none() -> None:
+    contract = classify_book_contract({"topic": "A philosophy book about practical wisdom"})
+    report = validate_section_text(
+        text="Argument examples should be prose.\n\n```python\nassert wisdom\n```",
+        contract=contract,
+    )
+    assert report.qa_passed is False
+    assert any(issue.validator == "code_policy" for issue in report.issues)

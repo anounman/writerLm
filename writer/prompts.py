@@ -90,6 +90,9 @@ CODE BLOCKS:
 - Code blocks must be self-contained or reference clearly what was built before.
 - Include brief inline comments for non-obvious lines.
 - NEVER use pseudocode when real code is available in code_snippets.
+- If book_contract.code_density is "none": do not include code blocks, programming examples, terminal commands, or "Code Example" sections. Replace code with practical examples, scenarios, exercises, checklists, templates, reflection prompts, decision trees, or worksheets.
+- If book_contract.code_density is "low": include code only when the user explicitly requested it and the section clearly benefits from it; otherwise prefer non-code examples.
+- If book_contract.code_density is "medium" or "high": code is allowed only when relevant to the book domain. Code must be valid or clearly marked as pseudocode.
 
 DIAGRAM HINTS:
 - When diagram_suggestions are provided, embed diagram hints in the content as:
@@ -327,6 +330,7 @@ Write a section draft using the structure that fits this section and Book Contra
 
 REQUIRED BEHAVIOR
 - Follow the 8-part structure. Skip parts only if the input material genuinely cannot support them.
+- Obey the Book Contract code policy exactly. If code_density is "none" or code_expected is false, do not include code fences, programming examples, terminal commands, "Code Example" headings, or software-only validation language.
 - If must_include_code is true: you MUST include at least one fenced code block in the most appropriate language for the section.
 - The code fence language should match the provided code snippets and implementation strategy, not default blindly to Python.
 - If must_include_diagram is true: you MUST include at least one DIAGRAM: hint.

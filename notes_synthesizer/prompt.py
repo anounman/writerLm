@@ -51,6 +51,9 @@ Depth and quality rules (CRITICAL):
 
 CODE EXTRACTION (CRITICAL FOR PRACTICAL BOOKS):
 - Extract or synthesize code_snippets from evidence only when the Book Contract or section requirements indicate code is appropriate.
+- If book_contract.code_density is "none" or book_contract.code_expected is false, do not create code_snippets, programming examples, terminal commands, or software-only implementation steps.
+- If book_contract.code_density is "low", create code_snippets only when code is explicitly requested and clearly useful.
+- If book_contract.code_density is "medium" or "high", code is allowed only when relevant to the book domain; runnable code is preferred and pseudocode must be clearly marked.
 - Each code snippet must have: language, description, code, and source_ids.
 - Code should be practical, runnable, and focused on one concept.
 - If must_include_code is true but no code is found in evidence, synthesize a minimal illustrative snippet based on the concepts described. Mark source_ids as empty.
@@ -263,6 +266,7 @@ Instructions:
 
 PRACTICAL CONTENT INSTRUCTIONS:
 - If must_include_code is true: extract or synthesize at least one code_snippet. Code must be runnable and focused.
+- If the Book Contract says code_density=none or code_expected=false, ignore accidental must_include_code/code-like planner hints and use plain-language practical examples instead.
 - If must_include_diagram is true: produce at least one diagram_suggestion with type, title, description, and elements.
 - When the section involves building something: produce implementation_steps with sequential, actionable steps.
 - Include code_snippets only when the topic and Book Contract genuinely call for code.

@@ -44,6 +44,8 @@ def normalize_section_draft(
     # Remove leaked raw source ids from prose, but preserve code blocks
     # Split on code fences, only clean non-code parts
     draft.content = _clean_prose_preserve_code(draft.content)
+    if not _code_allowed(task):
+        draft.content = _remove_disallowed_code(draft.content)
 
     _ensure_required_code(task, draft)
     _ensure_required_diagram(task, draft)
@@ -79,6 +81,8 @@ def _count_code_blocks(content: str) -> int:
 
 
 def _ensure_required_code(task: WriterSectionTask, draft: SectionDraft) -> None:
+    if not _code_allowed(task):
+        return
     if not task.section_input.must_include_code:
         return
     if _count_code_blocks(draft.content) > 0:
@@ -177,11 +181,41 @@ def _draft_is_assembly_ready(task: WriterSectionTask, draft: SectionDraft) -> bo
         return False
     if SOURCE_ID_PATTERN.search(draft.content):
         return False
-    if task.section_input.must_include_code and draft.code_blocks_count <= 0:
+    if _code_allowed(task) and task.section_input.must_include_code and draft.code_blocks_count <= 0:
         return False
     if task.section_input.must_include_diagram and "DIAGRAM:" not in draft.content and not draft.diagram_hints:
         return False
     return True
+
+
+def _code_allowed(task: WriterSectionTask) -> bool:
+    contract = task.section_input.book_contract or {}
+    if not contract:
+        return bool(task.section_input.must_include_code)
+    density = str(contract.get("code_density") or "").casefold()
+    expected = bool(contract.get("code_expected", False))
+    if density == "none" or expected is False:
+        return False
+    if density in {"medium", "high"}:
+        return True
+    return bool(task.section_input.must_include_code and density == "low")
+
+
+def _remove_disallowed_code(content: str) -> str:
+    cleaned = re.sub(
+        r"```[\s\S]*?```",
+        "Practical exercise: Use a checklist, worksheet, or scenario to apply this idea without programming.",
+        content,
+    )
+    cleaned = re.sub(r"(?im)^\s*#{1,4}\s*Code Example\s*$\n?", "", cleaned)
+    cleaned = re.sub(r"(?im)^\s*#{1,4}\s*Output\s*/\s*Expected Result\s*$", "### Reflection Check", cleaned)
+    cleaned = re.sub(
+        r"\b(?:run the code again|print statement|assertion|fail loudly and locally|expected result is not just that the code runs|working code result|runnable code)\b",
+        "",
+        cleaned,
+        flags=re.I,
+    )
+    return re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
 
 def _clean_prose_preserve_code(content: str) -> str:

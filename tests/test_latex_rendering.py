@@ -44,6 +44,26 @@ def test_public_urls_survive_as_wrapped_latex_urls() -> None:
     assert r"\url{https://example.com/linear-algebra}" in latex
 
 
+def test_default_latex_theme_is_professional_book_not_dashboard() -> None:
+    latex = _render_section("A calm practical example.")
+    assert "professional_book theme" in latex
+    assert "bookaccent" in latex
+    assert "brandteal" not in latex
+    assert "brandorange" not in latex
+    assert "RGB}{0,122,128}" not in latex
+    assert "RGB}{239,124,0}" not in latex
+
+
+def test_diagram_internal_type_label_is_not_rendered() -> None:
+    latex = _render_section(
+        "DIAGRAM: [comparison_table] - Choosing a Practice\n"
+        "A professional comparison of two options.\n"
+        "Elements: Option A, Option B, Decision"
+    )
+    assert "comparison\\_table" not in latex
+    assert "Choosing a Practice" in latex
+
+
 def _render_section(content: str) -> str:
     manuscript = render_latex_manuscript(
         front_matter=AssemblyFrontMatter(

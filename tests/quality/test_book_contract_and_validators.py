@@ -41,6 +41,8 @@ def test_technical_guide_activates_code_and_procedure() -> None:
         "book_type": "implementation guide",
     })
     active = names(contract)
+    assert contract.code_density in {"medium", "high"}
+    assert contract.code_expected is True
     assert "code_validator" in active
     assert "procedure_validator" in active
 
@@ -70,3 +72,43 @@ def test_activation_report_lists_inactive_validators() -> None:
     report = build_validator_activation_report(contract, validators)
     assert "argument_validator" in report["activated_validators"]
     assert "code_validator" in report["inactive_validators"]
+
+
+def test_productivity_handbook_defaults_to_no_code() -> None:
+    contract = classify_book_contract({
+        "topic": "Create a practical handbook about focus and deep work in the age of AI.",
+    })
+    assert contract.domain == "productivity"
+    assert contract.code_density == "none"
+    assert contract.code_expected is False
+    assert "code_validator" not in names(contract)
+
+
+def test_psychology_and_philosophy_default_to_no_code() -> None:
+    psychology = classify_book_contract({"topic": "A psychology handbook for learning habits"})
+    philosophy = classify_book_contract({"topic": "A philosophy book about moral responsibility"})
+    assert psychology.code_density == "none"
+    assert psychology.code_expected is False
+    assert "code_validator" not in names(psychology)
+    assert philosophy.code_density == "none"
+    assert philosophy.code_expected is False
+    assert "code_validator" not in names(philosophy)
+
+
+def test_rest_api_implementation_guide_defaults_to_medium_code() -> None:
+    contract = classify_book_contract({
+        "topic": "Create a technical implementation guide for building a REST API with authentication.",
+    })
+    assert contract.domain == "software"
+    assert contract.code_density in {"medium", "high"}
+    assert contract.code_expected is True
+    assert "code_validator" in names(contract)
+
+
+def test_user_explicitly_asks_for_code_in_productivity_guide() -> None:
+    contract = classify_book_contract({
+        "topic": "Create a Python-focused productivity automation guide with code examples.",
+    })
+    assert contract.code_density == "medium"
+    assert contract.code_expected is True
+    assert "code_validator" in names(contract)

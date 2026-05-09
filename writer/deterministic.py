@@ -7,6 +7,7 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
     core_points = _render_core_points(section_input)
     build_goal = _build_goal_sentence(section_input)
     subject = _subject_label(section_input)
+    code_allowed = _code_allowed(section_input)
 
     content_parts = [
         "### Concept",
@@ -18,15 +19,15 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
         "### Checkpoint",
         (
             "Before moving on, you should be able to explain what input this step receives, "
-            f"what it produces, and how you would know it worked. That habit keeps {subject} "
+            f"what it produces for the reader, and how you would know it helped. That habit keeps {subject} "
             "clear as the material becomes more complex."
         ),
         "### Intuition",
         (
             f"Think of {subject} as a chain of connected ideas. Each step should make the "
-            "next step easier to understand, apply, or verify. If one step is vague, the "
+            "next step easier to understand, apply, or check. If one step is vague, the "
             "reader loses the thread, so this section makes the important moving parts "
-            "visible and testable."
+            "visible and usable."
         ),
     ]
 
@@ -43,7 +44,7 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
             )
         )
 
-    if section_input.code_snippets:
+    if code_allowed and section_input.code_snippets:
         content_parts.extend(
             [
                 "### Code Example",
@@ -55,28 +56,34 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
     if section_input.implementation_steps:
         content_parts.extend(
             [
-                "### Step-by-step Implementation",
+                "### Step-by-step Implementation" if code_allowed else "### Practical Steps",
                 _render_steps(section_input),
             ]
         )
 
-    content_parts.extend(
-        [
+    if code_allowed:
+        content_parts.extend([
             "### Output / Expected Result",
             (
-                "The expected result is not just that the code runs. You should see a concrete "
-                "artifact: a solved example, a derived formula, a diagram, a short explanation, "
-                "a working code result, or a visible project outcome. Save that artifact or write "
-                "a small summary so the next section has something real to build on."
+                "The expected result should be concrete: a solved example, a derived formula, "
+                "a diagram, a short explanation, a working code result, or a visible project outcome."
             ),
+        ])
+    else:
+        content_parts.extend([
+            "### Reflection Check",
+            (
+                "The result should be a practical artifact the reader can inspect: a short plan, "
+                "a completed worksheet, a decision, a scenario analysis, or a clear next action."
+            ),
+        ])
+
+    content_parts.extend(
+        [
             "### Common Mistakes",
             _render_common_mistakes(section_input),
             "### Mini Exercise",
-            (
-                "Change one input, parameter, or file. Run the code again and write down what "
-                "changed. If nothing changed, add one print statement or assertion that makes "
-                "the hidden state visible."
-            ),
+            _render_mini_exercise(code_allowed),
         ]
     )
 
@@ -111,8 +118,8 @@ def build_deterministic_section_draft(section_input: WriterSectionInput) -> Sect
 def _build_goal_sentence(section_input: WriterSectionInput) -> str:
     if section_input.implementation_steps:
         first = section_input.implementation_steps[0].get("action", "build the next step")
-        return f"In practice, you will {first.lower()} and verify it before continuing."
-    return "In practice, you will connect the idea to the next measurable project step."
+        return f"In practice, you will {first.lower()} and check the result before continuing."
+    return "In practice, you will connect the idea to the next concrete reader action."
 
 
 def _render_core_points(section_input: WriterSectionInput) -> str:
@@ -190,10 +197,15 @@ def _expected_output_for_snippet(snippet: dict) -> str:
 
 def _render_steps(section_input: WriterSectionInput) -> str:
     lines = []
+    code_allowed = _code_allowed(section_input)
     for index, step in enumerate(section_input.implementation_steps, start=1):
         action = step.get("action", "Do the next step")
         detail = step.get("detail", "")
-        why = " This matters because each step should fail loudly and locally."
+        why = (
+            " This matters because each step should produce feedback the reader can inspect."
+            if code_allowed
+            else " This matters because each step should make the decision or practice easier to use."
+        )
         lines.append(f"{step.get('step_number', index)}. {action}: {detail}{why}".strip())
     return "\n".join(lines)
 
@@ -207,3 +219,22 @@ def _render_common_mistakes(section_input: WriterSectionInput) -> str:
         f"- Watch for this: {item} Fix it by testing the smallest visible behavior before moving on."
         for item in caveats
     )
+
+
+def _render_mini_exercise(code_allowed: bool) -> str:
+    if code_allowed:
+        return "Change one input or parameter, compare the result, and write down what changed before moving on."
+    return "Choose one realistic situation from your week, apply the checklist or worksheet, and write one sentence about what you would change next."
+
+
+def _code_allowed(section_input: WriterSectionInput) -> bool:
+    contract = section_input.book_contract or {}
+    if not contract:
+        return bool(section_input.must_include_code)
+    density = str(contract.get("code_density") or "").casefold()
+    expected = bool(contract.get("code_expected", False))
+    if density == "none" or expected is False:
+        return False
+    if density in {"medium", "high"}:
+        return True
+    return bool(section_input.must_include_code and density == "low")

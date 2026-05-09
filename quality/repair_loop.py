@@ -42,7 +42,7 @@ FORBIDDEN_LINE_RE = re.compile(
     r"(?im)^\s*(?:QA gate found validation problems|Unresolved Gaps|TODO\b.*|FIXME\b.*|placeholder\b.*|citation needed\b.*|internal pipeline\b.*|debug message\b.*|validation failed\b.*)$"
 )
 FORBIDDEN_INLINE_RE = re.compile("|".join(re.escape(item) for item in FORBIDDEN_FINAL_STRINGS), re.I)
-TEMPLATE_FILLER_RE = re.compile(r"\b(?:it is important to note that|overall,?|in conclusion,?|this section explores|as an ai|the expected result is not just that the code runs|change one input, parameter, or file|this matters because each step should fail loudly and locally|the printed output is your first test)\b", re.I)
+TEMPLATE_FILLER_RE = re.compile(r"\b(?:it is important to note that|overall,?|in conclusion,?|this section explores|as an ai|the expected result is not just that the code runs|change one input, parameter, or file|this matters because each step should fail loudly and locally|the printed output is your first test|run the code again|print statement|assertion|working code result)\b", re.I)
 OVERCLAIM_REPLACEMENTS = (
     (re.compile(r"\bproves\b", re.I), "suggests"),
     (re.compile(r"\balways\b", re.I), "often"),
@@ -61,6 +61,9 @@ def build_repair_plan(section_text: str, validation_reports: list[Any], contract
     if TEMPLATE_FILLER_RE.search(section_text):
         actions.append("remove_repeated_template_phrase")
         reasons.append("Template filler phrase detected.")
+    if (contract.code_density == "none" or not contract.code_expected) and _contains_code_artifact(section_text):
+        actions.append("remove_disallowed_code")
+        reasons.append("Code or software-only teaching artifacts are present in a non-code contract.")
     if re.search(r"\b(?:proves|always|guarantees)\b", section_text, re.I):
         actions.extend(["remove_or_soften_unsupported_claim", "add_uncertainty_framing"])
         reasons.append("Overclaim language detected.")
@@ -109,6 +112,9 @@ def apply_deterministic_repairs(section_text: str, repair_plan: RepairPlan, cont
     if "remove_repeated_template_phrase" in repair_plan.actions:
         repaired = TEMPLATE_FILLER_RE.sub("", repaired)
 
+    if "remove_disallowed_code" in repair_plan.actions or contract.code_density == "none" or not contract.code_expected:
+        repaired = _remove_disallowed_code(repaired)
+
     if "remove_or_soften_unsupported_claim" in repair_plan.actions or "add_uncertainty_framing" in repair_plan.actions:
         for pattern, replacement in OVERCLAIM_REPLACEMENTS:
             repaired = pattern.sub(replacement, repaired)
@@ -132,6 +138,34 @@ def apply_deterministic_repairs(section_text: str, repair_plan: RepairPlan, cont
         repaired = _add_sensitive_caution(repaired, contract)
 
     repaired = re.sub(r"[ \t]{2,}", " ", repaired)
+    repaired = re.sub(r"\n{3,}", "\n\n", repaired)
+    return repaired.strip()
+
+
+def _contains_code_artifact(text: str) -> bool:
+    return bool(
+        "```" in text
+        or re.search(r"(?im)^\s*#{1,4}\s*(?:code example|output\s*/\s*expected result)\s*$", text)
+        or TEMPLATE_FILLER_RE.search(text)
+    )
+
+
+def _remove_disallowed_code(text: str) -> str:
+    repaired = re.sub(
+        r"```[\s\S]*?```",
+        "Practical exercise: Translate this idea into a plain-language example, worksheet, checklist, or scenario that the reader can use without programming.",
+        text,
+    )
+    repaired = re.sub(r"(?im)^\s*#{1,4}\s*Code Example\s*$\n?", "", repaired)
+    repaired = re.sub(r"(?im)^\s*#{1,4}\s*Step-by-step Implementation\s*$", "### Practical Steps", repaired)
+    repaired = re.sub(r"(?im)^\s*#{1,4}\s*Output\s*/\s*Expected Result\s*$", "### Reflection Check", repaired)
+    repaired = TEMPLATE_FILLER_RE.sub("", repaired)
+    repaired = re.sub(
+        r"(?im)^\s*(?:If the command succeeds|Treat any import error|The printed output|Save that artifact|Run and inspect the result).*$",
+        "",
+        repaired,
+    )
+    repaired = re.sub(r"(?im)^###\s*(?:Reflection Check|Practical Steps)\s*\n\s*(?=###|\Z)", "", repaired)
     repaired = re.sub(r"\n{3,}", "\n\n", repaired)
     return repaired.strip()
 
