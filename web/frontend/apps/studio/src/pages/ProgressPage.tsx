@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { RefreshCw, X, Check, Timer, Activity, AlertTriangle, Download, FileJson, FileText, Clock3, Gauge, Layers3, CircleDot, Wrench, Sparkles, Code2, Image, BookOpenCheck, ShieldCheck, FileDown } from "lucide-react";
 import { Button } from "@writerlm/ui";
+import { Activity, AlertTriangle, BookOpenCheck, Check, CircleDot, Clock3, Code2, Download, FileDown, FileJson, FileText, Gauge, Image, Layers3, RefreshCw, ShieldCheck, Sparkles, Timer, Wrench, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import React, { useEffect, useState } from "react";
 import { ApiClient, ApiError, GeneratedBook, Job, JobArtifact, JobStatus, friendlyApiErrorMessage } from "../api";
 
 interface ProgressPageProps {
@@ -132,102 +132,66 @@ function getProgressSummary(job: Job | null, status: JobStatus | null) {
     total,
     percent,
     activeLabel: active?.label || (terminalComplete ? "Complete" : "Queued"),
-                      { label: "Regenerate weak sections", action: "weak_sections", icon: RefreshCw },
+  };
 }
 
 function categorizeError(message: string | null | undefined) {
   const raw = (message || "").trim();
-                    ].map(item => {
-    const isActive = activeRepairAction === item.action;
-    const Icon = isActive ? RefreshCw : item.icon;
-    return (
-      <Button
-        key={item.label}
-        variant="secondary"
-        size="sm"
-        disabled={repairRunning}
-        onClick={() => repair(item.action as any)}
-      >
-        <Icon size={13} className={isActive ? "animate-spin" : ""} /> {isActive ? "Running..." : item.label}
-      </Button>
-    );
-  })
-}
-<Button variant="ghost" size="sm" onClick={exportAnyway}>
-  <FileDown size={13} /> Export anyway
-</Button>
+  const text = raw.toLowerCase();
+  if (!raw) {
+    return {
+      title: "Job failed",
+      summary: "The pipeline stopped before it could finish.",
+      action: "Download the available logs below, then retry after checking your configuration.",
+      raw,
     };
   }
-{
-  repairRunning && (
-    <div className="mt-3 rounded-md border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-100">
-      <div className="flex items-center gap-2">
-        <RefreshCw size={12} className="animate-spin" />
-        <span>Repair running{activeRepairLabel ? `: ${activeRepairLabel}` : ""}. This may take a few minutes. Artifacts will refresh automatically.</span>
-      </div>
-    </div>
-  )
-}
-{
-  repairError && (
-    <div className="mt-3 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-100">
-      Repair failed: {repairError}
-    </div>
-  )
-}
-{
-  repairMessage && !repairRunning && !repairError && (
-    <div className="mt-3 rounded-md border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
-      {repairMessage}
-    </div>
-  )
-}
-if (text.includes("rate limit") || text.includes("429") || text.includes("quota") || text.includes("too many requests")) {
+  if (text.includes("rate limit") || text.includes("429") || text.includes("quota") || text.includes("too many requests")) {
+    return {
+      title: "Rate limit reached",
+      summary: "One of the model or research providers rejected the request because the account is temporarily over its allowed usage.",
+      action: "Wait a while before retrying, or switch to a provider/model with more available quota in Settings.",
+      raw,
+    };
+  }
+  if (text.includes("api key") || text.includes("unauthorized") || text.includes("401") || text.includes("403") || text.includes("permission")) {
+    return {
+      title: "Provider access problem",
+      summary: "A provider key appears to be missing, invalid, or not allowed to use the requested model/service.",
+      action: "Check your API keys and selected models, then retry the job.",
+      raw,
+    };
+  }
+  if (text.includes("timeout") || text.includes("timed out") || text.includes("connection") || text.includes("network")) {
+    return {
+      title: "Network or timeout problem",
+      summary: "The pipeline could not reach a provider or a provider took too long to respond.",
+      action: "Retry the job. If it happens again, try a smaller request or a different provider.",
+      raw,
+    };
+  }
+  if (text.includes("latex") || text.includes("pdflatex") || text.includes("xelatex") || text.includes("lualatex")) {
+    return {
+      title: "Book compiled with a LaTeX issue",
+      summary: "The content was generated, but the final document renderer reported a formatting or compilation problem.",
+      action: "Download logs and retry. You may also disable strict LaTeX compilation in Settings.",
+      raw,
+    };
+  }
+  if (text.includes("validation") || text.includes("invalid json") || text.includes("schema")) {
+    return {
+      title: "Generated content failed validation",
+      summary: "A model response did not match the structured format the pipeline needs.",
+      action: "Retry the job. If it repeats, reduce the scope or switch to a stronger model.",
+      raw,
+    };
+  }
   return {
-    title: "Rate limit reached",
-    summary: "One of the model or research providers rejected the request because the account is temporarily over its allowed usage.",
-    action: "Wait a while before retrying, or switch to a provider/model with more available quota in Settings.",
+    title: "Pipeline error",
+    summary: "The job stopped before completion. The raw diagnostic is available below for troubleshooting.",
+    action: "Download the logs and retry the job after reviewing the failed stage.",
     raw,
   };
-}
-if (text.includes("api key") || text.includes("unauthorized") || text.includes("401") || text.includes("403") || text.includes("permission")) {
-  return {
-    title: "Provider access problem",
-    summary: "A provider key appears to be missing, invalid, or not allowed to use the requested model/service.",
-    action: "Check your API keys and selected models, then retry the job.",
-    raw,
-  };
-}
-if (text.includes("timeout") || text.includes("timed out") || text.includes("connection") || text.includes("network")) {
-  return {
-    title: "Network or timeout problem",
-    summary: "The pipeline could not reach a provider or a provider took too long to respond.",
-    action: "Retry the job. If it happens again, try a smaller request or a different provider.",
-    raw,
-  };
-}
-if (text.includes("latex") || text.includes("pdflatex") || text.includes("xelatex") || text.includes("lualatex")) {
-  return {
-    title: "Book compiled with a LaTeX issue",
-    summary: "The content was generated, but the final document renderer reported a formatting or compilation problem.",
-    action: "Download logs and retry. You may also disable strict LaTeX compilation in Settings.",
-    raw,
-  };
-}
-if (text.includes("validation") || text.includes("invalid json") || text.includes("schema")) {
-  return {
-    title: "Generated content failed validation",
-    summary: "A model response did not match the structured format the pipeline needs.",
-    action: "Retry the job. If it repeats, reduce the scope or switch to a stronger model.",
-    raw,
-  };
-}
-return {
-  title: "Pipeline error",
-  summary: "The job stopped before completion. The raw diagnostic is available below for troubleshooting.",
-  action: "Download the logs and retry the job after reviewing the failed stage.",
-  raw,
-};
 }
 
 function formatBytes(bytes: number) {
@@ -541,19 +505,47 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onBooks
                     {[
                       { label: "Repair book", action: "repair", icon: Wrench },
                       { label: "Polish for showcase", action: "showcase", icon: Sparkles },
-                      { label: "Regenerate weak sections", action: "repair", icon: RefreshCw },
+                      { label: "Regenerate weak sections", action: "weak_sections", icon: RefreshCw },
                       { label: "Remove code examples", action: "code", icon: X },
                       { label: "Improve diagrams", action: "diagrams", icon: Image },
                       { label: "Strengthen sources", action: "sources", icon: BookOpenCheck },
                       { label: "Fix code blocks", action: "code", icon: Code2 },
-                    ].map(item => (
-                      <Button key={item.label} variant="secondary" size="sm" onClick={() => repair(item.action as any)}>
-                        <item.icon size={13} /> {item.label}
-                      </Button>
-                    ))}
-                    <Button variant="ghost" size="sm" onClick={() => onNotice("Export is allowed; use the generated book download from Books once the artifact is available.")}>
+                    ].map(item => {
+                      const isActive = activeRepairAction === item.action;
+                      const Icon = isActive ? RefreshCw : item.icon;
+                      return (
+                        <Button
+                          key={item.label}
+                          variant="secondary"
+                          size="sm"
+                          disabled={repairRunning}
+                          onClick={() => repair(item.action as any)}
+                        >
+                          <Icon size={13} className={isActive ? "animate-spin" : ""} /> {isActive ? "Running..." : item.label}
+                        </Button>
+                      );
+                    })}
+                    <Button variant="ghost" size="sm" onClick={exportAnyway}>
                       <FileDown size={13} /> Export anyway
                     </Button>
+                  </div>
+                )}
+                {repairRunning && (
+                  <div className="mt-3 rounded-md border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-100">
+                    <div className="flex items-center gap-2">
+                      <RefreshCw size={12} className="animate-spin" />
+                      <span>Repair running{activeRepairLabel ? `: ${activeRepairLabel}` : ""}. This may take a few minutes. Artifacts will refresh automatically.</span>
+                    </div>
+                  </div>
+                )}
+                {repairError && (
+                  <div className="mt-3 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+                    Repair failed: {repairError}
+                  </div>
+                )}
+                {repairMessage && !repairRunning && !repairError && (
+                  <div className="mt-3 rounded-md border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+                    {repairMessage}
                   </div>
                 )}
               </div>
