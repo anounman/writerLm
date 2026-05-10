@@ -46,7 +46,7 @@ Whether you're developing new pipeline features or expanding the Web Studio, her
 Clone the repository and set up your environment variables:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/anounman/WriterLm.git
 cd writerLm
 cp .env.example .env
 ```
