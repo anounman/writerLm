@@ -10,13 +10,15 @@ At its core, WriterLM orchestrates a multi-stage workflow where highly specializ
 
 ### The Agent Pipeline
 
-1. **Planner Agent** (`planner_agent/`): Initializes the book structure. Based on user inputs (topic, target audience, tone, and goals), the planner outlines chapters, sections, and the overarching instructional logic.
-2. **Researcher** (`researcher/`): Conducts thorough data gathering. It supports a **hybrid research mode**, dynamically crawling the web (via Tavily/Firecrawl) or extracting data from user-uploaded PDFs to build context for each section.
-3. **Notes Synthesizer** (`notes_synthesizer/`): Processes raw research packets, condensing them into structured, coherent notes formatted perfectly for drafting.
-4. **Writer** (`writer/`): Generates the actual content section-by-section, leveraging the synthesized notes to maintain factual accuracy and narrative flow.
-5. **Reviewer** (`reviewer/`): Analyzes the generated drafts, offering critiques and requesting revisions until the content aligns perfectly with the book plan and stylistic guidelines.
-6. **Quality Checker** (`quality/`): Runs an automated Quality Assurance (QA) pass on the approved drafts. It derives a "book contract" from the initial constraints and executes a repair loop with targeted validators to ensure factual accuracy and structural adherence.
-7. **Assembler** (`assembler/`): Combines all approved and QA-verified section drafts into a cohesive LaTeX manuscript, compiling it into a polished, final PDF.
+1. **Input Gateway**: Sanitizes and normalizes the user prompt. It defends against prompt injections, implements robust parsing with fallback mechanisms, and ensures the pipeline starts with a secure and structured book request.
+2. **Planner Agent** (`planner_agent/`): Initializes the book structure. Based on user inputs (topic, target audience, tone, and goals), the planner outlines chapters, sections, and the overarching instructional logic.
+3. **Researcher** (`researcher/`): Conducts thorough data gathering. It supports a **hybrid research mode**, dynamically crawling the web (via Tavily/Firecrawl) or extracting data from user-uploaded PDFs to build context for each section.
+4. **Notes Synthesizer** (`notes_synthesizer/`): Processes raw research packets, condensing them into structured, coherent notes formatted perfectly for drafting.
+5. **Writer** (`writer/`): Generates the actual content section-by-section, leveraging the synthesized notes to maintain factual accuracy and narrative flow.
+6. **Reviewer** (`reviewer/`): Analyzes the generated drafts, offering critiques and requesting revisions until the content aligns perfectly with the book plan and stylistic guidelines.
+7. **Quality Checker** (`quality/`): Runs an automated Quality Assurance (QA) pass on the approved drafts. It derives a "book contract" from the initial constraints and executes a repair loop with targeted validators to ensure factual accuracy and structural adherence.
+8. **Assembler** (`assembler/`): Combines all approved and QA-verified section drafts into a cohesive LaTeX manuscript, compiling it into a polished, final PDF.
+
 
 ## Tech Stack
 
