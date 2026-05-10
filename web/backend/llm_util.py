@@ -59,32 +59,29 @@ Here is the exact structure you MUST output:
 }
 
 RULES:
-1. Use code_density="none" for non-technical books (psychology, philosophy, history, business, self-help, education) unless the user explicitly asks for code.
-2. Use code_density="medium" or "high" for technical implementation/programming books.
-3. The "urls" array must ONLY contain URLs the user literally pasted. DO NOT invent URLs.
-4. Infer generation_contract fields from the user's intent, domain, and constraints.
-5. Set showcase_candidate=true when the user mentions "showcase", "homepage", "polished", or "publication-ready".
-6. For philosophy/ethics books: implementation_style="argument_driven", section_style="academic_argument", code_artifact_policy="no_code".
-7. For history books: code_artifact_policy="no_code", diagram_style="timelines_cause_effect_maps".
-8. For psychology/self-help: code_artifact_policy="no_code", forbidden_content should include "diagnosis" and "clinical treatment advice".
-9. For business/strategy: implementation_style="case_study_playbook", code_artifact_policy="no_code".
-10. For technical implementation guides: implementation_style="file_by_file", code_artifact_policy="file_labeled_code_required".
-11. required_stack should only include technologies the user explicitly names.
+1. The LLM parser should never set code_density above none for non-technical books (psychology, philosophy, history, business, self-help, education) unless the user explicitly asks for code.
+2. Explicit "no code" (or without code, no programming, no YAML, no terminal commands) always means code_density="none" and generation_contract.code_artifact_policy="no_code". This applies even to technical topics!
+3. Explicit "diagram-heavy" or "visual" always means diagram_density="high".
+4. Explicit "homepage", "showcase", or "polished" always means generation_contract.showcase_candidate=true. Also output "target_quality_score": 80 (or higher if requested), "auto_repair": true, "sample_first": true, and "quality_mode": "full_auto_repair" at the top level.
+5. Technical implementation guides with "code-heavy" must use generation_contract.code_artifact_policy="file_labeled_code_required" and implementation_style="file_by_file".
+6. required_stack must include every technology explicitly named by the user in the prompt.
+7. required_outputs must preserve requested artifacts such as worksheets, tests, diagrams, timelines, checklists, canvases, etc.
+8. The "urls" array must ONLY contain URLs the user literally pasted. DO NOT invent URLs.
 
 EXAMPLES:
 
-User: "I want to write a polished showcase book on focus and deep work for my homepage. No code, research-backed, high quality."
+User: "Create an evidence-based psychology handbook about building healthy study habits for university students. Keep it practical and supportive, but do not diagnose mental health conditions or make clinical treatment claims."
 Output:
 {
-  "topic": "Focus and deep work in the modern world",
-  "audience": "Professionals and knowledge workers",
-  "tone": "Calm, professional, and polished",
-  "book_type": "conceptual_guide",
-  "theory_practice_balance": "balanced",
+  "topic": "Healthy study habits",
+  "audience": "University students",
+  "tone": "Practical and supportive",
+  "book_type": "reference_handbook",
+  "theory_practice_balance": "practice_heavy",
   "pedagogy_style": "auto",
   "source_usage": "supplemental",
   "exercise_strategy": "worked_examples",
-  "goals": ["Build sustainable focus habits", "Navigate distraction in digital environments"],
+  "goals": ["Build healthy study habits", "Improve academic performance"],
   "project_based": false,
   "running_project_description": null,
   "code_density": "none",
@@ -95,206 +92,38 @@ Output:
   "urls": [],
   "language_request": null,
   "generation_contract": {
-    "depth_level": "deep",
+    "depth_level": "intermediate",
     "implementation_style": "conceptual_only",
-    "section_style": "conversational",
+    "section_style": "handbook",
     "code_artifact_policy": "no_code",
     "diagram_style": "concept_maps_decision_trees_checklists",
     "source_strictness": "high",
-    "evidence_standard": "curated",
-    "showcase_candidate": true,
-    "required_stack": [],
-    "forbidden_content": ["code examples", "programming filler", "terminal commands", "diagnosis", "clinical treatment advice"],
-    "project_artifacts": [],
-    "required_outputs": ["evidence notes", "exercises", "reflection prompts", "checklists"],
-    "success_criteria": ["homepage showcase-ready", "polished final manuscript", "coherent book arc", "no generic filler"],
-    "target_reader_outcome": "Sustainably improve focus and productivity without burnout",
-    "citation_policy": "Cite key studies inline; attribute frameworks to original authors",
-    "visual_policy": "structured useful diagrams only",
-    "notation_system": null
-  }
-}
-
-User: "Build a production-ready URL shortener API with FastAPI, PostgreSQL, Docker, and tests. Code-heavy and diagram-heavy. Use https://fastapi.tiangolo.com as reference."
-Output:
-{
-  "topic": "Building a production-ready URL shortener API",
-  "audience": "Intermediate to advanced Python backend developers",
-  "tone": "Technical, precise, and implementation-focused",
-  "book_type": "implementation_guide",
-  "theory_practice_balance": "implementation_heavy",
-  "pedagogy_style": "project_based",
-  "source_usage": "supplemental",
-  "exercise_strategy": "practice_sets",
-  "goals": ["Build a complete URL shortener API from scratch", "Implement authentication, rate limiting, and analytics", "Containerize and deploy"],
-  "project_based": true,
-  "running_project_description": "A production-ready URL shortener service with FastAPI, PostgreSQL, and Docker",
-  "code_density": "high",
-  "example_density": "high",
-  "diagram_density": "high",
-  "max_section_words": null,
-  "force_web_research": false,
-  "urls": ["https://fastapi.tiangolo.com"],
-  "language_request": null,
-  "generation_contract": {
-    "depth_level": "deep",
-    "implementation_style": "file_by_file",
-    "section_style": "file_by_file_implementation",
-    "code_artifact_policy": "file_labeled_code_required",
-    "diagram_style": "architecture_sequence_schema_deployment",
-    "source_strictness": null,
-    "evidence_standard": null,
-    "showcase_candidate": false,
-    "required_stack": ["FastAPI", "PostgreSQL", "Docker", "pytest"],
-    "forbidden_content": ["broken code", "fake APIs", "disconnected snippets", "unlabeled code blocks", "placeholder code"],
-    "project_artifacts": ["folder tree", "source files", "tests", "config files", "Dockerfile", "docker-compose.yml", "deployment checklist"],
-    "required_outputs": ["folder tree", "source files", "config files", "tests", "verification commands", "troubleshooting checklist"],
-    "success_criteria": ["Every code block is labeled with file path", "Project builds and runs end-to-end"],
-    "target_reader_outcome": "Deploy a working URL shortener API in production",
-    "citation_policy": null,
-    "visual_policy": "structured useful diagrams only",
-    "notation_system": null
-  }
-}
-
-User: "Write a philosophy book about free will and moral responsibility, suitable for advanced readers."
-Output:
-{
-  "topic": "Free will and moral responsibility",
-  "audience": "Advanced readers and philosophy students",
-  "tone": "Rigorous, measured, and intellectually honest",
-  "book_type": "conceptual_guide",
-  "theory_practice_balance": "theory_heavy",
-  "pedagogy_style": "socratic",
-  "source_usage": "primary_curriculum",
-  "exercise_strategy": "none",
-  "goals": ["Compare major positions on free will", "Analyze objections and counterarguments", "Evaluate moral responsibility under each framework"],
-  "project_based": false,
-  "running_project_description": null,
-  "code_density": "none",
-  "example_density": "medium",
-  "diagram_density": "medium",
-  "max_section_words": null,
-  "force_web_research": false,
-  "urls": [],
-  "language_request": null,
-  "generation_contract": {
-    "depth_level": "deep",
-    "implementation_style": "argument_driven",
-    "section_style": "academic_argument",
-    "code_artifact_policy": "no_code",
-    "diagram_style": "argument_maps_comparison_matrices",
-    "source_strictness": "primary_sources_required",
-    "evidence_standard": "primary_source",
+    "evidence_standard": "peer_reviewed",
     "showcase_candidate": false,
     "required_stack": [],
-    "forbidden_content": ["fake quotes", "unsupported attribution", "unclear terminology", "code examples"],
+    "forbidden_content": ["diagnosis", "clinical treatment advice", "fake studies", "fake statistics"],
     "project_artifacts": [],
-    "required_outputs": ["definitions", "argument maps", "objections", "counterarguments", "conclusion summaries"],
-    "success_criteria": ["Every major position fairly represented", "Clear distinction between author analysis and source claims"],
-    "target_reader_outcome": "Critically evaluate free will positions and construct informed arguments",
-    "citation_policy": "Attribute all positions to original philosophers; cite primary texts",
+    "required_outputs": ["evidence notes", "exercises", "reflection prompts", "habit trackers", "checklists"],
+    "success_criteria": ["Evidence-based practical advice", "Supportive tone without medical claims"],
+    "target_reader_outcome": "Develop sustainable study habits",
+    "citation_policy": "Cite peer-reviewed studies",
     "visual_policy": null,
     "notation_system": null
   }
 }
 
-User: "A history book on the French Revolution for general readers, with timelines and maps."
-Output:
-{
-  "topic": "The French Revolution",
-  "audience": "General readers interested in European history",
-  "tone": "Narrative, clear, and engaging",
-  "book_type": "conceptual_guide",
-  "theory_practice_balance": "balanced",
-  "pedagogy_style": "auto",
-  "source_usage": "supplemental",
-  "exercise_strategy": "none",
-  "goals": ["Understand the causes, course, and consequences of the French Revolution", "Distinguish disputed interpretations"],
-  "project_based": false,
-  "running_project_description": null,
-  "code_density": "none",
-  "example_density": "high",
-  "diagram_density": "high",
-  "max_section_words": null,
-  "force_web_research": false,
-  "urls": [],
-  "language_request": null,
-  "generation_contract": {
-    "depth_level": "intermediate",
-    "implementation_style": null,
-    "section_style": "conversational",
-    "code_artifact_policy": "no_code",
-    "diagram_style": "timelines_cause_effect_maps",
-    "source_strictness": "medium",
-    "evidence_standard": "primary_source",
-    "showcase_candidate": false,
-    "required_stack": [],
-    "forbidden_content": ["fake dates", "fake events", "invented quotes", "unsupported claims", "code examples"],
-    "project_artifacts": [],
-    "required_outputs": ["timelines", "chronology tables", "cause-effect maps", "disputed interpretation notes"],
-    "success_criteria": ["Chronologically accurate", "Multiple interpretations presented fairly"],
-    "target_reader_outcome": "Understand the French Revolution's causes, key events, and lasting impact",
-    "citation_policy": "Cite primary and secondary historical sources",
-    "visual_policy": "structured useful diagrams only",
-    "notation_system": null
-  }
-}
-
-User: "A go-to-market playbook for first-time founders launching a B2B SaaS product."
-Output:
-{
-  "topic": "Go-to-market strategy for B2B SaaS",
-  "audience": "First-time founders and early-stage startup teams",
-  "tone": "Practical, direct, and actionable",
-  "book_type": "conceptual_guide",
-  "theory_practice_balance": "practice_heavy",
-  "pedagogy_style": "auto",
-  "source_usage": "example_inspiration",
-  "exercise_strategy": "worked_examples",
-  "goals": ["Build a repeatable GTM playbook", "Validate product-market fit", "Design pricing and positioning"],
-  "project_based": false,
-  "running_project_description": null,
-  "code_density": "none",
-  "example_density": "high",
-  "diagram_density": "high",
-  "max_section_words": null,
-  "force_web_research": false,
-  "urls": [],
-  "language_request": null,
-  "generation_contract": {
-    "depth_level": "intermediate",
-    "implementation_style": "case_study_playbook",
-    "section_style": "case_study_playbook",
-    "code_artifact_policy": "no_code",
-    "diagram_style": "frameworks_matrices_funnels",
-    "source_strictness": "medium",
-    "evidence_standard": "curated",
-    "showcase_candidate": false,
-    "required_stack": [],
-    "forbidden_content": ["fake real company case studies", "vague startup buzzwords", "unsupported market claims", "code examples"],
-    "project_artifacts": [],
-    "required_outputs": ["canvases", "decision tables", "checklists", "fictional case studies", "action plans"],
-    "success_criteria": ["Actionable templates in every chapter", "Fictional examples clearly labeled"],
-    "target_reader_outcome": "Launch a B2B SaaS product with a validated GTM strategy",
-    "citation_policy": null,
-    "visual_policy": "structured useful diagrams only",
-    "notation_system": null
-  }
-}
-
-User: "A visual systems-thinking textbook for university students with concept maps and exercises."
+User: "Create a visual systems-thinking textbook. Use concept maps, feedback loops, and decision trees. No programming."
 Output:
 {
   "topic": "Systems thinking",
-  "audience": "University students in engineering, business, and social sciences",
-  "tone": "Academic yet accessible",
+  "audience": "Students and professionals",
+  "tone": "Academic yet visual",
   "book_type": "textbook",
   "theory_practice_balance": "balanced",
   "pedagogy_style": "auto",
   "source_usage": "primary_curriculum",
   "exercise_strategy": "practice_sets",
-  "goals": ["Understand feedback loops, emergence, and system archetypes", "Apply systems thinking to real-world problems"],
+  "goals": ["Understand systems thinking concepts"],
   "project_based": false,
   "running_project_description": null,
   "code_density": "none",
@@ -314,12 +143,188 @@ Output:
     "evidence_standard": "curated",
     "showcase_candidate": false,
     "required_stack": [],
-    "forbidden_content": ["code examples"],
+    "forbidden_content": ["code examples", "programming filler", "terminal commands"],
     "project_artifacts": [],
-    "required_outputs": ["concept maps", "exercises", "case studies", "feedback loop diagrams"],
-    "success_criteria": ["Every chapter has visual aids", "Exercises test understanding"],
-    "target_reader_outcome": "Apply systems thinking frameworks to analyze complex problems",
-    "citation_policy": "Cite seminal systems thinking literature",
+    "required_outputs": ["concept maps", "feedback loop diagrams", "decision trees", "worksheets"],
+    "success_criteria": ["Highly visual explanations"],
+    "target_reader_outcome": "Apply systems thinking using visual tools",
+    "citation_policy": null,
+    "visual_policy": "structured useful diagrams only",
+    "notation_system": null
+  }
+}
+
+User: "Build a production-ready URL shortener API showcase with FastAPI, PostgreSQL, SQLAlchemy, Alembic, Docker, Docker Compose, and pytest. Code-heavy, diagram-heavy, polished, for my portfolio."
+Output:
+{
+  "topic": "Production-ready URL shortener API",
+  "audience": "Developers reviewing a portfolio",
+  "tone": "Technical and professional",
+  "book_type": "implementation_guide",
+  "theory_practice_balance": "implementation_heavy",
+  "pedagogy_style": "project_based",
+  "source_usage": "auto",
+  "exercise_strategy": "practice_sets",
+  "goals": ["Showcase a complete API build"],
+  "project_based": true,
+  "running_project_description": "A production URL shortener with FastAPI and Postgres",
+  "code_density": "high",
+  "example_density": "high",
+  "diagram_density": "high",
+  "max_section_words": null,
+  "force_web_research": false,
+  "urls": [],
+  "language_request": null,
+  "target_quality_score": 80,
+  "auto_repair": true,
+  "sample_first": true,
+  "quality_mode": "full_auto_repair",
+  "generation_contract": {
+    "depth_level": "deep",
+    "implementation_style": "file_by_file",
+    "section_style": "file_by_file_implementation",
+    "code_artifact_policy": "file_labeled_code_required",
+    "diagram_style": "architecture_sequence_schema_deployment",
+    "source_strictness": "medium",
+    "evidence_standard": "curated",
+    "showcase_candidate": true,
+    "required_stack": ["FastAPI", "PostgreSQL", "SQLAlchemy", "Alembic", "Docker", "Docker Compose", "pytest"],
+    "forbidden_content": ["broken code", "fake APIs", "disconnected snippets", "unlabeled code blocks", "placeholder code", "generic filler"],
+    "project_artifacts": ["folder tree", "source files", "tests", "config files", "Dockerfile", "docker-compose.yml", "deployment checklist"],
+    "required_outputs": ["folder tree", "source files", "config files", "tests", "verification commands", "troubleshooting checklist"],
+    "success_criteria": ["homepage showcase-ready", "polished final manuscript", "coherent book arc", "no generic filler"],
+    "target_reader_outcome": "Understand a production API architecture",
+    "citation_policy": null,
+    "visual_policy": "structured useful diagrams only",
+    "notation_system": null
+  }
+}
+
+User: "Create a conceptual guide explaining Kubernetes architecture for product managers. Use diagrams and analogies, but no code, no YAML, and no terminal commands."
+Output:
+{
+  "topic": "Kubernetes architecture for product managers",
+  "audience": "Product managers",
+  "tone": "Clear, conceptual, and analogy-driven",
+  "book_type": "conceptual_guide",
+  "theory_practice_balance": "theory_heavy",
+  "pedagogy_style": "auto",
+  "source_usage": "auto",
+  "exercise_strategy": "none",
+  "goals": ["Explain Kubernetes conceptually without technical implementation"],
+  "project_based": false,
+  "running_project_description": null,
+  "code_density": "none",
+  "example_density": "high",
+  "diagram_density": "high",
+  "max_section_words": null,
+  "force_web_research": false,
+  "urls": [],
+  "language_request": null,
+  "generation_contract": {
+    "depth_level": "surface",
+    "implementation_style": "conceptual_only",
+    "section_style": "conversational",
+    "code_artifact_policy": "no_code",
+    "diagram_style": "architecture_sequence_schema_deployment",
+    "source_strictness": "medium",
+    "evidence_standard": "curated",
+    "showcase_candidate": false,
+    "required_stack": ["Kubernetes"],
+    "forbidden_content": ["YAML", "terminal commands", "code examples", "programming filler", "shell commands"],
+    "project_artifacts": [],
+    "required_outputs": ["architecture diagrams", "concept maps"],
+    "success_criteria": ["Clear analogies for non-engineers"],
+    "target_reader_outcome": "Confidently discuss Kubernetes with engineering teams",
+    "citation_policy": null,
+    "visual_policy": "structured useful diagrams only",
+    "notation_system": null
+  }
+}
+
+User: "Write a research-grounded guide on digital minimalism using https://example.com/minimal and https://example.org/focus. No fake quotes."
+Output:
+{
+  "topic": "Digital minimalism",
+  "audience": "General readers",
+  "tone": "Research-grounded and practical",
+  "book_type": "conceptual_guide",
+  "theory_practice_balance": "balanced",
+  "pedagogy_style": "auto",
+  "source_usage": "supplemental",
+  "exercise_strategy": "worked_examples",
+  "goals": ["Reduce screen time", "Implement digital minimalism"],
+  "project_based": false,
+  "running_project_description": null,
+  "code_density": "none",
+  "example_density": "medium",
+  "diagram_density": "medium",
+  "max_section_words": null,
+  "force_web_research": true,
+  "urls": ["https://example.com/minimal", "https://example.org/focus"],
+  "language_request": null,
+  "generation_contract": {
+    "depth_level": "intermediate",
+    "implementation_style": "conceptual_only",
+    "section_style": "conversational",
+    "code_artifact_policy": "no_code",
+    "diagram_style": "concept_maps_decision_trees_checklists",
+    "source_strictness": "high",
+    "evidence_standard": "curated",
+    "showcase_candidate": false,
+    "required_stack": [],
+    "forbidden_content": ["fake studies", "fake statistics", "unsupported claims", "fake quotes"],
+    "project_artifacts": [],
+    "required_outputs": ["reflection prompts", "habit trackers"],
+    "success_criteria": ["Accurate use of provided URLs"],
+    "target_reader_outcome": "Establish intentional technology habits",
+    "citation_policy": "Cite provided sources accurately",
+    "visual_policy": null,
+    "notation_system": null
+  }
+}
+
+User: "Create a polished homepage showcase book about AI-assisted learning. Use full quality mode, sample first, auto repair, and target a quality score above 85. Make it diagram-heavy and no-code."
+Output:
+{
+  "topic": "AI-assisted learning",
+  "audience": "Educators and lifelong learners",
+  "tone": "Visionary, polished, and practical",
+  "book_type": "conceptual_guide",
+  "theory_practice_balance": "balanced",
+  "pedagogy_style": "auto",
+  "source_usage": "auto",
+  "exercise_strategy": "worked_examples",
+  "goals": ["Demonstrate best practices in AI-assisted learning"],
+  "project_based": false,
+  "running_project_description": null,
+  "code_density": "none",
+  "example_density": "high",
+  "diagram_density": "high",
+  "max_section_words": null,
+  "force_web_research": false,
+  "urls": [],
+  "language_request": null,
+  "target_quality_score": 85,
+  "auto_repair": true,
+  "sample_first": true,
+  "quality_mode": "full_auto_repair",
+  "generation_contract": {
+    "depth_level": "intermediate",
+    "implementation_style": "conceptual_only",
+    "section_style": "conversational",
+    "code_artifact_policy": "no_code",
+    "diagram_style": "concept_maps_decision_trees_checklists",
+    "source_strictness": "high",
+    "evidence_standard": "curated",
+    "showcase_candidate": true,
+    "required_stack": [],
+    "forbidden_content": ["code examples", "programming filler", "terminal commands", "generic filler", "placeholder text", "internal QA text", "weak diagrams", "fake sources", "unsupported statistics"],
+    "project_artifacts": [],
+    "required_outputs": ["concept maps", "frameworks"],
+    "success_criteria": ["homepage showcase-ready", "polished final manuscript", "coherent book arc", "no generic filler"],
+    "target_reader_outcome": "Integrate AI effectively into learning workflows",
+    "citation_policy": null,
     "visual_policy": "structured useful diagrams only",
     "notation_system": null
   }

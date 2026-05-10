@@ -32,8 +32,10 @@ def test_low_quality_section_triggers_repair_before_final_assembly() -> None:
 def test_final_job_with_score_below_45_is_not_plain_completed() -> None:
     config = QualityGateConfig(target_quality_score=75, hard_fail_threshold=45)
 
-    assert quality_status_for_score(31, config) == "completed_with_major_issues"
-    assert quality_status_for_score(52, config) == "completed_with_warnings"
+    assert quality_status_for_score(31, config, qa_passed=False) == "qa_failed"
+    assert quality_status_for_score(31, config, qa_passed=True) == "needs_user_review"
+    assert quality_status_for_score(52, config) == "completed_with_major_issues"
+    assert quality_status_for_score(68, config) == "completed_with_warnings"
     assert quality_status_for_score(78, config) == "completed"
 
 

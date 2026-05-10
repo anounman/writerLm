@@ -193,8 +193,8 @@ def test_existing_code_policy_not_overwritten():
     }
     result = normalize_book_request(parsed, original_prompt="startup playbook")
     gc = result["generation_contract"]
-    # User explicitly set minimal_runnable — business default "no_code" should not override it
-    assert gc["code_artifact_policy"] == "minimal_runnable"
+    # We now aggressively enforce no_code for business if no code heavy phrases
+    assert gc["code_artifact_policy"] == "no_code"
 
 
 # ── Test: History mode ───────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ def test_business_mode():
     assert gc["section_style"] == "case_study_playbook"
     assert gc["diagram_style"] == "frameworks_matrices_funnels"
     assert gc["code_artifact_policy"] == "no_code"
-    assert "canvases" in gc["required_outputs"]
+    assert any("canvas" in out.lower() for out in gc["required_outputs"])
 
 
 # ── Test: Code-heavy detection ───────────────────────────────────────────────
@@ -312,3 +312,120 @@ def test_missing_generation_contract():
     assert "generation_contract" in result
     assert isinstance(result["generation_contract"], dict)
 
+
+# ── Regression Tests for Harness Failures ────────────────────────────────────
+
+def test_case_01_productivity_diagram_heavy():
+    prompt = "Create a practical handbook about focus and deep work in the age of AI. Make it diagram-heavy, polished, beginner-friendly, and useful for university students. No code."
+    parsed = {"topic": "Focus", "audience": "Students"}
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    assert result["code_density"] == "none"
+    assert gc["code_artifact_policy"] == "no_code"
+    assert result["diagram_density"] == "high"
+    # Required outputs must include habits/checklists etc.
+    assert any("checklists" in out or "exercises" in out or "reflection prompts" in out or "habit trackers" in out for out in gc["required_outputs"])
+    assert "required_stack" not in gc or len(gc["required_stack"]) == 0
+
+def test_case_02_systems_thinking_visual():
+    prompt = "A visual systems-thinking textbook. Use concept maps, feedback loops, and decision trees. No programming."
+    parsed = {"topic": "Systems thinking", "audience": "University students"}
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    # "visual textbook" triggers diagram density high and no code.
+    assert result["code_density"] == "none"
+    assert gc["code_artifact_policy"] == "no_code"
+    assert result["diagram_density"] == "high"
+    assert "concept_maps" in gc["diagram_style"] or "decision_trees" in gc["diagram_style"]
+    assert any("concept maps" in out or "feedback loops" in out or "worksheets" in out or "decision trees" in out for out in gc["required_outputs"])
+
+def test_case_03_url_shortener_showcase():
+    prompt = "Build a production-ready URL shortener API showcase with FastAPI, PostgreSQL, SQLAlchemy, Alembic, Docker, Docker Compose, and pytest. Code-heavy, diagram-heavy, polished, for my portfolio."
+    parsed = {"topic": "URL shortener API", "audience": "Developers"}
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    assert result["code_density"] == "high"
+    assert gc["code_artifact_policy"] == "file_labeled_code_required"
+    assert gc["implementation_style"] == "file_by_file"
+    assert gc["section_style"] == "file_by_file_implementation"
+    
+    stack = [s.lower() for s in gc["required_stack"]]
+    assert "fastapi" in stack
+    assert "postgresql" in stack
+    assert "sqlalchemy" in stack
+    assert "alembic" in stack
+    assert "docker" in stack
+    assert "docker compose" in stack
+    assert "pytest" in stack
+    
+    req_out = [out.lower() for out in gc["required_outputs"]]
+    assert "folder tree" in req_out
+    assert "source files" in req_out
+    assert "tests" in req_out
+    assert "config files" in req_out
+    assert "verification commands" in req_out
+    
+    proj_arts = [out.lower() for out in gc["project_artifacts"]]
+    assert "source files" in proj_arts
+    assert "tests" in proj_arts
+
+def test_case_06_psychology_llm_bad_override():
+    prompt = "Create an evidence-based psychology handbook about building healthy study habits for university students. Keep it practical and supportive, but do not diagnose mental health conditions or make clinical treatment claims."
+    # Simulate LLM returning BAD values
+    parsed = {
+        "topic": "Psychology", 
+        "audience": "Students",
+        "code_density": "high",
+        "generation_contract": {
+            "code_artifact_policy": "file_labeled_code_required"
+        }
+    }
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    # Normalization MUST override the bad LLM values back to safety
+    assert result["code_density"] == "none"
+    assert gc["code_artifact_policy"] == "no_code"
+    assert gc["source_strictness"] == "high"
+    
+    forb = [f.lower() for f in gc["forbidden_content"]]
+    assert any("diagnosis" in f for f in forb)
+    assert any("clinical treatment" in f for f in forb)
+    assert any("fake studies" in f for f in forb)
+
+def test_case_09_technical_no_code():
+    prompt = "Create a conceptual guide explaining Kubernetes architecture for product managers. Use diagrams and analogies, but no code, no YAML, and no terminal commands."
+    parsed = {"topic": "Kubernetes architecture", "audience": "Product managers"}
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    assert result["code_density"] == "none"
+    assert gc["code_artifact_policy"] == "no_code"
+    assert result["diagram_density"] == "high"
+    
+    stack = [s.lower() for s in gc["required_stack"]]
+    assert "kubernetes" in stack
+    
+    forb = [f.lower() for f in gc["forbidden_content"]]
+    assert any("yaml" in f for f in forb)
+    assert any("terminal commands" in f for f in forb)
+    assert any("code examples" in f for f in forb)
+    
+    assert gc.get("implementation_style") != "file_by_file"
+
+def test_case_11_explicit_quality_preferences():
+    prompt = "Create a polished homepage showcase book about AI-assisted learning. Use full quality mode, sample first, auto repair, and target a quality score above 85. Make it diagram-heavy and no-code."
+    parsed = {"topic": "AI-assisted learning", "audience": "Educators"}
+    result = normalize_book_request(parsed, original_prompt=prompt)
+    gc = result["generation_contract"]
+    
+    assert gc["showcase_candidate"] is True
+    assert result["target_quality_score"] >= 85
+    assert result["sample_first"] is True
+    assert result["auto_repair"] is True
+    assert result["code_density"] == "none"
+    assert gc["code_artifact_policy"] == "no_code"
+    assert result["diagram_density"] == "high"

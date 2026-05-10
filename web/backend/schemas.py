@@ -311,6 +311,24 @@ class RepairRequest(BaseModel):
     max_repair_passes: int | None = Field(default=None, ge=0, le=5)
 
 
+class RepairResultOut(BaseModel):
+    action: str
+    status: str
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
+    previous_score: int | None = None
+    new_score: int | None = None
+    qa_passed: bool | None = None
+    artifacts_updated: bool = False
+    artifacts: list["JobArtifactOut"] = Field(default_factory=list)
+    message: str | None = None
+
+
+class RepairResponseOut(BaseModel):
+    job: "JobOut"
+    repair: RepairResultOut
+
+
 class JobOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -356,3 +374,7 @@ class GeneratedBookOut(BaseModel):
     summary_metrics: dict
     artifact_paths: dict
     created_at: datetime
+
+
+RepairResultOut.model_rebuild()
+RepairResponseOut.model_rebuild()

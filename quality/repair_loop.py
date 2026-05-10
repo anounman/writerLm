@@ -24,6 +24,16 @@ class RepairAction(str):
     pass
 
 
+REPAIR_MODES = {
+    "general",
+    "code",
+    "diagrams",
+    "sources",
+    "showcase",
+    "weak_sections",
+}
+
+
 class RepairPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -50,7 +60,13 @@ OVERCLAIM_REPLACEMENTS = (
 )
 
 
-def build_repair_plan(section_text: str, validation_reports: list[Any], contract: BookContract) -> RepairPlan:
+def build_repair_plan(
+    section_text: str,
+    validation_reports: list[Any],
+    contract: BookContract,
+    *,
+    repair_mode: str = "general",
+) -> RepairPlan:
     actions: list[str] = []
     reasons: list[str] = []
     unsupported_claims: list[str] = []
@@ -118,6 +134,7 @@ def build_repair_plan(section_text: str, validation_reports: list[Any], contract
             reasons.append("Forbidden content policies are defined — flag violations for rewrite.")
 
     ordered_actions = _dedupe(actions)
+    ordered_actions = _apply_repair_mode(ordered_actions, section_text, contract, repair_mode)
     return RepairPlan(actions=ordered_actions, unsupported_claims=_dedupe(unsupported_claims), reasons=_dedupe(reasons))
 
 
@@ -151,6 +168,9 @@ def apply_deterministic_repairs(section_text: str, repair_plan: RepairPlan, cont
 
     if "mark_pseudocode" in repair_plan.actions:
         repaired = re.sub(r"```(?:text|python|javascript|typescript)?\n", "```text\n# Conceptual pseudocode, not tested runnable code.\n", repaired, count=1)
+
+    if "label_code_blocks" in repair_plan.actions:
+        repaired = _label_code_blocks(repaired)
 
     if contract.sensitive_domain and _looks_like_sensitive_advice(repaired) and not _has_caution(repaired):
         repaired = _add_sensitive_caution(repaired, contract)
@@ -195,15 +215,31 @@ def run_quality_repair_loop(
     max_passes: int = 2,
     *,
     review_bundle: Optional[ReviewBundle] = None,
+    repair_mode: str = "general",
+    target_section_ids: Optional[set[str]] = None,
 ) -> Any:
     if contract is None:
         raise ValueError("run_quality_repair_loop requires a BookContract.")
     if review_bundle is not None:
-        repaired_bundle, qa_report = _run_review_bundle_loop(review_bundle, contract, source_map or {}, max_passes)
+        repaired_bundle, qa_report = _run_review_bundle_loop(
+            review_bundle,
+            contract,
+            source_map or {},
+            max_passes,
+            repair_mode=repair_mode,
+            target_section_ids=target_section_ids,
+        )
         return RepairLoopResult(review_bundle=repaired_bundle, qa_report=qa_report)
     if sections is None:
         raise ValueError("run_quality_repair_loop requires sections or review_bundle.")
-    return _run_sections_loop(sections, contract, source_map or {}, max_passes)
+    return _run_sections_loop(
+        sections,
+        contract,
+        source_map or {},
+        max_passes,
+        repair_mode=repair_mode,
+        target_section_ids=target_section_ids,
+    )
 
 
 def _run_review_bundle_loop(
@@ -211,6 +247,9 @@ def _run_review_bundle_loop(
     contract: BookContract,
     source_map: dict[str, list[dict[str, Any]]],
     max_passes: int,
+    *,
+    repair_mode: str,
+    target_section_ids: Optional[set[str]],
 ) -> tuple[ReviewBundle, dict[str, Any]]:
     section_dicts: list[dict[str, Any]] = []
     for result in review_bundle.sections:
@@ -231,7 +270,14 @@ def _run_review_bundle_loop(
             "content": result.section_output.reviewed_content,
             "citations": result.section_output.citations_used,
         })
-    repaired_sections, qa_report = _run_sections_loop(section_dicts, contract, source_map, max_passes)
+    repaired_sections, qa_report = _run_sections_loop(
+        section_dicts,
+        contract,
+        source_map,
+        max_passes,
+        repair_mode=repair_mode,
+        target_section_ids=target_section_ids,
+    )
     repaired_by_id = {section["id"]: section for section in repaired_sections}
     for result in review_bundle.sections:
         repaired = repaired_by_id.get(result.section_input.section_id)
@@ -255,6 +301,9 @@ def _run_sections_loop(
     contract: BookContract,
     source_map: dict[str, list[dict[str, Any]]],
     max_passes: int,
+    *,
+    repair_mode: str,
+    target_section_ids: Optional[set[str]],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     validators = select_validators(contract)
     activation_report = build_validator_activation_report(contract, validators)
@@ -270,7 +319,9 @@ def _run_sections_loop(
             source_notes = _source_notes_for(section, source_map)
             report = validate_section_text(text=section["content"], contract=contract, source_notes=source_notes)
             last_report = report
-            plan = build_repair_plan(section["content"], [report], contract)
+            if target_section_ids and section["id"] not in target_section_ids:
+                break
+            plan = build_repair_plan(section["content"], [report], contract, repair_mode=repair_mode)
             if not plan.actions:
                 break
             repaired = apply_deterministic_repairs(section["content"], plan, contract)
@@ -373,6 +424,116 @@ def _dedupe(values: list[str]) -> list[str]:
             seen.add(cleaned)
             output.append(cleaned)
     return output
+
+
+def _apply_repair_mode(
+    actions: list[str],
+    section_text: str,
+    contract: BookContract,
+    repair_mode: str,
+) -> list[str]:
+    mode = (repair_mode or "general").strip().lower()
+    if mode not in REPAIR_MODES:
+        mode = "general"
+
+    if mode == "general":
+        return actions
+
+    mode_actions = list(actions)
+    if mode == "code":
+        if _contains_code_artifact(section_text):
+            mode_actions.append("label_code_blocks")
+        mode_actions = [
+            action
+            for action in mode_actions
+            if action in {
+                "remove_disallowed_code",
+                "mark_pseudocode",
+                "label_code_blocks",
+                "fix_stack_drift",
+                "fix_domain_drift",
+                "remove_internal_qa_text",
+            }
+        ]
+    elif mode == "diagrams":
+        if re.search(r"\bdiagram\b|\bvisual\b|^DIAGRAM:", section_text, re.I | re.M):
+            mode_actions.append("replace_generic_visual")
+        mode_actions = [
+            action
+            for action in mode_actions
+            if action in {
+                "replace_generic_visual",
+                "remove_internal_qa_text",
+                "remove_repeated_template_phrase",
+            }
+        ]
+    elif mode == "sources":
+        if "remove_or_soften_unsupported_claim" not in mode_actions:
+            mode_actions.append("remove_or_soften_unsupported_claim")
+        mode_actions.append("add_uncertainty_framing")
+        mode_actions = [
+            action
+            for action in mode_actions
+            if action in {
+                "remove_or_soften_unsupported_claim",
+                "add_uncertainty_framing",
+                "remove_internal_qa_text",
+            }
+        ]
+    elif mode == "showcase":
+        if TEMPLATE_FILLER_RE.search(section_text):
+            mode_actions.append("remove_repeated_template_phrase")
+        if FORBIDDEN_INLINE_RE.search(section_text):
+            mode_actions.append("remove_internal_qa_text")
+        mode_actions = [
+            action
+            for action in mode_actions
+            if action in {
+                "remove_repeated_template_phrase",
+                "remove_internal_qa_text",
+                "remove_or_soften_unsupported_claim",
+                "add_uncertainty_framing",
+                "mark_example_as_fictional",
+            }
+        ]
+    elif mode == "weak_sections":
+        mode_actions = actions
+
+    if contract.code_artifact_policy == "file_labeled_code_required" and _contains_code_artifact(section_text):
+        if "label_code_blocks" not in mode_actions:
+            mode_actions.append("label_code_blocks")
+
+    return _dedupe(mode_actions)
+
+
+def _label_code_blocks(text: str) -> str:
+    lines = text.splitlines()
+    output: list[str] = []
+    block_index = 0
+    for idx, line in enumerate(lines):
+        if line.strip().startswith("```"):
+            prev_line = output[-1].strip().lower() if output else ""
+            if not prev_line.startswith("file:") and not prev_line.startswith("filename:"):
+                block_index += 1
+                language = line.strip().lstrip("`").strip() or "txt"
+                ext = "txt"
+                if language in {"python", "py"}:
+                    ext = "py"
+                elif language in {"javascript", "js"}:
+                    ext = "js"
+                elif language in {"typescript", "ts"}:
+                    ext = "ts"
+                elif language in {"bash", "sh", "shell"}:
+                    ext = "sh"
+                elif language in {"json"}:
+                    ext = "json"
+                elif language in {"yaml", "yml"}:
+                    ext = "yml"
+                output.append(f"File: example_{block_index}.{ext}")
+            output.append(line)
+        else:
+            output.append(line)
+    return "\n".join(output)
 
 
 def _looks_like_sensitive_advice(text: str) -> bool:

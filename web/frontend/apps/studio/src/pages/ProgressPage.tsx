@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { RefreshCw, X, Check, Timer, Activity, AlertTriangle, Download, FileJson, FileText, Clock3, Gauge, Layers3, CircleDot, Wrench, Sparkles, Code2, Image, BookOpenCheck, ShieldCheck, FileDown } from "lucide-react";
 import { Button } from "@writerlm/ui";
-import { ApiClient, Job, JobArtifact, JobStatus, friendlyApiErrorMessage } from "../api";
+import { ApiClient, ApiError, GeneratedBook, Job, JobArtifact, JobStatus, friendlyApiErrorMessage } from "../api";
 
 interface ProgressPageProps {
   api: ApiClient;
@@ -10,6 +10,7 @@ interface ProgressPageProps {
   selectedJob: Job | null;
   onSelect: (id: number) => void;
   onJobs: React.Dispatch<React.SetStateAction<Job[]>>;
+  onBooks: React.Dispatch<React.SetStateAction<GeneratedBook[]>>;
   onNotice: (message: string) => void;
 }
 
@@ -131,66 +132,102 @@ function getProgressSummary(job: Job | null, status: JobStatus | null) {
     total,
     percent,
     activeLabel: active?.label || (terminalComplete ? "Complete" : "Queued"),
-  };
+                      { label: "Regenerate weak sections", action: "weak_sections", icon: RefreshCw },
 }
 
 function categorizeError(message: string | null | undefined) {
   const raw = (message || "").trim();
-  const text = raw.toLowerCase();
-  if (!raw) {
-    return {
-      title: "Job failed",
-      summary: "The pipeline stopped before it could finish.",
-      action: "Download the available logs below, then retry after checking your configuration.",
-      raw,
+                    ].map(item => {
+    const isActive = activeRepairAction === item.action;
+    const Icon = isActive ? RefreshCw : item.icon;
+    return (
+      <Button
+        key={item.label}
+        variant="secondary"
+        size="sm"
+        disabled={repairRunning}
+        onClick={() => repair(item.action as any)}
+      >
+        <Icon size={13} className={isActive ? "animate-spin" : ""} /> {isActive ? "Running..." : item.label}
+      </Button>
+    );
+  })
+}
+<Button variant="ghost" size="sm" onClick={exportAnyway}>
+  <FileDown size={13} /> Export anyway
+</Button>
     };
   }
-  if (text.includes("rate limit") || text.includes("429") || text.includes("quota") || text.includes("too many requests")) {
-    return {
-      title: "Rate limit reached",
-      summary: "One of the model or research providers rejected the request because the account is temporarily over its allowed usage.",
-      action: "Wait a while before retrying, or switch to a provider/model with more available quota in Settings.",
-      raw,
-    };
-  }
-  if (text.includes("api key") || text.includes("unauthorized") || text.includes("401") || text.includes("403") || text.includes("permission")) {
-    return {
-      title: "Provider access problem",
-      summary: "A provider key appears to be missing, invalid, or not allowed to use the requested model/service.",
-      action: "Check your API keys and selected models, then retry the job.",
-      raw,
-    };
-  }
-  if (text.includes("timeout") || text.includes("timed out") || text.includes("connection") || text.includes("network")) {
-    return {
-      title: "Network or timeout problem",
-      summary: "The pipeline could not reach a provider or a provider took too long to respond.",
-      action: "Retry the job. If it happens again, try a smaller request or a different provider.",
-      raw,
-    };
-  }
-  if (text.includes("latex") || text.includes("pdflatex") || text.includes("xelatex") || text.includes("lualatex")) {
-    return {
-      title: "Book compiled with a LaTeX issue",
-      summary: "The content was generated, but the final document renderer reported a formatting or compilation problem.",
-      action: "Download logs and retry. You may also disable strict LaTeX compilation in Settings.",
-      raw,
-    };
-  }
-  if (text.includes("validation") || text.includes("invalid json") || text.includes("schema")) {
-    return {
-      title: "Generated content failed validation",
-      summary: "A model response did not match the structured format the pipeline needs.",
-      action: "Retry the job. If it repeats, reduce the scope or switch to a stronger model.",
-      raw,
-    };
-  }
+{
+  repairRunning && (
+    <div className="mt-3 rounded-md border border-purple-500/20 bg-purple-500/10 px-3 py-2 text-xs text-purple-100">
+      <div className="flex items-center gap-2">
+        <RefreshCw size={12} className="animate-spin" />
+        <span>Repair running{activeRepairLabel ? `: ${activeRepairLabel}` : ""}. This may take a few minutes. Artifacts will refresh automatically.</span>
+      </div>
+    </div>
+  )
+}
+{
+  repairError && (
+    <div className="mt-3 rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-100">
+      Repair failed: {repairError}
+    </div>
+  )
+}
+{
+  repairMessage && !repairRunning && !repairError && (
+    <div className="mt-3 rounded-md border border-success/20 bg-success/10 px-3 py-2 text-xs text-success">
+      {repairMessage}
+    </div>
+  )
+}
+if (text.includes("rate limit") || text.includes("429") || text.includes("quota") || text.includes("too many requests")) {
   return {
-    title: "Pipeline error",
-    summary: "The job stopped before completion. The raw diagnostic is available below for troubleshooting.",
-    action: "Download the logs and retry the job after reviewing the failed stage.",
+    title: "Rate limit reached",
+    summary: "One of the model or research providers rejected the request because the account is temporarily over its allowed usage.",
+    action: "Wait a while before retrying, or switch to a provider/model with more available quota in Settings.",
     raw,
   };
+}
+if (text.includes("api key") || text.includes("unauthorized") || text.includes("401") || text.includes("403") || text.includes("permission")) {
+  return {
+    title: "Provider access problem",
+    summary: "A provider key appears to be missing, invalid, or not allowed to use the requested model/service.",
+    action: "Check your API keys and selected models, then retry the job.",
+    raw,
+  };
+}
+if (text.includes("timeout") || text.includes("timed out") || text.includes("connection") || text.includes("network")) {
+  return {
+    title: "Network or timeout problem",
+    summary: "The pipeline could not reach a provider or a provider took too long to respond.",
+    action: "Retry the job. If it happens again, try a smaller request or a different provider.",
+    raw,
+  };
+}
+if (text.includes("latex") || text.includes("pdflatex") || text.includes("xelatex") || text.includes("lualatex")) {
+  return {
+    title: "Book compiled with a LaTeX issue",
+    summary: "The content was generated, but the final document renderer reported a formatting or compilation problem.",
+    action: "Download logs and retry. You may also disable strict LaTeX compilation in Settings.",
+    raw,
+  };
+}
+if (text.includes("validation") || text.includes("invalid json") || text.includes("schema")) {
+  return {
+    title: "Generated content failed validation",
+    summary: "A model response did not match the structured format the pipeline needs.",
+    action: "Retry the job. If it repeats, reduce the scope or switch to a stronger model.",
+    raw,
+  };
+}
+return {
+  title: "Pipeline error",
+  summary: "The job stopped before completion. The raw diagnostic is available below for troubleshooting.",
+  action: "Download the logs and retry the job after reviewing the failed stage.",
+  raw,
+};
 }
 
 function formatBytes(bytes: number) {
@@ -199,19 +236,58 @@ function formatBytes(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotice }: ProgressPageProps) {
+export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onBooks, onNotice }: ProgressPageProps) {
   const status = selectedJob ? effectiveStatus(selectedJob) : null;
   const canStop = status === "running" || status === "queued";
   const canRetry = selectedJob && ["failed", "stopped", "completed_with_latex_issue"].includes(status ?? "");
-  const canRepair = selectedJob && ["completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review", "completed"].includes(status ?? "");
+  const canRepair = selectedJob && ["completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review", "completed", "repairing"].includes(status ?? "");
   const hasError = selectedJob?.error_message && status !== "running" && status !== "queued";
   const friendlyError = categorizeError(selectedJob?.error_message);
   const progressSummary = getProgressSummary(selectedJob, status);
   const [artifacts, setArtifacts] = useState<JobArtifact[]>([]);
   const [loadingArtifacts, setLoadingArtifacts] = useState(false);
+  const [activeRepairAction, setActiveRepairAction] = useState<string | null>(null);
+  const [repairError, setRepairError] = useState<string | null>(null);
+  const [repairMessage, setRepairMessage] = useState<string | null>(null);
+
+  const artifactStatuses = new Set([
+    "repairing",
+    "completed",
+    "completed_with_warnings",
+    "completed_with_major_issues",
+    "qa_failed",
+    "needs_user_review",
+    "completed_with_latex_issue",
+    "failed",
+    "stopped",
+  ]);
+  const repairLabels: Record<string, string> = {
+    repair: "Repair book",
+    general: "Repair book",
+    repair_book: "Repair book",
+    showcase: "Polish for showcase",
+    polish_showcase: "Polish for showcase",
+    weak_sections: "Regenerate weak sections",
+    code: "Fix code / remove code examples",
+    fix_code_blocks: "Fix code blocks",
+    diagrams: "Improve diagrams",
+    improve_diagrams: "Improve diagrams",
+    sources: "Strengthen sources",
+    strengthen_sources: "Strengthen sources",
+  };
+  const repairRunning = Boolean(activeRepairAction) || status === "repairing";
+  const activeRepairLabel = activeRepairAction
+    ? repairLabels[activeRepairAction] || activeRepairAction
+    : repairLabels[String(selectedJob?.summary?.quality?.last_repair_action || "")] || null;
 
   useEffect(() => {
-    if (!selectedJob || !["failed", "stopped", "completed_with_latex_issue"].includes(status ?? "")) {
+    setActiveRepairAction(null);
+    setRepairError(null);
+    setRepairMessage(null);
+  }, [selectedJob?.id]);
+
+  useEffect(() => {
+    if (!selectedJob || !artifactStatuses.has(status ?? "")) {
       setArtifacts([]);
       return;
     }
@@ -233,6 +309,20 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
     } catch (e) { onNotice(friendlyApiErrorMessage(e, "Could not stop job.")); }
   }
 
+  async function refreshArtifacts(jobId: number) {
+    setLoadingArtifacts(true);
+    try {
+      const items = await api.jobArtifacts(jobId);
+      setArtifacts(items);
+      return items;
+    } catch (e) {
+      setArtifacts([]);
+      return [] as JobArtifact[];
+    } finally {
+      setLoadingArtifacts(false);
+    }
+  }
+
   async function retry() {
     if (!selectedJob) return;
     try {
@@ -243,13 +333,56 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
     } catch (e) { onNotice(friendlyApiErrorMessage(e, "Could not retry job.")); }
   }
 
-  async function repair(action: "repair" | "code" | "diagrams" | "sources" | "showcase") {
-    if (!selectedJob) return;
+  async function repair(action: "repair" | "code" | "diagrams" | "sources" | "showcase" | "weak_sections") {
+    if (!selectedJob || repairRunning) return;
+    const beforeScore = selectedJob.summary?.quality?.score ?? selectedJob.summary?.evaluation?.quality_score;
+    setActiveRepairAction(action);
+    setRepairError(null);
+    setRepairMessage(null);
     try {
-      const updated = await api.repairJob(selectedJob.id, action);
-      onJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
-      onNotice(`Repair action queued for job #${updated.id}: ${action.replaceAll("_", " ")}.`);
-    } catch (e) { onNotice(friendlyApiErrorMessage(e, "Could not run repair.")); }
+      const response = await api.repairJob(selectedJob.id, action);
+      const updatedJob = response.job;
+      const nextJobs = await api.jobs();
+      onJobs(nextJobs);
+      try {
+        const nextBooks = await api.books();
+        onBooks(nextBooks);
+      } catch {
+        // Ignore book refresh errors to avoid masking a successful repair.
+      }
+      await refreshArtifacts(updatedJob.id);
+
+      const previous = response.repair?.previous_score ?? beforeScore;
+      const next = response.repair?.new_score ?? updatedJob.summary?.quality?.score ?? updatedJob.summary?.evaluation?.quality_score;
+      if (previous != null && next != null) {
+        onNotice(`Repair completed. Quality score changed from ${previous} to ${next}.`);
+      } else {
+        onNotice("Repair completed.");
+      }
+      if (response.repair?.message) setRepairMessage(response.repair.message);
+    } catch (e) {
+      const detail = e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Repair failed.";
+      setRepairError(detail);
+      onNotice(detail);
+    } finally {
+      setActiveRepairAction(null);
+    }
+  }
+
+  async function exportAnyway() {
+    if (!selectedJob) return;
+    let items = artifacts;
+    if (!items.length) {
+      items = await refreshArtifacts(selectedJob.id);
+    }
+    const priority = ["pdf", "latex", "review_bundle", "book"];
+    const matchKey = priority.find(key => items.some(item => item.key === key));
+    if (!matchKey) {
+      onNotice("No exportable artifact is available yet.");
+      return;
+    }
+    const artifact = items.find(item => item.key === matchKey);
+    if (artifact) await downloadArtifact(artifact);
   }
 
   async function downloadArtifact(artifact: JobArtifact) {
@@ -270,25 +403,25 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
       <div className="lg:w-56 flex-none lg:border-r border-border lg:pr-4 overflow-x-auto lg:overflow-y-auto scrollbar-hide py-1 lg:-ml-5 lg:pl-5">
         {jobs.length === 0 && <p className="text-xs text-muted-foreground text-center py-10 lg:py-12">No jobs yet</p>}
         <div className="flex lg:block gap-2 min-w-0 pb-1 lg:pb-0">
-        {jobs.map(job => {
-          const s = effectiveStatus(job);
-          const active = selectedJob?.id === job.id;
-          return (
-            <button
-              key={job.id}
-              onClick={() => onSelect(job.id)}
-              className={`w-[230px] lg:w-full flex-none text-left px-3 py-3 rounded-lg lg:mb-1 border transition-colors cursor-pointer ${active ? "bg-accent border-border" : "border-transparent hover:bg-accent/50 hover:border-border"}`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-mono text-[10px] text-muted-foreground">#{job.id}</span>
-                <StatusBadge status={s} />
-              </div>
-              <p className={`text-xs font-medium truncate ${active ? "text-foreground" : "text-muted-foreground"}`}>
-                {String(job.request_payload?.topic || "Untitled")}
-              </p>
-            </button>
-          );
-        })}
+          {jobs.map(job => {
+            const s = effectiveStatus(job);
+            const active = selectedJob?.id === job.id;
+            return (
+              <button
+                key={job.id}
+                onClick={() => onSelect(job.id)}
+                className={`w-[230px] lg:w-full flex-none text-left px-3 py-3 rounded-lg lg:mb-1 border transition-colors cursor-pointer ${active ? "bg-accent border-border" : "border-transparent hover:bg-accent/50 hover:border-border"}`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-mono text-[10px] text-muted-foreground">#{job.id}</span>
+                  <StatusBadge status={s} />
+                </div>
+                <p className={`text-xs font-medium truncate ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                  {String(job.request_payload?.topic || "Untitled")}
+                </p>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -365,8 +498,8 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
                           : "Quality check pending"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {status === "repairing"
-                        ? `Repair pass ${selectedJob.summary?.quality?.repair_passes ?? 0}: fixing weak sections`
+                      {repairRunning
+                        ? `Repair running${activeRepairLabel ? `: ${activeRepairLabel}` : ""}.`
                         : selectedJob.summary?.quality?.pre_run_risk?.risk
                           ? `Estimated risk: ${selectedJob.summary.quality.pre_run_risk.risk}. Recommended: ${selectedJob.summary.quality.pre_run_risk.recommended}.`
                           : "Live estimates appear as checkpoints finish."}
@@ -447,17 +580,17 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
                 </div>
               )}
 
-              {["failed", "stopped", "completed_with_latex_issue", "completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review"].includes(status ?? "") && (
+              {["completed", "failed", "stopped", "completed_with_latex_issue", "completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review"].includes(status ?? "") && (
                 <div className="rounded-lg border border-border bg-card p-4 mb-5">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
                       <h3 className="text-sm font-semibold text-foreground">Troubleshooting downloads</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">Available logs and approved JSON artifacts from this job.</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Available logs and artifacts from this run.</p>
                     </div>
                     {loadingArtifacts && <RefreshCw size={14} className="text-muted-foreground animate-spin" />}
                   </div>
                   {artifacts.length === 0 && !loadingArtifacts ? (
-                    <p className="text-xs text-muted-foreground">No downloadable job files are available yet.</p>
+                    <p className="text-xs text-muted-foreground">No downloadable artifacts were found for this run.</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {artifacts.map(artifact => {

@@ -79,13 +79,20 @@ def quality_label(score: int | float | None) -> str:
     return "Major issues"
 
 
-def quality_status_for_score(score: int | float | None, config: QualityGateConfig) -> str:
+def quality_status_for_score(
+    score: int | float | None,
+    config: QualityGateConfig,
+    *,
+    qa_passed: bool = True,
+) -> str:
     score = int(score or 0)
     if score >= config.target_quality_score:
         return "completed"
-    if score >= config.hard_fail_threshold:
+    if score >= 60:
         return "completed_with_warnings"
-    return "completed_with_major_issues"
+    if score >= config.hard_fail_threshold:
+        return "completed_with_major_issues"
+    return "qa_failed" if not qa_passed else "needs_user_review"
 
 
 def needs_automatic_repair(score: int | float | None, config: QualityGateConfig) -> bool:
@@ -237,11 +244,12 @@ def weak_sections(qa_report: dict[str, Any] | None, *, threshold: int = 60) -> l
 def showcase_readiness(qa_report: dict[str, Any] | None, config: QualityGateConfig) -> dict[str, Any]:
     score = qa_score(qa_report)
     issues = summarize_top_issues(qa_report)
+    qa_passed = bool((qa_report or {}).get("qa_passed", True))
     return {
         "ready": score >= max(85, config.target_quality_score) and not issues,
         "score": score,
         "label": quality_label(score),
-        "status": quality_status_for_score(score, config),
+        "status": quality_status_for_score(score, config, qa_passed=qa_passed),
         "blocking_issues": issues,
         "recommendation": (
             "Showcase-ready."

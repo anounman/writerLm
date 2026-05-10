@@ -1,29 +1,29 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth, useUser } from "@clerk/react";
+import { KeyRound, Library, PanelsTopLeft, Settings, Sparkles, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { Sparkles, PanelsTopLeft, Library, KeyRound, Settings, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { Sidebar, Tab } from "./components/Sidebar";
-import { TopBar } from "./components/TopBar";
-import { StudioStats } from "./components/StudioStats";
 import { CommandMenu } from "./components/CommandMenu";
+import { Sidebar, Tab } from "./components/Sidebar";
+import { StudioStats } from "./components/StudioStats";
+import { TopBar } from "./components/TopBar";
 
+import { BooksPage } from "./pages/BooksPage";
+import { ConfigPage } from "./pages/ConfigPage";
+import { CreatePage } from "./pages/CreatePage";
+import { KeysPage } from "./pages/KeysPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoadingScreen } from "./pages/LoadingScreen";
-import { CreatePage } from "./pages/CreatePage";
 import { ProgressPage } from "./pages/ProgressPage";
-import { BooksPage } from "./pages/BooksPage";
-import { KeysPage } from "./pages/KeysPage";
-import { ConfigPage } from "./pages/ConfigPage";
 
-import { ApiClient, Job, GeneratedBook } from "./api";
+import { ApiClient, GeneratedBook, Job } from "./api";
 
 const TABS: Array<{ id: Tab; label: string; icon: any }> = [
-  { id: "create",   label: "Create",   icon: Sparkles },
+  { id: "create", label: "Create", icon: Sparkles },
   { id: "progress", label: "Progress", icon: PanelsTopLeft },
-  { id: "books",    label: "Books",    icon: Library },
-  { id: "keys",     label: "Keys",     icon: KeyRound },
-  { id: "config",   label: "Config",   icon: Settings },
+  { id: "books", label: "Books", icon: Library },
+  { id: "keys", label: "Keys", icon: KeyRound },
+  { id: "config", label: "Config", icon: Settings },
 ];
 
 type Theme = "dark" | "light";
@@ -165,7 +165,7 @@ export default function App() {
                 />
               )}
               {activeTab === "progress" && (
-                <ProgressPage api={api} jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJobId} onJobs={setJobs} onNotice={setNotice} />
+                <ProgressPage api={api} jobs={jobs} selectedJob={selectedJob} onSelect={setSelectedJobId} onJobs={setJobs} onBooks={setBooks} onNotice={setNotice} />
               )}
               {activeTab === "books" && <BooksPage api={api} books={books} onNotice={setNotice} />}
               {activeTab === "keys" && <KeysPage api={api} onNotice={setNotice} />}

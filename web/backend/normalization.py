@@ -8,6 +8,7 @@ This module is pure-function, idempotent, and makes zero LLM calls.
 
 from __future__ import annotations
 
+import copy
 import re
 from typing import Any
 
@@ -17,7 +18,7 @@ from typing import Any
 _URL_PATTERN = re.compile(r"https?://[^\s<>\"')\]]+")
 
 _NO_CODE_PHRASES = re.compile(
-    r"\b(?:no\s+code|without\s+code|no\s+programming|avoid\s+programming)\b",
+    r"\b(?:no[- ]code|without\s+code|no\s+programming|avoid\s+programming)\b",
     re.IGNORECASE,
 )
 
@@ -107,7 +108,8 @@ _ADVANCED_KEYWORDS = re.compile(
 _NON_TECHNICAL_DOMAINS = {
     "productivity", "psychology", "self-help", "self_help", "philosophy",
     "history", "business", "education", "general_nonfiction", "general",
-    "society", "politics", "medicine_adjacent", "ethics",
+    "society", "politics", "medicine_adjacent", "ethics", "systems_thinking",
+    "systems-thinking", "visual_textbook", "visual-textbook",
 }
 
 # Technologies to extract from prompts
@@ -136,6 +138,7 @@ def _is_technical_context(parsed: dict[str, Any], text_pool: str) -> bool:
         "backend", "frontend", "full-stack", "microservice", "database", "cli",
         "code", "coding", "python", "javascript", "typescript", "docker",
         "kubernetes", "terraform", "deploy", "authentication", "authorization",
+        "fastapi", "postgresql", "sqlalchemy", "alembic", "docker compose", "pytest",
     )
     book_type = str(parsed.get("book_type") or "")
     if book_type in ("implementation_guide",):
@@ -156,16 +159,19 @@ def _is_nontechnical_domain(parsed: dict[str, Any], text_pool: str) -> bool:
     for pattern in (_PHILOSOPHY_KEYWORDS, _HISTORY_KEYWORDS, _PSYCHOLOGY_KEYWORDS, _BUSINESS_KEYWORDS):
         if pattern.search(text_pool) and not _is_technical_context(parsed, text_pool):
             return True
+    if "systems thinking" in text_pool.lower() or "visual textbook" in text_pool.lower():
+        return True
     return False
 
 
 def _add_unique(target: list[str], items: list[str]) -> list[str]:
     """Append items to target without duplicates, preserving order."""
-    existing = {item.lower() for item in target}
+    existing = {item.lower().strip().rstrip(".") for item in target}
     for item in items:
-        if item.lower() not in existing:
+        clean_item = item.strip().rstrip(".")
+        if clean_item.lower() not in existing:
             target.append(item)
-            existing.add(item.lower())
+            existing.add(clean_item.lower())
     return target
 
 
@@ -184,22 +190,25 @@ def _sanitize_enum(val: Any, allowed: set[str], default: str | None = None) -> s
     return default
 
 def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") -> dict[str, Any]:
-    """Apply deterministic normalization rules to a parsed book request."""
-    result = dict(parsed)
+    """Apply deterministic normalization rules to a parsed book request.
+    
+    This function is the final authority and MUST override LLM output when 
+    user intent is clear from the prompt.
+    """
+    result = copy.deepcopy(parsed)
     
     # ── Alias handling ───────────────────────────────────────────────────
     if "quality_target_score" in result:
         result["target_quality_score"] = result.pop("quality_target_score")
-    
-    # User requested target_quality_score becomes quality_target_score? 
-    # That would break validation. I will keep target_quality_score.
 
     contract = dict(result.get("generation_contract") or {})
     topic = str(result.get("topic") or "")
     audience = str(result.get("audience") or "")
     goals = result.get("goals") or []
     goals_text = " ".join(str(g) for g in goals)
-    text_pool = f"{topic} {audience} {goals_text} {original_prompt}"
+    desc = str(result.get("running_project_description") or "")
+    outcome = str(contract.get("target_reader_outcome") or "")
+    text_pool = f"{topic} {audience} {goals_text} {desc} {outcome} {original_prompt}"
 
     is_technical = _is_technical_context(result, text_pool)
     is_nontechnical = _is_nontechnical_domain(result, text_pool)
@@ -216,30 +225,73 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
                 seen.add(url)
         result["urls"] = clean_urls
 
-    # ── Rule 2: No-code enforcement ──────────────────────────────────────
-    explicit_no_code = _NO_CODE_PHRASES.search(text_pool)
-    if explicit_no_code or result.get("code_density") == "none":
-        contract.setdefault("code_artifact_policy", "no_code")
-        if explicit_no_code:
+    # ── Rule 2: Explicit no-code always wins ─────────────────────────────
+    # This must override ANY LLM output.
+    explicit_no_code = _NO_CODE_PHRASES.search(text_pool) or \
+                       re.search(r"\bno\s+(?:yaml|terminal\s+commands|shell\s+commands)\b", text_pool, re.I)
+    
+    if explicit_no_code:
+        result["code_density"] = "none"
+        contract["code_artifact_policy"] = "no_code"
+        _add_unique(
+            contract.setdefault("forbidden_content", []),
+            ["code examples", "programming filler", "terminal commands", "YAML", "shell commands"],
+        )
+
+    # ── Rule 3: Non-technical domains default to no-code ─────────────────
+    if is_nontechnical and not explicit_no_code:
+        # Default to no-code unless user explicitly asked for code-heavy
+        if not _CODE_HEAVY_PHRASES.search(text_pool):
             result["code_density"] = "none"
-            _add_unique(
-                contract.setdefault("forbidden_content", []),
-                ["code examples", "programming filler", "terminal commands"],
-            )
+            contract["code_artifact_policy"] = "no_code"
 
-    # ── Rule 3: Code-heavy detection ─────────────────────────────────────
-    if _CODE_HEAVY_PHRASES.search(text_pool) and is_technical:
+    # ── Rule 4: Technical no-code must stay no-code ──────────────────────
+    # Topic technical but prompt says "no code"
+    if is_technical and explicit_no_code:
+        result["code_density"] = "none"
+        contract["code_artifact_policy"] = "no_code"
+
+    # ── Rule 5: Code-heavy technical prompts ─────────────────────────────
+    if _CODE_HEAVY_PHRASES.search(text_pool) and is_technical and not explicit_no_code:
         result["code_density"] = "high"
-        contract.setdefault("implementation_style", "file_by_file")
-        contract.setdefault("section_style", "file_by_file_implementation")
-        contract.setdefault("code_artifact_policy", "file_labeled_code_required")
+        contract["code_artifact_policy"] = "file_labeled_code_required"
+        contract["implementation_style"] = "file_by_file"
+        contract["section_style"] = "file_by_file_implementation"
 
-    # ── Rule 4: Showcase detection ───────────────────────────────────────
+    # ── Rule 6: Diagram-heavy / visual ───────────────────────────────────
+    if _DIAGRAM_HEAVY_PHRASES.search(text_pool):
+        result["diagram_density"] = "high"
+        contract.setdefault("visual_policy", "structured useful diagrams only")
+        
+        # Infer diagram_style by domain if missing or weak
+        if not contract.get("diagram_style") or contract.get("diagram_style") == "none":
+            if "systems thinking" in text_pool.lower() or "psychology" in text_pool.lower() or "productivity" in text_pool.lower():
+                contract["diagram_style"] = "concept_maps_decision_trees_checklists"
+            elif is_technical:
+                contract["diagram_style"] = "architecture_sequence_schema_deployment"
+            elif _PHILOSOPHY_KEYWORDS.search(text_pool):
+                contract["diagram_style"] = "argument_maps_comparison_matrices"
+            elif _HISTORY_KEYWORDS.search(text_pool):
+                contract["diagram_style"] = "timelines_cause_effect_maps"
+            elif _BUSINESS_KEYWORDS.search(text_pool):
+                contract["diagram_style"] = "frameworks_matrices_funnels"
+
+    # ── Rule 7: Showcase always sets quality controls ───────────────────
     if _SHOWCASE_PHRASES.search(text_pool):
         contract["showcase_candidate"] = True
+        
         current_score = result.get("target_quality_score", 0) or 0
+        score_match = re.search(r'quality score(?: target)? (?:above |of |>|>=)?\s*(\d+)', text_pool, re.I)
+        if score_match:
+            prompt_score = int(score_match.group(1))
+            if prompt_score > current_score:
+                current_score = prompt_score
+                
         if current_score < 80:
             result["target_quality_score"] = 80
+        else:
+            result["target_quality_score"] = current_score
+            
         result["auto_repair"] = True
         result["sample_first"] = True
         if result.get("quality_mode") in (None, "fast_draft", "full_generation"):
@@ -253,195 +305,76 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
                 "no generic filler",
             ],
         )
-
-    # ── Rule 5: Required stack extraction ────────────────────────────────
-    if original_prompt:
-        existing_stack = set(s.lower() for s in (contract.get("required_stack") or []))
-        stack: list[str] = list(contract.get("required_stack") or [])
-        for canonical, pattern in _STACK_PATTERNS:
-            if pattern.search(original_prompt) and canonical.lower() not in existing_stack:
-                stack.append(canonical)
-                existing_stack.add(canonical.lower())
-        if stack:
-            contract["required_stack"] = stack
-
-    # ── Rule 6: Technical implementation guide ───────────────────────────
-    if (
-        result.get("book_type") == "implementation_guide"
-        or (result.get("project_based") and _IMPLEMENTATION_PHRASES.search(text_pool))
-    ) and is_technical:
-        # Only set code policy if no_code was NOT explicitly requested
-        if contract.get("code_artifact_policy") != "no_code":
-            if result.get("code_density") != "none":
-                contract.setdefault("code_artifact_policy", "file_labeled_code_required")
-            contract.setdefault("implementation_style", "file_by_file")
-            contract.setdefault("section_style", "file_by_file_implementation")
-            if result.get("code_density") == "none":
-                result["code_density"] = "medium"
-            _add_unique(
-                contract.setdefault("required_outputs", []),
-                [
-                    "folder tree",
-                    "source files",
-                    "config files",
-                    "tests",
-                    "verification commands",
-                    "troubleshooting checklist",
-                ],
-            )
-            _add_unique(
-                contract.setdefault("project_artifacts", []),
-                [
-                    "folder tree",
-                    "source files",
-                    "tests",
-                    "config files",
-                    "deployment checklist",
-                ],
-            )
-            _add_unique(
-                contract.setdefault("forbidden_content", []),
-                [
-                    "broken code",
-                    "fake APIs",
-                    "disconnected snippets",
-                    "unlabeled code blocks",
-                    "placeholder code",
-                    "generic filler",
-                ],
-            )
-
-    # ── Rule 7: Non-technical books default ──────────────────────────────
-    if is_nontechnical and not _is_technical_context(result, text_pool):
-        # Default no-code unless user explicitly requested code
-        if not _CODE_HEAVY_PHRASES.search(text_pool) and result.get("code_density") not in ("low", "medium", "high"):
-            result["code_density"] = "none"
-            contract.setdefault("code_artifact_policy", "no_code")
-
-    # ── Rule 8: Philosophy ───────────────────────────────────────────────
-    if _PHILOSOPHY_KEYWORDS.search(text_pool):
-        contract.setdefault("implementation_style", "argument_driven")
-        contract.setdefault("section_style", "academic_argument")
-        contract.setdefault("diagram_style", "argument_maps_comparison_matrices")
-        if result.get("code_density") not in ("low", "medium", "high"):
-            result["code_density"] = "none"
-        contract.setdefault("code_artifact_policy", "no_code")
-        _add_unique(
-            contract.setdefault("required_outputs", []),
-            [
-                "definitions",
-                "argument maps",
-                "objections",
-                "counterarguments",
-                "conclusion summaries",
-            ],
-        )
-        _add_unique(
-            contract.setdefault("forbidden_content", []),
-            ["fake quotes", "unsupported attribution", "unclear terminology"],
-        )
-
-    # ── Rule 9: History ──────────────────────────────────────────────────
-    if _HISTORY_KEYWORDS.search(text_pool):
-        if result.get("code_density") not in ("low", "medium", "high"):
-            result["code_density"] = "none"
-        contract.setdefault("code_artifact_policy", "no_code")
-        contract.setdefault("diagram_style", "timelines_cause_effect_maps")
-        _add_unique(
-            contract.setdefault("required_outputs", []),
-            [
-                "timelines",
-                "chronology tables",
-                "cause-effect maps",
-                "disputed interpretation notes",
-            ],
-        )
-        _add_unique(
-            contract.setdefault("forbidden_content", []),
-            ["fake dates", "fake events", "invented quotes", "unsupported claims"],
-        )
-
-    # ── Rule 10: Psychology / productivity / self-help ────────────────────
-    if _PSYCHOLOGY_KEYWORDS.search(text_pool):
-        if result.get("code_density") not in ("low", "medium", "high"):
-            result["code_density"] = "none"
-        contract.setdefault("code_artifact_policy", "no_code")
-        if _EVIDENCE_BASED_PHRASES.search(text_pool):
-            contract.setdefault("source_strictness", "high")
-        _add_unique(
-            contract.setdefault("required_outputs", []),
-            [
-                "evidence notes",
-                "exercises",
-                "reflection prompts",
-                "habit trackers",
-                "checklists",
-            ],
-        )
         _add_unique(
             contract.setdefault("forbidden_content", []),
             [
-                "diagnosis",
-                "clinical treatment advice",
-                "overclaiming causality",
-                "fake studies",
-                "fake statistics",
+                "generic filler",
+                "placeholder text",
+                "internal QA text",
+                "weak diagrams",
+                "fake sources",
+                "unsupported statistics",
             ],
         )
 
-    # ── Rule 11: Business ────────────────────────────────────────────────
-    if _BUSINESS_KEYWORDS.search(text_pool):
+    # ── Rule 8: Required stack extraction (Full Pool) ────────────────────
+    existing_stack = {s.lower() for s in (contract.get("required_stack") or [])}
+    stack: list[str] = list(contract.get("required_stack") or [])
+    for canonical, pattern in _STACK_PATTERNS:
+        if pattern.search(text_pool) and canonical.lower() not in existing_stack:
+            stack.append(canonical)
+            existing_stack.add(canonical.lower())
+    if stack:
+        contract["required_stack"] = stack
+
+    # ── Rule 9: Domain-specific Required Outputs ─────────────────────────
+    req_out = contract.setdefault("required_outputs", [])
+    
+    if is_technical and result.get("code_density") != "none":
+        _add_unique(req_out, ["folder tree", "source files", "config files", "tests", "verification commands", "troubleshooting checklist", "deployment checklist"])
+        _add_unique(contract.setdefault("project_artifacts", []), ["folder tree", "source files", "tests", "config files", "deployment checklist"])
+    
+    if "systems thinking" in text_pool.lower():
+        _add_unique(req_out, ["concept maps", "feedback loop diagrams", "decision trees", "worksheets", "real-life examples"])
+    elif _BUSINESS_KEYWORDS.search(text_pool):
         contract.setdefault("implementation_style", "case_study_playbook")
         contract.setdefault("section_style", "case_study_playbook")
         contract.setdefault("diagram_style", "frameworks_matrices_funnels")
-        if result.get("code_density") not in ("low", "medium", "high"):
-            result["code_density"] = "none"
-        contract.setdefault("code_artifact_policy", "no_code")
-        _add_unique(
-            contract.setdefault("required_outputs", []),
-            [
-                "canvases",
-                "decision tables",
-                "checklists",
-                "fictional case studies",
-                "action plans",
-            ],
-        )
-        _add_unique(
-            contract.setdefault("forbidden_content", []),
-            [
-                "fake real company case studies",
-                "vague startup buzzwords",
-                "unsupported market claims",
-            ],
-        )
+        _add_unique(req_out, ["ICP worksheet", "positioning canvas", "pricing decision table", "launch experiment template", "action checklist", "fictional case studies"])
+    elif _MATH_KEYWORDS.search(text_pool):
+        contract.setdefault("notation_system", "LaTeX")
+        _add_unique(req_out, ["definitions", "solved examples", "diagrams", "practice problems", "exam-style exercises", "formula summaries"])
+    elif _PSYCHOLOGY_KEYWORDS.search(text_pool) or "productivity" in text_pool.lower():
+        if _EVIDENCE_BASED_PHRASES.search(text_pool):
+            contract.setdefault("source_strictness", "high")
+        _add_unique(req_out, ["evidence notes", "exercises", "reflection prompts", "habit trackers", "checklists"])
+    elif _PHILOSOPHY_KEYWORDS.search(text_pool):
+        contract.setdefault("implementation_style", "argument_driven")
+        contract.setdefault("section_style", "academic_argument")
+        contract.setdefault("diagram_style", "argument_maps_comparison_matrices")
+        _add_unique(req_out, ["definitions", "argument maps", "objections", "counterarguments", "conclusion summaries"])
+    elif _HISTORY_KEYWORDS.search(text_pool):
+        contract.setdefault("diagram_style", "timelines_cause_effect_maps")
+        _add_unique(req_out, ["timelines", "chronology tables", "cause-effect maps", "disputed interpretation notes"])
 
-    # ── Rule 12: Diagram-heavy detection ─────────────────────────────────
-    if _DIAGRAM_HEAVY_PHRASES.search(text_pool):
-        result["diagram_density"] = "high"
-        contract.setdefault("visual_policy", "structured useful diagrams only")
-        _add_unique(
-            contract.setdefault("forbidden_content", []),
-            [
-                "generic keyword diagrams",
-                "internal diagram labels",
-                "low-value visuals",
-            ],
-        )
-        # Infer diagram_style by domain if missing
-        if not contract.get("diagram_style"):
-            if _PHILOSOPHY_KEYWORDS.search(text_pool):
-                contract["diagram_style"] = "argument_maps_comparison_matrices"
-            elif _HISTORY_KEYWORDS.search(text_pool):
-                contract["diagram_style"] = "timelines_cause_effect_maps"
-            elif _BUSINESS_KEYWORDS.search(text_pool):
-                contract["diagram_style"] = "frameworks_matrices_funnels"
-            elif is_technical:
-                contract["diagram_style"] = "architecture_sequence_schema_deployment"
-            else:
-                contract["diagram_style"] = "concept_maps_decision_trees_checklists"
+    # ── Rule 10: Domain-specific Forbidden Content ───────────────────────
+    forb = contract.setdefault("forbidden_content", [])
+    if _PSYCHOLOGY_KEYWORDS.search(text_pool):
+        _add_unique(forb, ["diagnosis", "clinical treatment advice", "overclaiming causality", "fake studies", "fake statistics"])
+    if _PHILOSOPHY_KEYWORDS.search(text_pool):
+        _add_unique(forb, ["fake quotes", "unsupported attribution", "unclear terminology"])
+    if _HISTORY_KEYWORDS.search(text_pool):
+        _add_unique(forb, ["fake dates", "fake events", "invented quotes", "unsupported claims"])
+    if _BUSINESS_KEYWORDS.search(text_pool):
+        _add_unique(forb, ["fake real company case studies", "unsupported market claims", "vague startup buzzwords"])
+    if is_technical and result.get("code_density") != "none":
+        _add_unique(forb, ["broken code", "fake APIs", "unlabeled code blocks", "disconnected snippets", "placeholder code"])
+    if result.get("diagram_density") == "high":
+        _add_unique(forb, ["generic keyword diagrams", "internal diagram labels", "low-value visuals"])
+    if _EVIDENCE_BASED_PHRASES.search(text_pool) or "digital minimalism" in text_pool.lower():
+        _add_unique(forb, ["fake studies", "fake statistics", "unsupported claims", "fake quotes"])
 
-    # ── Rule 13: Depth inference from audience ───────────────────────────
+    # ── Depth inference from audience ───────────────────────────
     if not contract.get("depth_level"):
         if _BEGINNER_KEYWORDS.search(audience):
             contract["depth_level"] = "surface"
@@ -449,10 +382,6 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
             contract["depth_level"] = "deep"
         else:
             contract["depth_level"] = "intermediate"
-
-    # ── Math / physics notation ──────────────────────────────────────────
-    if _MATH_KEYWORDS.search(text_pool):
-        contract.setdefault("notation_system", "LaTeX")
 
     # ── Section style inference (if still unset) ─────────────────────────
     if not contract.get("section_style"):
@@ -481,7 +410,7 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
     section_styles = {"academic", "conversational", "handbook", "tutorial", "reference", "file_by_file_implementation", "academic_argument", "case_study_playbook", "visual_textbook", "workbook"}
     code_policies = {"no_code", "pseudocode_only", "minimal_runnable", "file_labeled_code_required"}
     diagram_styles = {"none", "conceptual", "architecture", "data_flow", "comparison_matrix", "architecture_sequence_schema_deployment", "concept_maps_decision_trees_checklists", "argument_maps_comparison_matrices", "timelines_cause_effect_maps", "frameworks_matrices_funnels"}
-    source_strictness = {"low", "medium", "high", "primary_sources_required"}
+    source_strictness_enum = {"low", "medium", "high", "primary_sources_required"}
     evidence_standards = {"anecdotal", "curated", "primary_source", "peer_reviewed"}
 
     result["book_type"] = _sanitize_enum(result.get("book_type"), book_types, "auto")
@@ -501,8 +430,9 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
     if "section_style" in contract: contract["section_style"] = _sanitize_enum(contract["section_style"], section_styles, None)
     if "code_artifact_policy" in contract: contract["code_artifact_policy"] = _sanitize_enum(contract["code_artifact_policy"], code_policies, None)
     if "diagram_style" in contract: contract["diagram_style"] = _sanitize_enum(contract["diagram_style"], diagram_styles, None)
-    if "source_strictness" in contract: contract["source_strictness"] = _sanitize_enum(contract["source_strictness"], source_strictness, None)
+    if "source_strictness" in contract: contract["source_strictness"] = _sanitize_enum(contract["source_strictness"], source_strictness_enum, None)
     if "evidence_standard" in contract: contract["evidence_standard"] = _sanitize_enum(contract["evidence_standard"], evidence_standards, None)
 
     result["generation_contract"] = contract
     return result
+

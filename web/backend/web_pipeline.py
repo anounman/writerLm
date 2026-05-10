@@ -781,7 +781,7 @@ def run_web_pipeline(
     write_evaluation_outputs(evaluation, evaluation_json_path, evaluation_md_path)
 
     llm_usage = get_llm_metrics_summary()
-    book_status = quality_status_for_score(final_score, quality_config)
+    book_status = quality_status_for_score(final_score, quality_config, qa_passed=bool(qa_report.get("qa_passed", True)))
     if latex_compile_result is not None and not latex_compile_result.succeeded and book_status == "completed":
         book_status = "completed_with_warnings"
     artifacts = {

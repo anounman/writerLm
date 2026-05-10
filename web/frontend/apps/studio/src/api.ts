@@ -204,6 +204,24 @@ export interface JobArtifact {
   updated_at: string;
 }
 
+export interface RepairResult {
+  action: string;
+  status: string;
+  started_at?: string | null;
+  finished_at?: string | null;
+  previous_score?: number | null;
+  new_score?: number | null;
+  qa_passed?: boolean | null;
+  artifacts_updated?: boolean;
+  artifacts?: JobArtifact[];
+  message?: string | null;
+}
+
+export interface RepairResponse {
+  job: Job;
+  repair: RepairResult;
+}
+
 export interface GeneratedBook {
   id: number;
   job_id: number;
@@ -421,9 +439,11 @@ export class ApiClient {
     return this.request<Job>(`/jobs/${id}/retry`, { method: "POST" });
   }
 
-  repairJob(id: number, action: "repair" | "code" | "diagrams" | "sources" | "showcase" = "repair") {
-    const suffix = action === "repair" ? "" : `/${action}`;
-    return this.request<Job>(`/jobs/${id}/repair${suffix}`, { method: "POST", body: JSON.stringify({}) });
+  async repairJob(id: number, action: "repair" | "code" | "diagrams" | "sources" | "showcase" | "weak_sections" = "repair") {
+    const suffix = action === "repair" ? "" : action === "weak_sections" ? "/weak-sections" : `/${action}`;
+    const response = await this.request<any>(`/jobs/${id}/repair${suffix}`, { method: "POST", body: JSON.stringify({}) });
+    if (response?.job && response?.repair) return response as RepairResponse;
+    return { job: response as Job, repair: { action, status: "completed" } } as RepairResponse;
   }
 
   jobArtifacts(id: number) {

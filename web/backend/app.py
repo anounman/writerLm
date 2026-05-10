@@ -33,6 +33,7 @@ from web.backend.schemas import (
     ProviderModelOut,
     QualityEstimateRequest,
     RepairRequest,
+    RepairResponseOut,
     TokenResponse,
     UserCreate,
     UserLogin,
@@ -102,6 +103,7 @@ JOB_ARTIFACT_FILES = {
     "repair_history": "repair_history.json",
     "weak_sections": "weak_sections.json",
     "showcase_readiness": "showcase_readiness.json",
+    "latex": "book.tex",
 }
 
 
@@ -216,13 +218,12 @@ def _run_repair_action(
     job_id: int,
     action: str,
     payload: RepairRequest | None,
-) -> BookJob:
+) -> dict:
     from planner_agent.schemas import BookPlan
     from quality.book_contract import BookContract, classify_book_contract
     from quality.control import (
         QualityGateConfig,
         build_quality_checkpoint,
-        build_repair_history,
         qa_score,
         quality_label,
         quality_status_for_score,
@@ -234,6 +235,9 @@ def _run_repair_action(
     from quality.repair_loop import run_quality_repair_loop
     from reviewer.io import save_review_bundle
     from reviewer.schemas import ReviewBundle
+    from assembler.compiler import compile_latex_file
+    from assembler.io import save_assembly_bundle, save_latex_compile_result, save_latex_manuscript
+    from assembler.orchestrator import run_assembler
 
     job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
     if job is None:
@@ -249,12 +253,24 @@ def _run_repair_action(
         raise HTTPException(status_code=404, detail="No review bundle is available to repair.")
 
     old_status = job.status
+    repair_mode = action
+    started_at = _utciso()
+    stages = dict(job.stages or {})
+    repair_stage = dict(stages.get("repair") or {})
+    repair_stage.setdefault("label", "Repair")
+    repair_stage["status"] = "running"
+    repair_stage["started_at"] = started_at
+    repair_stage["completed_at"] = None
+    repair_stage["details"] = {**(repair_stage.get("details") or {}), "action": repair_mode}
+    stages["repair"] = repair_stage
+    job.stages = stages
     job.status = "repairing"
     job.current_stage = "repair"
     db.add(job)
     db.commit()
     db.refresh(job)
 
+    previous_report = None
     try:
         review_bundle = ReviewBundle.model_validate(json.loads(review_path.read_text(encoding="utf-8")))
         contract_path = run_dir / "book_contract.json"
@@ -272,25 +288,40 @@ def _run_repair_action(
             config_payload["max_repair_passes"] = payload.max_repair_passes
         config = QualityGateConfig.from_payload(config_payload)
 
-        previous_report = None
         qa_path = run_dir / "qa_report.json"
         if qa_path.exists():
             previous_report = json.loads(qa_path.read_text(encoding="utf-8"))
+        previous_score = qa_score(previous_report)
+
+        target_section_ids: set[str] | None = None
+        if repair_mode == "weak_sections":
+            weak_path = run_dir / "weak_sections.json"
+            if weak_path.exists():
+                weak_payload = json.loads(weak_path.read_text(encoding="utf-8"))
+                target_section_ids = {
+                    str(item.get("section_id"))
+                    for item in (weak_payload.get("sections") or [])
+                    if item.get("section_id")
+                }
 
         result = run_quality_repair_loop(
             review_bundle=review_bundle,
             contract=book_contract,
             max_passes=max(1, config.max_repair_passes),
+            repair_mode=repair_mode,
+            target_section_ids=target_section_ids,
         )
         save_review_bundle(result.review_bundle, review_path)
         score = qa_score(result.qa_report)
+        qa_passed = bool(result.qa_report.get("qa_passed", True))
         qa_report = {
             **result.qa_report,
             "overall_score": score,
             "quality_label": quality_label(score),
             "score_breakdown": score_breakdown(result.qa_report),
             "top_issues": summarize_top_issues(result.qa_report),
-            "last_repair_action": action,
+            "last_repair_action": repair_mode,
+            "repair_started_at": started_at,
         }
         qa_path.write_text(json.dumps(qa_report, indent=2, ensure_ascii=False), encoding="utf-8")
 
@@ -298,20 +329,33 @@ def _run_repair_action(
         history = {"passes": []}
         if history_path.exists():
             history = json.loads(history_path.read_text(encoding="utf-8"))
-        next_history = build_repair_history(
-            before_report=previous_report,
-            after_report=qa_report,
-            pass_name=f"{action}_{len(history.get('passes') or []) + 1}",
-            action=action,
-        )
-        history["passes"] = [*(history.get("passes") or []), *next_history["passes"]]
+        history_entry = {
+            "action": repair_mode,
+            "started_at": started_at,
+            "finished_at": _utciso(),
+            "previous_score": previous_score,
+            "new_score": score,
+            "status": "completed",
+            "issues_before": summarize_top_issues(previous_report) if previous_report else [],
+            "issues_after": summarize_top_issues(qa_report),
+            "artifacts_updated": True,
+            "error": None,
+        }
+        history["passes"] = [*(history.get("passes") or []), history_entry]
         history_path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
 
         timeline_path = run_dir / "quality_timeline.json"
         timeline = []
         if timeline_path.exists():
             timeline = json.loads(timeline_path.read_text(encoding="utf-8"))
-        timeline.append(build_quality_checkpoint(stage=action, qa_report=qa_report, action=action, config=config))
+        timeline.append(
+            build_quality_checkpoint(
+                stage=f"repair:{repair_mode}",
+                qa_report=qa_report,
+                action="completed",
+                config=config,
+            )
+        )
         timeline_path.write_text(json.dumps(timeline, indent=2, ensure_ascii=False), encoding="utf-8")
 
         weak = weak_sections(qa_report)
@@ -319,8 +363,61 @@ def _run_repair_action(
         showcase = showcase_readiness(qa_report, config)
         (run_dir / "showcase_readiness.json").write_text(json.dumps(showcase, indent=2, ensure_ascii=False), encoding="utf-8")
 
-        next_status = quality_status_for_score(score, config)
+        book_plan_path = run_dir / "book_plan.json"
+        if not book_plan_path.exists():
+            book_plan_path = run_dir / "book.json"
+        if not book_plan_path.exists():
+            raise RuntimeError("Book plan is missing; cannot rebuild artifacts after repair.")
+        book_plan = BookPlan.model_validate(json.loads(book_plan_path.read_text(encoding="utf-8")))
+
+        assembly_bundle_path = run_dir / "assembly_bundle.json"
+        latex_path = run_dir / "book.tex"
+        latex_build_dir = run_dir / "latex_build"
+        latex_compile_result_path = run_dir / "latex_compile_result.json"
+
+        assembly_artifacts = run_assembler(
+            book_plan=book_plan,
+            review_bundle=result.review_bundle,
+            book_plan_path=book_plan_path,
+            review_bundle_path=review_path,
+            latex_output_path=latex_path,
+        )
+        save_assembly_bundle(assembly_artifacts.assembly_bundle, assembly_bundle_path)
+        save_latex_manuscript(assembly_artifacts.latex_manuscript, latex_path)
+
+        latex_compile_result = None
+        config_snapshot = dict(job.config_snapshot or {})
+        compile_latex = bool(config_snapshot.get("compile_latex", True))
+        strict_latex = bool(config_snapshot.get("strict_latex_compile", False))
+        latex_engine = str(config_snapshot.get("latex_engine") or "pdflatex")
+        if compile_latex:
+            latex_compile_result = compile_latex_file(
+                latex_path,
+                build_dir=latex_build_dir,
+                preferred_engine=latex_engine,
+                output_pdf_name=book_plan.title,
+            )
+            save_latex_compile_result(latex_compile_result, latex_compile_result_path)
+
+        next_status = quality_status_for_score(score, config, qa_passed=qa_passed)
+        latex_error_message = None
+        if latex_compile_result is not None and not latex_compile_result.succeeded:
+            first_issue = latex_compile_result.issues[0].message if latex_compile_result.issues else "Unknown LaTeX compile failure."
+            latex_error_message = f"LaTeX compilation failed: {first_issue}"
+            if strict_latex:
+                next_status = "completed_with_latex_issue"
+            elif next_status == "completed":
+                next_status = "completed_with_warnings"
         summary = dict(job.summary or {})
+        summary["repair"] = {
+            "action": repair_mode,
+            "status": "completed",
+            "started_at": started_at,
+            "finished_at": _utciso(),
+            "previous_score": previous_score,
+            "new_score": score,
+            "passes": len(history.get("passes") or []),
+        }
         summary["quality"] = {
             **(summary.get("quality") or {}),
             "score": score,
@@ -331,21 +428,88 @@ def _run_repair_action(
             "repair_passes": len(history.get("passes") or []),
             "weak_section_count": len(weak),
             "showcase_ready": showcase["ready"],
-            "last_repair_action": action,
+            "last_repair_action": repair_mode,
+            "last_repair_started_at": started_at,
+            "last_repair_finished_at": _utciso(),
         }
         job.status = next_status
         job.current_stage = "completed"
         job.summary = summary
-        job.error_message = None if next_status != old_status else job.error_message
+        job.error_message = latex_error_message
+        job.completed_at = datetime.now(timezone.utc)
+        stages = dict(job.stages or {})
+        repair_stage = dict(stages.get("repair") or {})
+        repair_stage["status"] = "completed"
+        repair_stage["completed_at"] = _utciso()
+        repair_stage["details"] = {**(repair_stage.get("details") or {}), "result": next_status}
+        stages["repair"] = repair_stage
+        job.stages = stages
         if job.book is not None:
             job.book.status = next_status
             job.book.summary_metrics = summary
+            job.book.latex_path = str(latex_path)
+            job.book.pdf_path = latex_compile_result.pdf_path if latex_compile_result and latex_compile_result.pdf_path else job.book.pdf_path
+            job.book.artifact_paths = {
+                **(job.book.artifact_paths or {}),
+                "review_bundle": str(review_path),
+                "qa_report": str(qa_path),
+                "quality_timeline": str(timeline_path),
+                "repair_history": str(history_path),
+                "weak_sections": str(run_dir / "weak_sections.json"),
+                "showcase_readiness": str(run_dir / "showcase_readiness.json"),
+                "assembly_bundle": str(assembly_bundle_path),
+                "latex": str(latex_path),
+                "latex_compile_result": str(latex_compile_result_path) if latex_compile_result else None,
+                "pdf": latex_compile_result.pdf_path if latex_compile_result and latex_compile_result.pdf_path else None,
+            }
             db.add(job.book)
         db.add(job)
         db.commit()
         db.refresh(job)
-        return job
+        artifacts = _collect_job_artifacts(job)
+        return {
+            "job": job,
+            "repair": {
+                "action": repair_mode,
+                "status": "completed",
+                "started_at": started_at,
+                "finished_at": _utciso(),
+                "previous_score": previous_score,
+                "new_score": score,
+                "qa_passed": qa_passed,
+                "artifacts_updated": True,
+                "artifacts": artifacts,
+                "message": f"Repair completed for {repair_mode}.",
+            },
+        }
     except Exception as exc:
+        logger.exception("Repair failed for job %s", job.id)
+        history_path = run_dir / "repair_history.json"
+        history = {"passes": []}
+        if history_path.exists():
+            history = json.loads(history_path.read_text(encoding="utf-8"))
+        history_entry = {
+            "action": repair_mode,
+            "started_at": started_at,
+            "finished_at": _utciso(),
+            "previous_score": qa_score(previous_report),
+            "new_score": None,
+            "status": "failed",
+            "issues_before": summarize_top_issues(previous_report) if previous_report else [],
+            "issues_after": [],
+            "artifacts_updated": False,
+            "error": str(exc),
+        }
+        history["passes"] = [*(history.get("passes") or []), history_entry]
+        history_path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        stages = dict(job.stages or {})
+        repair_stage = dict(stages.get("repair") or {})
+        repair_stage["status"] = "failed"
+        repair_stage["completed_at"] = _utciso()
+        repair_stage["details"] = {**(repair_stage.get("details") or {}), "error": str(exc)}
+        stages["repair"] = repair_stage
+        job.stages = stages
         job.status = old_status
         job.current_stage = "completed"
         job.error_message = f"Repair failed: {exc}"
@@ -374,19 +538,74 @@ def _read_worker_state(job: BookJob) -> dict | None:
     return state
 
 
-def _job_artifact_path(job: BookJob, artifact_key: str) -> Path:
+def _find_latest_pdf(build_dir: Path) -> Path | None:
+    if not build_dir.exists() or not build_dir.is_dir():
+        return None
+    candidates = sorted(build_dir.glob("*.pdf"), key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0] if candidates else None
+
+
+def _resolve_job_artifact_path(job: BookJob, artifact_key: str) -> Path:
     if not job.run_dir:
         raise HTTPException(status_code=404, detail="This job does not have a run directory yet.")
-    filename = JOB_ARTIFACT_FILES.get(artifact_key)
-    if filename is None:
-        raise HTTPException(status_code=404, detail="Artifact is not available for download.")
     run_dir = Path(job.run_dir).resolve()
-    path = (run_dir / filename).resolve()
+    path: Path | None = None
+
+    filename = JOB_ARTIFACT_FILES.get(artifact_key)
+    if filename is not None:
+        path = (run_dir / filename).resolve()
+    elif artifact_key == "pdf":
+        if job.book and job.book.pdf_path:
+            path = Path(job.book.pdf_path).resolve()
+        else:
+            path = _find_latest_pdf(run_dir / "latex_build")
+            if path:
+                path = path.resolve()
+    elif artifact_key == "latex":
+        if job.book and job.book.latex_path:
+            path = Path(job.book.latex_path).resolve()
+        else:
+            path = (run_dir / "book.tex").resolve()
+
+    if path is None:
+        raise HTTPException(status_code=404, detail="Artifact is not available for download.")
     if run_dir not in path.parents and path != run_dir:
         raise HTTPException(status_code=403, detail="Artifact path is outside the run directory.")
     if not path.exists() or not path.is_file():
         raise HTTPException(status_code=404, detail="Artifact file is missing.")
     return path
+
+
+def _try_resolve_job_artifact(job: BookJob, artifact_key: str) -> Path | None:
+    try:
+        return _resolve_job_artifact_path(job, artifact_key)
+    except HTTPException:
+        return None
+
+
+def _collect_job_artifacts(job: BookJob) -> list[JobArtifactOut]:
+    if not job.run_dir:
+        return []
+    artifacts: list[JobArtifactOut] = []
+    seen: set[Path] = set()
+    keys = list(JOB_ARTIFACT_FILES.keys()) + ["pdf"]
+    for key in keys:
+        if key in {"book_state", "research_bundle", "book_plan"}:
+            continue
+        path = _try_resolve_job_artifact(job, key)
+        if not path or path in seen:
+            continue
+        seen.add(path)
+        stat = path.stat()
+        artifacts.append(
+            JobArtifactOut(
+                key=key,
+                filename=path.name,
+                size_bytes=stat.st_size,
+                updated_at=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
+            )
+        )
+    return artifacts
 
 
 def _restore_live_job(db: Session, job: BookJob, *, stage: str | None = None) -> BookJob:
@@ -769,29 +988,34 @@ def stop_job(job_id: int, user: User = Depends(current_user), db: Session = Depe
     return _mark_job_stopped(db, job, "Job was stopped by the user.")
 
 
-@app.post("/jobs/{job_id}/repair", response_model=JobOut)
-def repair_job(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
-    return _run_repair_action(db, user=user, job_id=job_id, action="repair_book", payload=payload)
+@app.post("/jobs/{job_id}/repair", response_model=RepairResponseOut)
+def repair_job(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="general", payload=payload)
 
 
-@app.post("/jobs/{job_id}/repair/code", response_model=JobOut)
-def repair_job_code(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
-    return _run_repair_action(db, user=user, job_id=job_id, action="fix_code_blocks", payload=payload)
+@app.post("/jobs/{job_id}/repair/code", response_model=RepairResponseOut)
+def repair_job_code(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="code", payload=payload)
 
 
-@app.post("/jobs/{job_id}/repair/diagrams", response_model=JobOut)
-def repair_job_diagrams(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
-    return _run_repair_action(db, user=user, job_id=job_id, action="improve_diagrams", payload=payload)
+@app.post("/jobs/{job_id}/repair/diagrams", response_model=RepairResponseOut)
+def repair_job_diagrams(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="diagrams", payload=payload)
 
 
-@app.post("/jobs/{job_id}/repair/sources", response_model=JobOut)
-def repair_job_sources(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
-    return _run_repair_action(db, user=user, job_id=job_id, action="strengthen_sources", payload=payload)
+@app.post("/jobs/{job_id}/repair/sources", response_model=RepairResponseOut)
+def repair_job_sources(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="sources", payload=payload)
 
 
-@app.post("/jobs/{job_id}/repair/showcase", response_model=JobOut)
-def repair_job_showcase(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
-    return _run_repair_action(db, user=user, job_id=job_id, action="polish_showcase", payload=payload)
+@app.post("/jobs/{job_id}/repair/showcase", response_model=RepairResponseOut)
+def repair_job_showcase(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="showcase", payload=payload)
+
+
+@app.post("/jobs/{job_id}/repair/weak-sections", response_model=RepairResponseOut)
+def repair_job_weak_sections(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> dict:
+    return _run_repair_action(db, user=user, job_id=job_id, action="weak_sections", payload=payload)
 
 
 @app.get("/jobs/{job_id}/artifacts", response_model=list[JobArtifactOut])
@@ -799,28 +1023,7 @@ def list_job_artifacts(job_id: int, user: User = Depends(current_user), db: Sess
     job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
-    if not job.run_dir:
-        return []
-
-    artifacts: list[JobArtifactOut] = []
-    seen: set[Path] = set()
-    for key, filename in JOB_ARTIFACT_FILES.items():
-        if key in {"book_state", "research_bundle", "book_plan"}:
-            continue
-        path = (Path(job.run_dir) / filename).resolve()
-        if path in seen or not path.exists() or not path.is_file():
-            continue
-        seen.add(path)
-        stat = path.stat()
-        artifacts.append(
-            JobArtifactOut(
-                key=key,
-                filename=path.name,
-                size_bytes=stat.st_size,
-                updated_at=datetime.fromtimestamp(stat.st_mtime, tz=timezone.utc),
-            )
-        )
-    return artifacts
+    return _collect_job_artifacts(job)
 
 
 @app.get("/jobs/{job_id}/artifacts/{artifact_key}")
@@ -833,7 +1036,7 @@ def download_job_artifact(
     job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
-    path = _job_artifact_path(job, artifact_key)
+    path = _resolve_job_artifact_path(job, artifact_key)
     return FileResponse(path, filename=path.name)
 
 

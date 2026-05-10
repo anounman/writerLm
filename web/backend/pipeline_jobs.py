@@ -218,19 +218,15 @@ def _book_request_to_planner_input(request: BookRequest, *, user_pdf_dir: Path |
     if source_context is not None:
         payload["source_context"] = source_context.model_dump(mode="json")
 
-    # Apply deterministic normalization and include the generation contract
-    from web.backend.normalization import normalize_book_request
-    normalized = normalize_book_request(payload, original_prompt="")
-    # Propagate normalized top-level fields back
-    payload["code_density"] = normalized.get("code_density", payload.get("code_density"))
-    payload["content_density"]["code_density"] = payload["code_density"]
-    if "diagram_density" in normalized:
-        payload["content_density"]["diagram_density"] = normalized["diagram_density"]
-    for key in ("target_quality_score", "auto_repair", "sample_first", "quality_mode", "urls"):
-        if key in normalized:
-            payload[key] = normalized[key]
-    # Always include generation_contract in the planner input
-    payload["generation_contract"] = normalized.get("generation_contract", {})
+    # The request is already normalized and validated by BookRequest schema
+    payload["code_density"] = request.code_density
+    payload["content_density"]["code_density"] = request.code_density
+    
+    # Use generation_contract from the request if present
+    if hasattr(request, "generation_contract") and request.generation_contract is not None:
+        payload["generation_contract"] = request.generation_contract.model_dump(exclude_unset=True)
+    else:
+        payload["generation_contract"] = {}
 
     return payload
 
