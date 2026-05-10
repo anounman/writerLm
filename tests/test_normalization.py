@@ -271,3 +271,44 @@ def test_required_stack_extraction():
     assert "fastapi" in stack_lower
     assert "postgresql" in stack_lower
     assert "docker compose" in stack_lower
+
+# ── Test: Enum Sanitization ──────────────────────────────────────────────────
+
+def test_enum_sanitization():
+    parsed = {
+        "topic": "Test",
+        "audience": "Test",
+        "book_type": "Exam-Prep ",
+        "theory_practice_balance": "Theory Heavy",
+        "generation_contract": {
+            "implementation_style": "file-by-file",
+            "section_style": "case-study",
+            "source_strictness": "high quality",
+            "depth_level": "unknown_depth"
+        }
+    }
+    result = normalize_book_request(parsed, original_prompt="")
+    assert result["book_type"] == "exam_prep"
+    assert result["theory_practice_balance"] == "theory_heavy"
+    gc = result["generation_contract"]
+    assert gc["implementation_style"] == "file_by_file"
+    assert gc["section_style"] == "case_study_playbook"
+    assert gc["source_strictness"] == "high"
+    assert gc["depth_level"] == "intermediate"
+
+# ── Test: Quality Score Alias ────────────────────────────────────────────────
+
+def test_alias_target_quality_score():
+    parsed = {"topic": "T", "audience": "A", "quality_target_score": 85}
+    result = normalize_book_request(parsed, original_prompt="")
+    assert "quality_target_score" not in result
+    assert result["target_quality_score"] == 85
+
+# ── Test: Missing Generation Contract ────────────────────────────────────────
+
+def test_missing_generation_contract():
+    parsed = {"topic": "T", "audience": "A"}
+    result = normalize_book_request(parsed, original_prompt="")
+    assert "generation_contract" in result
+    assert isinstance(result["generation_contract"], dict)
+

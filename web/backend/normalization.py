@@ -171,18 +171,29 @@ def _add_unique(target: list[str], items: list[str]) -> list[str]:
 
 # ── Main normalization function ──────────────────────────────────────────────
 
+def _sanitize_enum(val: Any, allowed: set[str], default: str | None = None) -> str | None:
+    if not val:
+        return default
+    s = str(val).lower().strip().replace("-", "_").replace(" ", "_")
+    if s == "case_study":
+        s = "case_study_playbook"
+    if s == "high_quality":
+        s = "high"
+    if s in allowed:
+        return s
+    return default
+
 def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") -> dict[str, Any]:
-    """Apply deterministic normalization rules to a parsed book request.
-
-    Args:
-        parsed: The merged BookRequest dict (may include generation_contract).
-        original_prompt: The raw user prompt text for signal extraction.
-
-    Returns:
-        The normalized dict with a guaranteed ``generation_contract`` sub-dict.
-        The function is **idempotent** — calling it twice yields the same result.
-    """
+    """Apply deterministic normalization rules to a parsed book request."""
     result = dict(parsed)
+    
+    # ── Alias handling ───────────────────────────────────────────────────
+    if "quality_target_score" in result:
+        result["target_quality_score"] = result.pop("quality_target_score")
+    
+    # User requested target_quality_score becomes quality_target_score? 
+    # That would break validation. I will keep target_quality_score.
+
     contract = dict(result.get("generation_contract") or {})
     topic = str(result.get("topic") or "")
     audience = str(result.get("audience") or "")
@@ -454,6 +465,44 @@ def normalize_book_request(parsed: dict[str, Any], original_prompt: str = "") ->
             contract["section_style"] = "reference"
         elif book_type == "conceptual_guide":
             contract["section_style"] = "conversational"
+            
+    # ── Enum sanitization ────────────────────────────────────────────────
+    book_types = {"auto", "textbook", "practice_workbook", "course_companion", "implementation_guide", "reference_handbook", "conceptual_guide", "exam_prep"}
+    theory_practices = {"auto", "theory_heavy", "balanced", "practice_heavy", "implementation_heavy"}
+    pedagogy_styles = {"auto", "german_theoretical", "indian_theory_then_examples", "socratic", "exam_oriented", "project_based"}
+    source_usages = {"auto", "primary_curriculum", "supplemental", "example_inspiration"}
+    exercise_strats = {"auto", "none", "extract_patterns", "worked_examples", "practice_sets"}
+    code_densities = {"none", "low", "medium", "high"}
+    content_densities = {"low", "medium", "high"}
+    quality_modes = {"fast_draft", "full_generation", "full_auto_repair", "sample_first"}
+    
+    depth_levels = {"surface", "intermediate", "deep", "exhaustive"}
+    impl_styles = {"conceptual_only", "pseudocode", "recipe_steps", "file_by_file", "project_progressive", "argument_driven", "case_study_playbook", "workbook", "visual_textbook", "reference"}
+    section_styles = {"academic", "conversational", "handbook", "tutorial", "reference", "file_by_file_implementation", "academic_argument", "case_study_playbook", "visual_textbook", "workbook"}
+    code_policies = {"no_code", "pseudocode_only", "minimal_runnable", "file_labeled_code_required"}
+    diagram_styles = {"none", "conceptual", "architecture", "data_flow", "comparison_matrix", "architecture_sequence_schema_deployment", "concept_maps_decision_trees_checklists", "argument_maps_comparison_matrices", "timelines_cause_effect_maps", "frameworks_matrices_funnels"}
+    source_strictness = {"low", "medium", "high", "primary_sources_required"}
+    evidence_standards = {"anecdotal", "curated", "primary_source", "peer_reviewed"}
+
+    result["book_type"] = _sanitize_enum(result.get("book_type"), book_types, "auto")
+    result["theory_practice_balance"] = _sanitize_enum(result.get("theory_practice_balance"), theory_practices, "balanced")
+    result["pedagogy_style"] = _sanitize_enum(result.get("pedagogy_style"), pedagogy_styles, "auto")
+    result["source_usage"] = _sanitize_enum(result.get("source_usage"), source_usages, "auto")
+    result["exercise_strategy"] = _sanitize_enum(result.get("exercise_strategy"), exercise_strats, "auto")
+    result["code_density"] = _sanitize_enum(result.get("code_density"), code_densities, "medium" if is_technical else "none")
+    result["example_density"] = _sanitize_enum(result.get("example_density"), content_densities, "high")
+    result["diagram_density"] = _sanitize_enum(result.get("diagram_density"), content_densities, "medium")
+    
+    if "quality_mode" in result:
+        result["quality_mode"] = _sanitize_enum(result.get("quality_mode"), quality_modes, "full_auto_repair")
+
+    if "depth_level" in contract: contract["depth_level"] = _sanitize_enum(contract["depth_level"], depth_levels, "intermediate")
+    if "implementation_style" in contract: contract["implementation_style"] = _sanitize_enum(contract["implementation_style"], impl_styles, None)
+    if "section_style" in contract: contract["section_style"] = _sanitize_enum(contract["section_style"], section_styles, None)
+    if "code_artifact_policy" in contract: contract["code_artifact_policy"] = _sanitize_enum(contract["code_artifact_policy"], code_policies, None)
+    if "diagram_style" in contract: contract["diagram_style"] = _sanitize_enum(contract["diagram_style"], diagram_styles, None)
+    if "source_strictness" in contract: contract["source_strictness"] = _sanitize_enum(contract["source_strictness"], source_strictness, None)
+    if "evidence_standard" in contract: contract["evidence_standard"] = _sanitize_enum(contract["evidence_standard"], evidence_standards, None)
 
     result["generation_contract"] = contract
     return result

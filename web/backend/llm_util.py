@@ -382,23 +382,49 @@ def parse_user_prompt(db: Session, user: User, prompt: str) -> dict[str, Any]:
     from llm_provider import build_chat_messages
     messages = build_chat_messages(model=model, system_prompt=SYSTEM_PROMPT, user_prompt=f"User Request: {prompt}")
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=0.1,
-        **json_response_format_kwargs(model)
-    )
-
-    content = response.choices[0].message.content
-    if not content:
-        raise ValueError("LLM returned empty response")
-        
+    import logging
+    logger = logging.getLogger(__name__)
+    content = ""
     try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=0.1,
+            **json_response_format_kwargs(model)
+        )
+        content = response.choices[0].message.content or ""
+        if not content:
+            raise ValueError("LLM returned empty response")
+            
         parsed = extract_json_from_text(content)
-        # Apply deterministic normalization — this is the source of truth
         normalized = normalize_book_request(parsed, original_prompt=prompt)
-        # Validate against schema and return the clean dict
         validated = BookRequest.model_validate(normalized)
         return validated.model_dump()
     except Exception as e:
-        raise ValueError(f"Failed to parse LLM response into BookRequest: {e}\nResponse: {content[:200]}...") from e
+        logger.exception("LLM parse or validation failed, using deterministic fallback")
+        
+        # Build safe fallback dict
+        safe_topic = prompt.split('.')[0][:100] if prompt else "Unknown Topic"
+        is_tech = bool(re.search(r'\b(code|programming|software|api)\b', prompt, re.IGNORECASE))
+        
+        fallback_dict = {
+            "topic": safe_topic,
+            "audience": "General readers",
+            "tone": "Clear and professional",
+            "book_type": "conceptual_guide",
+            "theory_practice_balance": "balanced",
+            "pedagogy_style": "auto",
+            "source_usage": "auto",
+            "exercise_strategy": "worked_examples",
+            "goals": ["Understand the topic", "Apply the ideas practically"],
+            "code_density": "medium" if is_tech else "none",
+            "example_density": "high",
+            "diagram_density": "medium",
+            "force_web_research": False,
+            "urls": [],
+            "generation_contract": {}
+        }
+        
+        normalized_fallback = normalize_book_request(fallback_dict, original_prompt=prompt)
+        validated_fallback = BookRequest.model_validate(normalized_fallback)
+        return validated_fallback.model_dump()

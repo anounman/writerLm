@@ -20,5 +20,8 @@
     "vite": {
       "rollup": "npm:@rollup/wasm-node@4.60.3"
     }
+  },
+  "dependencies": {
+    "lightningcss": "^1.32.0"
   }
 }

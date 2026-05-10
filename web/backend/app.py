@@ -643,6 +643,9 @@ def list_provider_models(provider: str, user: User = Depends(current_user), db: 
     return _fetch_groq_models(api_key)
 
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ParsePromptRequest(BaseModel):
     prompt: str
 
@@ -653,7 +656,8 @@ def parse_prompt(payload: ParsePromptRequest, user: User = Depends(current_user)
     try:
         return parse_user_prompt(db, user, payload.prompt)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        logger.exception("Failed to parse prompt")
+        raise HTTPException(status_code=400, detail={"detail": str(exc), "message": "Failed to parse prompt. See backend logs for details."}) from exc
 
 
 @app.post("/jobs/quality-estimate")
