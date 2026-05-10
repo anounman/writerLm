@@ -175,6 +175,9 @@ export interface Job {
       repair_passes?: number;
       weak_section_count?: number;
       showcase_ready?: boolean;
+      last_repair_action?: string;
+      last_repair_started_at?: string;
+      last_repair_finished_at?: string;
       pre_run_risk?: {
         risk?: string;
         recommended?: string;
