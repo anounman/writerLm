@@ -1,6 +1,18 @@
 /// <reference types="vite/client" />
 export type ApiKeyProvider = "google" | "groq" | "tavily" | "firecrawl";
-export type JobStatus = "queued" | "running" | "completed" | "completed_with_latex_issue" | "failed" | "stopped";
+export type JobStatus =
+  | "queued"
+  | "running"
+  | "validating"
+  | "repairing"
+  | "completed"
+  | "completed_with_latex_issue"
+  | "completed_with_warnings"
+  | "completed_with_major_issues"
+  | "qa_failed"
+  | "needs_user_review"
+  | "failed"
+  | "stopped";
 
 export interface User {
   id: number;
@@ -85,6 +97,12 @@ export interface BookRequest {
   urls: string[];
   /** Free-form language instruction, e.g. "Explain theory in English, write exam examples in German." */
   language_request?: string | null;
+  target_quality_score: number;
+  max_repair_passes: number;
+  hard_fail_threshold: number;
+  auto_repair: boolean;
+  sample_first: boolean;
+  quality_mode: "fast_draft" | "full_generation" | "full_auto_repair" | "sample_first";
 }
 
 export interface JobStage {
@@ -106,6 +124,26 @@ export interface Job {
   summary: {
     evaluation?: {
       quality_score?: number;
+    };
+    quality?: {
+      score?: number;
+      label?: string;
+      status?: string;
+      target_quality_score?: number;
+      hard_fail_threshold?: number;
+      breakdown?: Record<string, { label: string; score: number }>;
+      top_issues?: string[];
+      expected_final_quality_range?: string;
+      repair_passes?: number;
+      weak_section_count?: number;
+      showcase_ready?: boolean;
+      pre_run_risk?: {
+        risk?: string;
+        recommended?: string;
+        expected_runtime?: string;
+        recommended_quality_mode?: string;
+        factors?: string[];
+      };
     };
     llm_usage?: {
       accounted_total_tokens?: number;
@@ -284,6 +322,20 @@ export class ApiClient {
     });
   }
 
+  qualityEstimate(payload: BookRequest) {
+    return this.request<{
+      risk: string;
+      score: number;
+      factors: string[];
+      recommended: string;
+      expected_runtime: string;
+      recommended_quality_mode: string;
+    }>("/jobs/quality-estimate", {
+      method: "POST",
+      body: JSON.stringify({ request: payload })
+    });
+  }
+
   createJob(payload: BookRequest) {
     return this.request<Job>("/jobs", {
       method: "POST",
@@ -329,6 +381,11 @@ export class ApiClient {
 
   retryJob(id: number) {
     return this.request<Job>(`/jobs/${id}/retry`, { method: "POST" });
+  }
+
+  repairJob(id: number, action: "repair" | "code" | "diagrams" | "sources" | "showcase" = "repair") {
+    const suffix = action === "repair" ? "" : `/${action}`;
+    return this.request<Job>(`/jobs/${id}/repair${suffix}`, { method: "POST", body: JSON.stringify({}) });
   }
 
   jobArtifacts(id: number) {

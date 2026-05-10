@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
+import json
 import time
 
 from notes_synthesizer.llm import GroqStructuredLLM as NotesGroqStructuredLLM
@@ -32,6 +33,9 @@ from orchestration.run_notes_synthesizer import build_tasks_from_research_bundle
 from planner_agent.schemas import BookPlan
 from reviewer.node import LLMClientProtocol
 from writer.llm import GroqStructuredLLM as WriterGroqStructuredLLM
+from quality.book_contract import BookContract
+from quality.control import QualityGateConfig, build_quality_checkpoint
+from quality.repair_loop import run_quality_repair_loop
 
 
 @dataclass
@@ -55,6 +59,9 @@ def run_continuity_section_pipeline(
     writer_llm_factory: Callable[[], WriterGroqStructuredLLM] | None = None,
     reviewer_llm_client_factory: Callable[[], LLMClientProtocol] | None = None,
     config: ParallelSectionPipelineConfig | None = None,
+    book_contract: BookContract | None = None,
+    quality_config: QualityGateConfig | None = None,
+    quality_timeline: list[dict[str, Any]] | None = None,
 ) -> ContinuitySectionPipelineResult:
     config = config or ParallelSectionPipelineConfig.from_env()
     book_state = build_initial_book_state(
@@ -87,6 +94,15 @@ def run_continuity_section_pipeline(
         )
         results.append(result)
         if result.reviewer_task is not None and result.reviewer_task.section_output is not None:
+            if book_contract is not None:
+                _validate_and_repair_section(
+                    result=result,
+                    book_contract=book_contract,
+                    quality_config=quality_config or QualityGateConfig(),
+                    quality_timeline=quality_timeline,
+                    run_dir=run_dir,
+                    stage="sample_section" if order_index == 0 else f"section_{order_index + 1}",
+                )
             book_state = update_book_state_from_reviewed_section(
                 book_state=book_state,
                 section_id=result.section_id,
@@ -122,6 +138,56 @@ def run_continuity_section_pipeline(
         book_state=book_state,
         book_state_path=(run_dir / "book_state.json") if run_dir is not None else None,
     )
+
+
+def _validate_and_repair_section(
+    *,
+    result: SectionPipelineJobResult,
+    book_contract: BookContract,
+    quality_config: QualityGateConfig,
+    quality_timeline: list[dict[str, Any]] | None,
+    run_dir: Path | None,
+    stage: str,
+) -> None:
+    output = result.reviewer_task.section_output if result.reviewer_task else None
+    section_input = result.reviewer_task.section_input if result.reviewer_task else None
+    if output is None:
+        return
+    source_map = {
+        output.section_id: [
+            {"source_id": f"{output.section_id}_fact_{index}", "title": output.section_title, "snippet": fact}
+            for index, fact in enumerate(getattr(section_input, "supporting_facts", []) or [], start=1)
+        ]
+    }
+    repaired_sections, qa_report = run_quality_repair_loop(
+        sections=[{
+            "id": output.section_id,
+            "section": output.section_title,
+            "content": output.reviewed_content,
+            "citations": output.citations_used,
+        }],
+        contract=book_contract,
+        source_map=source_map,
+        max_passes=quality_config.max_repair_passes if quality_config.auto_repair else 1,
+    )
+    if repaired_sections:
+        repaired_content = repaired_sections[0]["content"]
+        if repaired_content != output.reviewed_content:
+            output.reviewed_content = repaired_content
+            output.applied_changes_summary.append("Applied quality-gate repair before continuing generation.")
+    if quality_timeline is not None:
+        checkpoint = build_quality_checkpoint(
+            stage=stage,
+            qa_report=qa_report,
+            action="repair_section" if qa_report.get("repaired_sections") else "continue",
+            config=quality_config,
+        )
+        quality_timeline.append(checkpoint)
+        if run_dir is not None:
+            (run_dir / "quality_timeline.json").write_text(
+                json.dumps(quality_timeline, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
 
 
 def _attach_book_state(task: NotesSynthesizerSectionTask, book_state: BookState) -> NotesSynthesizerSectionTask:

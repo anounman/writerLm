@@ -126,6 +126,10 @@ def run_web_pipeline(
     image_assets_path = run_dir / "image_assets.json"
     book_state_path = run_dir / "book_state.json"
     section_summary_path = run_dir / "section_pipeline_summary.json"
+    quality_timeline_path = run_dir / "quality_timeline.json"
+    repair_history_path = run_dir / "repair_history.json"
+    weak_sections_path = run_dir / "weak_sections.json"
+    showcase_readiness_path = run_dir / "showcase_readiness.json"
     assembly_bundle_path = run_dir / "assembly_bundle.json"
     latex_path = run_dir / "book.tex"
     latex_build_dir = run_dir / "latex_build"
@@ -157,9 +161,29 @@ def run_web_pipeline(
     writer_bundle = None
     review_bundle = None
     section_pipeline_summary: dict[str, Any] = {}
+    quality_timeline: list[dict[str, Any]] = []
+    repair_history: dict[str, Any] = {"passes": []}
 
     if resume_from_dir and not resume_checkpoint:
         raise RuntimeError(f"No resumable checkpoint found in {resume_from_dir}")
+
+    from quality.control import (
+        QualityGateConfig,
+        build_quality_checkpoint,
+        build_repair_history,
+        estimate_quality_risk,
+        qa_score,
+        quality_label,
+        quality_status_for_score,
+        score_breakdown,
+        showcase_readiness,
+        summarize_top_issues,
+        weak_sections,
+    )
+
+    quality_config = QualityGateConfig.from_payload(planner_input)
+    pre_run_risk = estimate_quality_risk(planner_input)
+    progress("pre_run_quality", "completed", details=pre_run_risk)
 
     if resume_checkpoint == "book_tex":
         source_book_plan_path = resume_from_dir / "book_plan.json"
@@ -263,7 +287,13 @@ def run_web_pipeline(
         save_book_plan(book_plan, book_plan_path)
         save_book_plan(book_plan, canonical_book_path)
         research_bundle_payload = research_bundle.model_dump(mode="json")
+        book_contract = classify_book_contract(planner_input, book_plan)
+        validator_activations = select_validators(book_contract)
+        book_contract.activated_validators = [item.name for item in validator_activations]
+        book_contract.validator_rationales = {item.name: item.reason for item in validator_activations}
+        research_bundle_payload["book_contract"] = book_contract.model_dump(mode="json")
         write_json(research_bundle_path, research_bundle_payload)
+        write_json(run_dir / "book_contract.json", book_contract.model_dump(mode="json"))
         progress(
             "planner_research",
             "completed",
@@ -275,6 +305,18 @@ def run_web_pipeline(
                 "errors": len(research_bundle.errors),
             },
         )
+        quality_timeline.append({
+            "stage": "planner_research",
+            "score": None,
+            "label": "Risk estimate",
+            "issues": pre_run_risk["factors"],
+            "repair_recommendations": [pre_run_risk["recommended"]],
+            "continue_generation": True,
+            "automatic_repair_required": quality_config.auto_repair and pre_run_risk["risk"] == "High",
+            "action": "sample_first" if quality_config.sample_first or pre_run_risk["risk"] == "High" else "continue",
+            "risk": pre_run_risk,
+        })
+        write_json(quality_timeline_path, quality_timeline)
 
     if review_bundle is not None:
         section_pipeline_summary = {
@@ -352,6 +394,9 @@ def run_web_pipeline(
             ),
             reviewer_llm_client_factory=build_reviewer_llm_client,
             config=ParallelSectionPipelineConfig(max_workers=1),
+            book_contract=book_contract if "book_contract" in locals() else None,
+            quality_config=quality_config,
+            quality_timeline=quality_timeline,
         )
         section_seconds = round(time.perf_counter() - stage_start, 2)
         stage_timings["continuity_section_pipeline"] = section_seconds
@@ -469,6 +514,44 @@ def run_web_pipeline(
     if notes_bundle is not None and writer_bundle is not None:
         write_json(notes_bundle_path, notes_bundle.model_dump(mode="json"))
         write_json(writer_bundle_path, writer_bundle.model_dump(mode="json"))
+        notes_score = max(
+            0,
+            min(
+                100,
+                82
+                - int(getattr(notes_bundle, "partial_sections", 0) or 0) * 8
+                - int(getattr(notes_bundle, "blocked_sections", 0) or 0) * 20,
+            ),
+        )
+        quality_timeline.append({
+            "stage": "notes_synthesis",
+            "score": notes_score,
+            "label": quality_label(notes_score),
+            "issues": [
+                issue
+                for issue in (
+                    f"{getattr(notes_bundle, 'partial_sections', 0)} sections have partial notes." if getattr(notes_bundle, "partial_sections", 0) else "",
+                    f"{getattr(notes_bundle, 'blocked_sections', 0)} sections have blocked notes." if getattr(notes_bundle, "blocked_sections", 0) else "",
+                )
+                if issue
+            ],
+            "repair_recommendations": ["Regenerate weak sections"] if notes_score < quality_config.target_quality_score else ["Continue"],
+            "continue_generation": notes_score >= quality_config.hard_fail_threshold,
+            "automatic_repair_required": quality_config.auto_repair and notes_score < quality_config.target_quality_score,
+            "action": "continue" if notes_score >= quality_config.target_quality_score else "watch_section_quality",
+        })
+        chapter_score = max(0, min(100, 84 - int(section_pipeline_summary.get("failed_sections") or 0) * 25))
+        quality_timeline.append({
+            "stage": "chapter_completion",
+            "score": chapter_score,
+            "label": quality_label(chapter_score),
+            "issues": list((section_pipeline_summary.get("failure_messages") or {}).values()),
+            "repair_recommendations": ["Regenerate weak sections"] if chapter_score < quality_config.target_quality_score else ["Continue"],
+            "continue_generation": chapter_score >= quality_config.hard_fail_threshold,
+            "automatic_repair_required": quality_config.auto_repair and chapter_score < quality_config.target_quality_score,
+            "action": "repair_sections" if chapter_score < quality_config.target_quality_score else "continue",
+        })
+        write_json(quality_timeline_path, quality_timeline)
     elif notes_bundle is not None or writer_bundle is not None:
         raise RuntimeError("Section pipeline produced an incomplete notes/writer checkpoint.")
     save_review_bundle(review_bundle, review_bundle_path)
@@ -479,6 +562,7 @@ def run_web_pipeline(
         raise RuntimeError(f"Section pipeline failed before assembly: {failed_section_ids}")
 
     progress("quality_checker", "running")
+    progress("repair", "running" if quality_config.auto_repair else "completed", details={"auto_repair": quality_config.auto_repair})
     stage_start = time.perf_counter()
     
     book_contract = None
@@ -494,24 +578,113 @@ def run_web_pipeline(
             research_bundle_payload["book_contract"] = book_contract.model_dump(mode="json")
             write_json(research_bundle_path, research_bundle_payload)
 
+    sample_report = None
+    if review_bundle.sections:
+        progress("sample_validation", "running")
+        sample_result = run_quality_repair_loop(
+            review_bundle=review_bundle.model_copy(update={"sections": review_bundle.sections[:1]}, deep=True),
+            contract=book_contract,
+            max_passes=max(1, quality_config.max_repair_passes if quality_config.auto_repair else 1),
+        )
+        sample_report = sample_result.qa_report
+        sample_checkpoint = build_quality_checkpoint(
+            stage="sample_section",
+            qa_report=sample_report,
+            action="repair_prompt" if qa_score(sample_report) < quality_config.target_quality_score else "continue",
+            config=quality_config,
+        )
+        if not any(item.get("stage") == "sample_section" for item in quality_timeline):
+            quality_timeline.append(sample_checkpoint)
+            write_json(quality_timeline_path, quality_timeline)
+        progress(
+            "sample_validation",
+            "completed",
+            details={
+                "sample_score": qa_score(sample_report),
+                "quality_label": quality_label(qa_score(sample_report)),
+                "action": sample_checkpoint["action"],
+                "top_issues": sample_checkpoint["issues"],
+            },
+        )
+    else:
+        progress("sample_validation", "completed", details={"status": "no sections available"})
+
     repair_result = run_quality_repair_loop(
         review_bundle=review_bundle,
         contract=book_contract,
+        max_passes=max(1, quality_config.max_repair_passes if quality_config.auto_repair else 1),
     )
     review_bundle = repair_result.review_bundle
+    final_score = qa_score(repair_result.qa_report)
+    if final_score < quality_config.target_quality_score and quality_config.auto_repair and quality_config.max_repair_passes > 1:
+        first_report = repair_result.qa_report
+        repair_result = run_quality_repair_loop(
+            review_bundle=review_bundle,
+            contract=book_contract,
+            max_passes=quality_config.max_repair_passes,
+        )
+        review_bundle = repair_result.review_bundle
+        repair_history = build_repair_history(
+            before_report=first_report,
+            after_report=repair_result.qa_report,
+            pass_name="repair_pass_1",
+            action="stronger_repair",
+        )
+    else:
+        repair_history = build_repair_history(
+            before_report=sample_report,
+            after_report=repair_result.qa_report,
+            pass_name="initial_repair",
+            action="repair_book" if quality_config.auto_repair else "validate_only",
+        )
+    final_score = qa_score(repair_result.qa_report)
+    quality_timeline.append(build_quality_checkpoint(
+        stage="final_manuscript",
+        qa_report=repair_result.qa_report,
+        action="continue" if final_score >= quality_config.target_quality_score else "repair_pass_1" if final_score >= quality_config.hard_fail_threshold else "needs_repair",
+        config=quality_config,
+    ))
     stage_timings["quality_checker"] = round(time.perf_counter() - stage_start, 2)
     save_review_bundle(review_bundle, review_bundle_path)
     qa_report_path = run_dir / "qa_report.json"
-    write_json(qa_report_path, repair_result.qa_report)
+    qa_report = {
+        **repair_result.qa_report,
+        "overall_score": final_score,
+        "quality_label": quality_label(final_score),
+        "score_breakdown": score_breakdown(repair_result.qa_report),
+        "top_issues": summarize_top_issues(repair_result.qa_report),
+        "target_quality_score": quality_config.target_quality_score,
+        "hard_fail_threshold": quality_config.hard_fail_threshold,
+    }
+    write_json(qa_report_path, qa_report)
+    write_json(quality_timeline_path, quality_timeline)
+    write_json(repair_history_path, repair_history)
+    weak_section_report = weak_sections(qa_report)
+    write_json(weak_sections_path, {"sections": weak_section_report})
+    showcase_report = showcase_readiness(qa_report, quality_config)
+    write_json(showcase_readiness_path, showcase_report)
     
     progress(
         "quality_checker", 
         "completed", 
         seconds=stage_timings["quality_checker"],
         details={
-            "qa_score": repair_result.qa_report.get("overall_score"),
-            "issues_fixed": repair_result.qa_report.get("issues_fixed", 0)
+            "qa_score": final_score,
+            "quality_label": quality_label(final_score),
+            "top_issues": summarize_top_issues(qa_report),
+            "target_quality_score": quality_config.target_quality_score,
+            "repair_required": final_score < quality_config.target_quality_score,
         }
+    )
+    progress(
+        "repair",
+        "completed",
+        seconds=stage_timings["quality_checker"],
+        details={
+            "passes": len(repair_history.get("passes") or []),
+            "repaired_sections": qa_report.get("repaired_sections", 0),
+            "final_score": final_score,
+        },
     )
 
     progress("image_assets", "running")
@@ -595,15 +768,22 @@ def run_web_pipeline(
     else:
         progress("latex_compile", "completed", details={"status": "disabled"})
 
+    quality_timeline.append({
+        "stage": "final_pdf_assembly",
+        "score": final_score,
+        "label": quality_label(final_score),
+        "issues": summarize_top_issues(qa_report),
+        "action": "continue" if latex_compile_result is None or latex_compile_result.succeeded else "latex_warning",
+    })
+    write_json(quality_timeline_path, quality_timeline)
+
     evaluation = evaluate_latex_book(latex_path)
     write_evaluation_outputs(evaluation, evaluation_json_path, evaluation_md_path)
 
     llm_usage = get_llm_metrics_summary()
-    book_status = (
-        "completed"
-        if latex_compile_result is None or latex_compile_result.succeeded
-        else "completed_with_latex_issue"
-    )
+    book_status = quality_status_for_score(final_score, quality_config)
+    if latex_compile_result is not None and not latex_compile_result.succeeded and book_status == "completed":
+        book_status = "completed_with_warnings"
     artifacts = {
         "book_plan": str(book_plan_path),
         "research_bundle": str(research_bundle_path),
@@ -613,6 +793,11 @@ def run_web_pipeline(
         "image_assets": str(image_assets_path),
         "book_state": str(book_state_path) if book_state_path.exists() else None,
         "section_pipeline_summary": str(section_summary_path),
+        "qa_report": str(qa_report_path),
+        "quality_timeline": str(quality_timeline_path),
+        "repair_history": str(repair_history_path),
+        "weak_sections": str(weak_sections_path),
+        "showcase_readiness": str(showcase_readiness_path),
         "assembly_bundle": str(assembly_bundle_path),
         "latex": str(latex_path),
         "latex_compile_result": str(latex_compile_result_path) if latex_compile_result else None,
@@ -630,6 +815,20 @@ def run_web_pipeline(
             "totals": evaluation["totals"],
             "weak_section_count": evaluation["weak_section_count"],
             "recommendations": evaluation["recommendations"],
+        },
+        "quality": {
+            "score": final_score,
+            "label": quality_label(final_score),
+            "status": book_status,
+            "target_quality_score": quality_config.target_quality_score,
+            "hard_fail_threshold": quality_config.hard_fail_threshold,
+            "breakdown": score_breakdown(qa_report),
+            "top_issues": summarize_top_issues(qa_report),
+            "timeline": quality_timeline,
+            "repair_passes": len(repair_history.get("passes") or []),
+            "weak_section_count": len(weak_section_report),
+            "showcase_ready": showcase_report["ready"],
+            "pre_run_risk": pre_run_risk,
         },
         "latex_compile": latex_compile_result.model_dump() if latex_compile_result else None,
     }

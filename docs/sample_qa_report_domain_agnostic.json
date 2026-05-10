@@ -1,0 +1,57 @@
+{
+  "book_contract": {
+    "domain": "psychology",
+    "book_type": "practical_handbook",
+    "audience_level": "beginner",
+    "evidence_standard": "research_grounded",
+    "risk_level": "high",
+    "freshness_requirement": "high"
+  },
+  "activated_validators": [
+    {
+      "name": "source_grounding",
+      "reason": "Every book needs important claims grounded in the available evidence."
+    },
+    {
+      "name": "claim_evidence",
+      "reason": "Claims are classified and checked by type instead of by domain assumptions."
+    },
+    {
+      "name": "continuity",
+      "reason": "The manuscript must preserve thesis, terminology, examples, and progression."
+    },
+    {
+      "name": "research_method_caution_validator",
+      "reason": "Activated for psychology and social-science style evidence claims."
+    },
+    {
+      "name": "safety_language_validator",
+      "reason": "Activated for health, legal, medical, financial, or safety-sensitive content."
+    },
+    {
+      "name": "procedure_validator",
+      "reason": "Activated for manuals, handbooks, implementation books, and procedural sections."
+    }
+  ],
+  "repaired_sections": 1,
+  "section_reports": [
+    {
+      "section_id": "chapter-1-section-core-idea",
+      "qa_passed": true,
+      "score_dimensions": {
+        "source_grounding": 90,
+        "claim_support": 88,
+        "continuity": 100,
+        "domain_fit": 100,
+        "audience_fit": 100,
+        "pedagogy_fit": 100,
+        "placeholder_absence": 100,
+        "visual_table_usefulness": 100,
+        "factual_risk": 100,
+        "final_polish": 100
+      },
+      "issues": []
+    }
+  ],
+  "qa_passed": true
+}

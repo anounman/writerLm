@@ -31,6 +31,8 @@ from web.backend.schemas import (
     JobOut,
     PipelineConfig,
     ProviderModelOut,
+    QualityEstimateRequest,
+    RepairRequest,
     TokenResponse,
     UserCreate,
     UserLogin,
@@ -67,8 +69,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ACTIVE_JOB_STATUSES = {"queued", "running"}
-TERMINAL_JOB_STATUSES = {"completed", "completed_with_latex_issue", "failed", "stopped"}
+ACTIVE_JOB_STATUSES = {"queued", "running", "validating", "repairing"}
+TERMINAL_JOB_STATUSES = {
+    "completed",
+    "completed_with_latex_issue",
+    "completed_with_warnings",
+    "completed_with_major_issues",
+    "qa_failed",
+    "needs_user_review",
+    "failed",
+    "stopped",
+}
 SUPPORTED_API_KEY_PROVIDERS = {"google", "groq", "tavily", "firecrawl"}
 STALE_PROCESS_MESSAGES = {
     "Job process is no longer running.",
@@ -86,6 +97,11 @@ JOB_ARTIFACT_FILES = {
     "bookplan": "book_plan.json",
     "book_plan": "book_plan.json",
     "telemetry": "telemetry.json",
+    "qa_report": "qa_report.json",
+    "quality_timeline": "quality_timeline.json",
+    "repair_history": "repair_history.json",
+    "weak_sections": "weak_sections.json",
+    "showcase_readiness": "showcase_readiness.json",
 }
 
 
@@ -191,6 +207,152 @@ def _mark_job_failed(db: Session, job: BookJob, message: str) -> BookJob:
     db.commit()
     db.refresh(job)
     return job
+
+
+def _run_repair_action(
+    db: Session,
+    *,
+    user: User,
+    job_id: int,
+    action: str,
+    payload: RepairRequest | None,
+) -> BookJob:
+    from planner_agent.schemas import BookPlan
+    from quality.book_contract import BookContract, classify_book_contract
+    from quality.control import (
+        QualityGateConfig,
+        build_quality_checkpoint,
+        build_repair_history,
+        qa_score,
+        quality_label,
+        quality_status_for_score,
+        score_breakdown,
+        showcase_readiness,
+        summarize_top_issues,
+        weak_sections,
+    )
+    from quality.repair_loop import run_quality_repair_loop
+    from reviewer.io import save_review_bundle
+    from reviewer.schemas import ReviewBundle
+
+    job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found.")
+    if not job.run_dir:
+        raise HTTPException(status_code=400, detail="This job does not have a run directory.")
+    if job.status in {"queued", "running", "validating", "repairing"}:
+        raise HTTPException(status_code=400, detail="Wait for the current generation step to finish before repairing.")
+
+    run_dir = Path(job.run_dir)
+    review_path = run_dir / "review_bundle.json"
+    if not review_path.exists():
+        raise HTTPException(status_code=404, detail="No review bundle is available to repair.")
+
+    old_status = job.status
+    job.status = "repairing"
+    job.current_stage = "repair"
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    try:
+        review_bundle = ReviewBundle.model_validate(json.loads(review_path.read_text(encoding="utf-8")))
+        contract_path = run_dir / "book_contract.json"
+        if contract_path.exists():
+            book_contract = BookContract.model_validate(json.loads(contract_path.read_text(encoding="utf-8")))
+        else:
+            book_plan_path = run_dir / "book_plan.json"
+            book_plan = BookPlan.model_validate(json.loads(book_plan_path.read_text(encoding="utf-8"))) if book_plan_path.exists() else None
+            book_contract = classify_book_contract(job.request_payload or {}, book_plan)
+
+        config_payload = dict(job.request_payload or {})
+        if payload and payload.target_quality_score is not None:
+            config_payload["target_quality_score"] = payload.target_quality_score
+        if payload and payload.max_repair_passes is not None:
+            config_payload["max_repair_passes"] = payload.max_repair_passes
+        config = QualityGateConfig.from_payload(config_payload)
+
+        previous_report = None
+        qa_path = run_dir / "qa_report.json"
+        if qa_path.exists():
+            previous_report = json.loads(qa_path.read_text(encoding="utf-8"))
+
+        result = run_quality_repair_loop(
+            review_bundle=review_bundle,
+            contract=book_contract,
+            max_passes=max(1, config.max_repair_passes),
+        )
+        save_review_bundle(result.review_bundle, review_path)
+        score = qa_score(result.qa_report)
+        qa_report = {
+            **result.qa_report,
+            "overall_score": score,
+            "quality_label": quality_label(score),
+            "score_breakdown": score_breakdown(result.qa_report),
+            "top_issues": summarize_top_issues(result.qa_report),
+            "last_repair_action": action,
+        }
+        qa_path.write_text(json.dumps(qa_report, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        history_path = run_dir / "repair_history.json"
+        history = {"passes": []}
+        if history_path.exists():
+            history = json.loads(history_path.read_text(encoding="utf-8"))
+        next_history = build_repair_history(
+            before_report=previous_report,
+            after_report=qa_report,
+            pass_name=f"{action}_{len(history.get('passes') or []) + 1}",
+            action=action,
+        )
+        history["passes"] = [*(history.get("passes") or []), *next_history["passes"]]
+        history_path.write_text(json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        timeline_path = run_dir / "quality_timeline.json"
+        timeline = []
+        if timeline_path.exists():
+            timeline = json.loads(timeline_path.read_text(encoding="utf-8"))
+        timeline.append(build_quality_checkpoint(stage=action, qa_report=qa_report, action=action, config=config))
+        timeline_path.write_text(json.dumps(timeline, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        weak = weak_sections(qa_report)
+        (run_dir / "weak_sections.json").write_text(json.dumps({"sections": weak}, indent=2, ensure_ascii=False), encoding="utf-8")
+        showcase = showcase_readiness(qa_report, config)
+        (run_dir / "showcase_readiness.json").write_text(json.dumps(showcase, indent=2, ensure_ascii=False), encoding="utf-8")
+
+        next_status = quality_status_for_score(score, config)
+        summary = dict(job.summary or {})
+        summary["quality"] = {
+            **(summary.get("quality") or {}),
+            "score": score,
+            "label": quality_label(score),
+            "status": next_status,
+            "breakdown": score_breakdown(qa_report),
+            "top_issues": summarize_top_issues(qa_report),
+            "repair_passes": len(history.get("passes") or []),
+            "weak_section_count": len(weak),
+            "showcase_ready": showcase["ready"],
+            "last_repair_action": action,
+        }
+        job.status = next_status
+        job.current_stage = "completed"
+        job.summary = summary
+        job.error_message = None if next_status != old_status else job.error_message
+        if job.book is not None:
+            job.book.status = next_status
+            job.book.summary_metrics = summary
+            db.add(job.book)
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        return job
+    except Exception as exc:
+        job.status = old_status
+        job.current_stage = "completed"
+        job.error_message = f"Repair failed: {exc}"
+        db.add(job)
+        db.commit()
+        db.refresh(job)
+        raise HTTPException(status_code=500, detail=job.error_message) from exc
 
 
 def _has_running_stage(job: BookJob) -> bool:
@@ -494,6 +656,14 @@ def parse_prompt(payload: ParsePromptRequest, user: User = Depends(current_user)
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/jobs/quality-estimate")
+def estimate_job_quality(payload: QualityEstimateRequest, user: User = Depends(current_user)) -> dict:
+    from quality.control import estimate_quality_risk
+    from web.backend.pipeline_jobs import _book_request_to_planner_input
+
+    return estimate_quality_risk(_book_request_to_planner_input(payload.request))
+
+
 @app.post("/jobs", response_model=JobOut)
 def create_job(payload: BookRequest, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
     try:
@@ -576,8 +746,8 @@ def retry_job(job_id: int, user: User = Depends(current_user), db: Session = Dep
     source_job = db.query(BookJob).filter(BookJob.user_id == user.id, BookJob.id == job_id).first()
     if source_job is None:
         raise HTTPException(status_code=404, detail="Job not found.")
-    if source_job.status not in {"failed", "stopped", "completed_with_latex_issue"}:
-        raise HTTPException(status_code=400, detail="Only failed, stopped, or LaTeX-issue jobs can be retried.")
+    if source_job.status not in {"failed", "stopped", "completed_with_latex_issue", "qa_failed", "needs_user_review", "completed_with_major_issues", "completed_with_warnings"}:
+        raise HTTPException(status_code=400, detail="Only failed, stopped, warning, or quality-issue jobs can be retried.")
     try:
         return launch_retry_job(db, user=user, source_job=source_job)
     except ValueError as exc:
@@ -593,6 +763,31 @@ def stop_job(job_id: int, user: User = Depends(current_user), db: Session = Depe
         return job
     _stop_process(job.process_id)
     return _mark_job_stopped(db, job, "Job was stopped by the user.")
+
+
+@app.post("/jobs/{job_id}/repair", response_model=JobOut)
+def repair_job(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    return _run_repair_action(db, user=user, job_id=job_id, action="repair_book", payload=payload)
+
+
+@app.post("/jobs/{job_id}/repair/code", response_model=JobOut)
+def repair_job_code(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    return _run_repair_action(db, user=user, job_id=job_id, action="fix_code_blocks", payload=payload)
+
+
+@app.post("/jobs/{job_id}/repair/diagrams", response_model=JobOut)
+def repair_job_diagrams(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    return _run_repair_action(db, user=user, job_id=job_id, action="improve_diagrams", payload=payload)
+
+
+@app.post("/jobs/{job_id}/repair/sources", response_model=JobOut)
+def repair_job_sources(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    return _run_repair_action(db, user=user, job_id=job_id, action="strengthen_sources", payload=payload)
+
+
+@app.post("/jobs/{job_id}/repair/showcase", response_model=JobOut)
+def repair_job_showcase(job_id: int, payload: RepairRequest | None = None, user: User = Depends(current_user), db: Session = Depends(get_db)) -> BookJob:
+    return _run_repair_action(db, user=user, job_id=job_id, action="polish_showcase", payload=payload)
 
 
 @app.get("/jobs/{job_id}/artifacts", response_model=list[JobArtifactOut])

@@ -35,10 +35,10 @@ const stagger: Variants = {
 };
 
 const pipeline = [
-  { label: "Planner", detail: "Book plan, pedagogy, scope", icon: Brain },
+  { label: "Planner", detail: "Book plan, audience, scope", icon: Brain },
   { label: "Researcher", detail: "PDF + web evidence bundles", icon: Search },
   { label: "Notes", detail: "Section-ready briefs", icon: Database },
-  { label: "Writer", detail: "Long-form LaTeX drafts", icon: PenTool },
+  { label: "Writer", detail: "Long-form manuscript drafts", icon: PenTool },
   { label: "Reviewer", detail: "Quality checks and repairs", icon: ShieldCheck },
   { label: "Compiler", detail: "Typeset PDF output", icon: FileCheck2 },
 ];
@@ -51,10 +51,10 @@ const featureCards = [
     meta: "PDF · URL · Web",
   },
   {
-    title: "Control the pedagogy",
-    body: "Tune book type, theory/practice balance, code density, language, diagrams, and exercise strategy.",
+    title: "Control the book shape",
+    body: "Tune book type, audience, theory/practice balance, language, diagrams, examples, and exercise strategy.",
     icon: Layers,
-    meta: "Curriculum aware",
+    meta: "Genre aware",
   },
   {
     title: "Keep model routing flexible",
@@ -77,7 +77,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
         initial={{ y: -18, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.35 }}
-        className="fixed top-4 left-4 right-4 z-50 h-14 rounded-lg border border-border bg-background/90 backdrop-blur-md shadow-sm"
+        className="relative z-10 mx-3 mt-3 sm:mx-4 sm:mt-4 h-14 rounded-lg border border-border bg-background/90 backdrop-blur-md shadow-sm"
       >
         <div className="h-full max-w-7xl mx-auto flex items-center justify-between px-4 sm:px-5">
           <div className="flex items-center gap-2.5">
@@ -99,10 +99,10 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
       </motion.header>
 
       <main>
-        <section className="relative min-h-[92vh] px-4 sm:px-6 pt-28 pb-10 flex items-center overflow-hidden border-b border-border">
+        <section className="relative min-h-[calc(92vh-4.5rem)] px-4 sm:px-6 pt-14 sm:pt-16 pb-12 sm:pb-16 flex items-center overflow-hidden border-b border-border">
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute inset-0 bg-background" />
-            <div className="absolute left-1/2 top-20 w-[980px] max-w-[150vw] -translate-x-1/2 opacity-[0.14] dark:opacity-[0.18]">
+            <div className="absolute left-1/2 top-24 sm:top-20 w-[760px] sm:w-[980px] xl:w-[1180px] max-w-[170vw] sm:max-w-[130vw] -translate-x-1/2 opacity-[0.10] sm:opacity-[0.14] dark:opacity-[0.18]">
               <div className="rounded-lg border border-border bg-card shadow-2xl overflow-hidden rotate-[-2deg]">
                 <div className="h-9 border-b border-border bg-secondary/80 flex items-center justify-between px-4">
                   <div className="flex items-center gap-1.5">
@@ -114,7 +114,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
                 </div>
                 <iframe
                   src="/sample_book.pdf#toolbar=0&navpanes=0&scrollbar=0"
-                  className="w-full h-[620px] bg-white border-0"
+                  className="w-full h-[460px] sm:h-[620px] xl:h-[720px] bg-white border-0"
                   title="Sample generated WriterLM book preview"
                 />
               </div>
@@ -126,44 +126,44 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
             variants={stagger}
             initial="hidden"
             animate="visible"
-            className="relative z-10 max-w-5xl mx-auto text-center"
+            className="relative z-10 w-full max-w-6xl mx-auto text-center"
           >
-            <motion.div variants={fadeUp} className="inline-flex items-center gap-2 border border-border bg-background/85 text-muted-foreground text-xs font-medium px-3 py-1.5 rounded-full mb-6">
+            <motion.div variants={fadeUp} className="inline-flex max-w-full items-center gap-2 border border-border bg-background/85 text-muted-foreground text-xs font-medium px-3 py-1.5 rounded-full mb-6">
               <Sparkles size={12} className="text-emerald-500" />
-              <span>AI book generation with research, review, and PDF compilation</span>
+              <span className="truncate sm:whitespace-normal">AI book generation with research, review, and PDF compilation</span>
             </motion.div>
 
-            <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl md:text-[5.75rem] font-bold tracking-tight leading-[0.92] mb-7">
+            <motion.h1 variants={fadeUp} className="text-5xl sm:text-6xl md:text-[5.75rem] xl:text-[7rem] font-bold tracking-tight leading-[0.92] mb-7">
               WriterLM
             </motion.h1>
 
-            <motion.p variants={fadeUp} className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight max-w-3xl mx-auto mb-5 leading-tight">
-              Turn prompts, PDFs, and web sources into publish-ready technical books.
+            <motion.p variants={fadeUp} className="text-xl sm:text-2xl md:text-3xl xl:text-4xl font-semibold tracking-tight max-w-4xl mx-auto mb-5 leading-tight">
+              Turn prompts, PDFs, and web sources into publish-ready books of any kind.
             </motion.p>
 
-            <motion.p variants={fadeUp} className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-              A local-first studio for long-form AI publishing: plan the curriculum, research every section, draft with controllable models, review quality, and compile the finished book to LaTeX/PDF.
+            <motion.p variants={fadeUp} className="text-sm sm:text-base xl:text-lg text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
+              A local-first studio for long-form AI publishing: plan the structure, research every section, draft with controllable models, review quality, and compile the finished book to LaTeX/PDF.
             </motion.p>
 
-            <motion.div variants={fadeUp} className="flex items-center justify-center gap-3 flex-wrap mb-9">
+            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 mb-9">
               <SignUpButton mode="modal">
-                <Button size="lg" className="h-11 px-6 text-sm font-semibold shadow-lg shadow-emerald-500/10">
+                <Button size="lg" className="h-11 px-6 text-sm font-semibold shadow-lg shadow-emerald-500/10 w-full sm:w-auto">
                   Start a book <ChevronRight size={15} className="ml-1" />
                 </Button>
               </SignUpButton>
               <Button
                 variant="outline"
                 size="lg"
-                className="h-11 px-6 text-sm font-semibold border-border bg-background/80 hover:bg-secondary"
+                className="h-11 px-6 text-sm font-semibold border-border bg-background/80 hover:bg-secondary w-full sm:w-auto"
                 onClick={() => window.open("https://github.com/anounman/writerLm", "_blank")}
               >
                 <Github size={15} className="mr-2" /> View source
               </Button>
             </motion.div>
 
-            <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-3xl mx-auto">
+            <motion.div variants={fadeUp} className="grid grid-cols-2 md:grid-cols-4 gap-2 max-w-4xl mx-auto">
               {[
-                ["46", "section books"],
+                ["Any", "book category"],
                 ["PDF", "final export"],
                 ["5", "LLM stages"],
                 ["Local", "Docker stack"],
@@ -177,7 +177,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
           </motion.div>
         </section>
 
-        <section className="px-4 sm:px-6 py-14 border-b border-border bg-secondary/20">
+        <section className="px-4 sm:px-6 py-14 lg:py-18 border-b border-border bg-secondary/20">
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
               <div>
@@ -189,7 +189,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               {pipeline.map((stage, index) => (
                 <motion.div
                   key={stage.label}
@@ -197,7 +197,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ duration: 0.35, delay: index * 0.04 }}
-                  className="rounded-lg border border-border bg-card p-4"
+                  className="rounded-lg border border-border bg-card p-4 min-h-[138px]"
                 >
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="w-8 h-8 rounded-md bg-secondary flex items-center justify-center">
@@ -213,7 +213,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-14 sm:py-20">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -224,7 +224,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Output Preview</p>
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-4">Books that look finished, not dumped.</h2>
               <p className="text-sm text-muted-foreground leading-relaxed mb-6">
-                The pipeline assembles sections into a structured manuscript and compiles a typeset PDF with a generated title, citations, diagrams, exercises, and stage artifacts.
+                The pipeline assembles sections into a structured manuscript and compiles a typeset PDF with a generated title, citations, diagrams, examples, exercises, and stage artifacts.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {["LaTeX manuscript", "PDF artifact", "Research bundle", "Review bundle"].map(item => (
@@ -249,7 +249,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
                 </div>
                 <span className="text-[10px] font-medium uppercase tracking-widest text-emerald-500">Compiled</span>
               </div>
-              <div className="h-[520px] bg-white">
+              <div className="h-[320px] sm:h-[440px] lg:h-[520px] bg-white">
                 <iframe
                   src="/sample_book.pdf#toolbar=0&navpanes=0&scrollbar=0"
                   className="w-full h-full border-0"
@@ -260,7 +260,7 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
           </div>
         </section>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-20">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-14 sm:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {featureCards.map((feature, index) => (
               <motion.div
@@ -312,12 +312,12 @@ export function LandingPage({ theme, onTheme }: LandingPageProps) {
           initial={{ opacity: 0, y: 18 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
-          className="py-20 px-4 sm:px-6 text-center"
+          className="py-16 sm:py-20 px-4 sm:px-6 text-center"
         >
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Start</p>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-5">Generate your first technical book.</h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto leading-relaxed">
-            Sign in, save your provider keys, and run the book pipeline locally or through your deployed studio.
+          <h2 className="text-3xl md:text-4xl xl:text-5xl font-bold tracking-tight mb-5">Generate your first book.</h2>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+            Sign in, save your provider keys, and run the book pipeline for textbooks, workbooks, guides, handbooks, or any structured long-form project.
           </p>
           <SignUpButton mode="modal">
             <Button size="lg" className="h-12 px-8 font-semibold shadow-lg shadow-emerald-500/10">

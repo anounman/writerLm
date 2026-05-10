@@ -205,6 +205,12 @@ def _book_request_to_planner_input(request: BookRequest, *, user_pdf_dir: Path |
         },
         "force_web_research": request.force_web_research,
         "urls": request.urls,
+        "target_quality_score": request.target_quality_score,
+        "max_repair_passes": request.max_repair_passes,
+        "hard_fail_threshold": request.hard_fail_threshold,
+        "auto_repair": request.auto_repair,
+        "sample_first": request.sample_first or request.quality_mode == "sample_first",
+        "quality_mode": request.quality_mode,
     }
     if request.language_request:
         payload["language_request"] = request.language_request
@@ -262,6 +268,11 @@ def _build_job_environment(
             "WRITERLM_IMAGE_MODEL": config["image_generation_model"],
             "WRITERLM_MAX_IMAGE_ASSETS": str(config["max_image_assets"]),
             "WRITERLM_STRICT_FULL_QA": "1",
+            "WRITERLM_TARGET_QUALITY_SCORE": str(request.target_quality_score if request else 75),
+            "WRITERLM_MAX_REPAIR_PASSES": str(request.max_repair_passes if request else 2),
+            "WRITERLM_HARD_FAIL_THRESHOLD": str(request.hard_fail_threshold if request else 45),
+            "WRITERLM_AUTO_REPAIR": _bool_env(request.auto_repair if request else True),
+            "WRITERLM_SAMPLE_FIRST": _bool_env((request.sample_first or request.quality_mode == "sample_first") if request else False),
         }
     )
 
@@ -345,9 +356,13 @@ def _initial_stages() -> dict:
         }
         for name, label in [
             ("planner_research", "Planner + Researcher"),
+            ("pre_run_quality", "Pre-run Quality Estimate"),
+            ("sample_validation", "Sample Validation"),
             ("notes_synthesis", "Notes Synthesis"),
             ("writer", "Writer"),
             ("reviewer", "Reviewer"),
+            ("quality_checker", "Quality Checker"),
+            ("repair", "Repair"),
             ("image_assets", "Image Assets"),
             ("assembler", "Assembler"),
             ("latex_compile", "LaTeX Compiler"),

@@ -65,8 +65,16 @@ def _stage_update(
     stages[stage] = entry
     job.stages = stages
     job.current_stage = stage
-    if status in {"running", "completed"} and (
-        job.status in {"queued", "running"}
+    if status == "running" and stage == "quality_checker":
+        job.status = "validating"
+        job.error_message = None
+        job.completed_at = None
+    elif status == "running" and stage == "repair":
+        job.status = "repairing"
+        job.error_message = None
+        job.completed_at = None
+    elif status in {"running", "completed"} and (
+        job.status in {"queued", "running", "validating", "repairing"}
         or job.error_message in STALE_PROCESS_MESSAGES
     ):
         job.status = "running"

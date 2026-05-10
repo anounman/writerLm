@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { RefreshCw, X, Check, Timer, Activity, AlertTriangle, Download, FileJson, FileText, Clock3, Gauge, Layers3, CircleDot } from "lucide-react";
+import { RefreshCw, X, Check, Timer, Activity, AlertTriangle, Download, FileJson, FileText, Clock3, Gauge, Layers3, CircleDot, Wrench, Sparkles, Code2, Image, BookOpenCheck, ShieldCheck, FileDown } from "lucide-react";
 import { Button } from "@writerlm/ui";
 import { ApiClient, Job, JobArtifact, JobStatus, friendlyApiErrorMessage } from "../api";
 
@@ -13,7 +13,7 @@ interface ProgressPageProps {
   onNotice: (message: string) => void;
 }
 
-const STAGE_ORDER = ["planner_research", "notes_synthesis", "writer", "reviewer", "quality_checker", "image_assets", "assembler", "latex_compile"];
+const STAGE_ORDER = ["pre_run_quality", "planner_research", "sample_validation", "notes_synthesis", "writer", "reviewer", "quality_checker", "repair", "image_assets", "assembler", "latex_compile"];
 
 function effectiveStatus(job: Job): JobStatus {
   const stages = Object.values(job.stages || {});
@@ -25,7 +25,13 @@ function effectiveStatus(job: Job): JobStatus {
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, string> = {
     running: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    validating: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    repairing: "bg-purple-500/10 text-purple-300 border-purple-500/20",
     completed: "bg-success/10 text-success border-success/20",
+    completed_with_warnings: "bg-yellow-500/10 text-yellow-300 border-yellow-500/20",
+    completed_with_major_issues: "bg-red-500/10 text-red-300 border-red-500/20",
+    qa_failed: "bg-red-500/10 text-red-300 border-red-500/20",
+    needs_user_review: "bg-orange-500/10 text-orange-300 border-orange-500/20",
     failed: "bg-red-500/10 text-red-400 border-red-500/20",
     stopped: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
     queued: "bg-muted text-muted-foreground border-border",
@@ -33,7 +39,13 @@ function StatusBadge({ status }: { status: string }) {
   };
   const dot: Record<string, string> = {
     running: "bg-blue-500 animate-pulse",
+    validating: "bg-sky-500 animate-pulse",
+    repairing: "bg-purple-500 animate-pulse",
     completed: "bg-success",
+    completed_with_warnings: "bg-yellow-500",
+    completed_with_major_issues: "bg-red-500",
+    qa_failed: "bg-red-500",
+    needs_user_review: "bg-orange-500",
     failed: "bg-red-500",
     stopped: "bg-yellow-500",
     queued: "bg-muted-foreground",
@@ -111,7 +123,7 @@ function getProgressSummary(job: Job | null, status: JobStatus | null) {
   const failed = orderedStages.filter(([, stage]) => stage?.status === "failed").length;
   const running = orderedStages.find(([, stage]) => stage?.status === "running");
   const active = running?.[1] || orderedStages.find(([, stage]) => stage?.status === "failed")?.[1] || orderedStages.find(([, stage]) => stage?.status === "stopped")?.[1];
-  const terminalComplete = status === "completed" || status === "completed_with_latex_issue";
+  const terminalComplete = ["completed", "completed_with_latex_issue", "completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review"].includes(status ?? "");
   const percent = terminalComplete ? 100 : Math.min(100, Math.round(((completed + (running ? 0.45 : 0)) / total) * 100));
   return {
     completed,
@@ -191,6 +203,7 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
   const status = selectedJob ? effectiveStatus(selectedJob) : null;
   const canStop = status === "running" || status === "queued";
   const canRetry = selectedJob && ["failed", "stopped", "completed_with_latex_issue"].includes(status ?? "");
+  const canRepair = selectedJob && ["completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review", "completed"].includes(status ?? "");
   const hasError = selectedJob?.error_message && status !== "running" && status !== "queued";
   const friendlyError = categorizeError(selectedJob?.error_message);
   const progressSummary = getProgressSummary(selectedJob, status);
@@ -228,6 +241,15 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
       onSelect(r.id);
       onNotice(`Retry job #${r.id} started.`);
     } catch (e) { onNotice(friendlyApiErrorMessage(e, "Could not retry job.")); }
+  }
+
+  async function repair(action: "repair" | "code" | "diagrams" | "sources" | "showcase") {
+    if (!selectedJob) return;
+    try {
+      const updated = await api.repairJob(selectedJob.id, action);
+      onJobs(prev => prev.map(j => j.id === updated.id ? updated : j));
+      onNotice(`Repair action queued for job #${updated.id}: ${action.replaceAll("_", " ")}.`);
+    } catch (e) { onNotice(friendlyApiErrorMessage(e, "Could not run repair.")); }
   }
 
   async function downloadArtifact(artifact: JobArtifact) {
@@ -327,6 +349,82 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
                 </div>
               </div>
 
+              {/* Quality control */}
+              <div className="rounded-lg border border-border bg-card p-4 sm:p-5 mb-5">
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-1">
+                      <ShieldCheck size={13} />
+                      <span>Quality control</span>
+                    </div>
+                    <p className="text-xl font-semibold text-foreground tracking-tight">
+                      {selectedJob.summary?.quality?.score != null
+                        ? `${selectedJob.summary.quality.score}/100 — ${selectedJob.summary.quality.label}`
+                        : selectedJob.summary?.evaluation?.quality_score != null
+                          ? `${selectedJob.summary.evaluation.quality_score}/100`
+                          : "Quality check pending"}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {status === "repairing"
+                        ? `Repair pass ${selectedJob.summary?.quality?.repair_passes ?? 0}: fixing weak sections`
+                        : selectedJob.summary?.quality?.pre_run_risk?.risk
+                          ? `Estimated risk: ${selectedJob.summary.quality.pre_run_risk.risk}. Recommended: ${selectedJob.summary.quality.pre_run_risk.recommended}.`
+                          : "Live estimates appear as checkpoints finish."}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 md:w-[420px]">
+                    {[
+                      { label: "Gate", value: selectedJob.stages?.quality_checker?.status === "running" ? "validating" : selectedJob.current_stage || "queued" },
+                      { label: "Repairs", value: String(selectedJob.summary?.quality?.repair_passes ?? 0) },
+                      { label: "Target", value: selectedJob.summary?.quality?.target_quality_score ? `${selectedJob.summary.quality.target_quality_score}+` : "75+" },
+                    ].map(item => (
+                      <div key={item.label} className="rounded-md border border-border bg-secondary/35 p-3 min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{item.label}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {selectedJob.summary?.quality?.top_issues?.length ? (
+                  <div className="mt-4 rounded-md border border-border bg-secondary/40 p-3">
+                    <p className="text-xs font-semibold text-foreground mb-2">Quality is low because:</p>
+                    <ol className="space-y-1 text-xs text-muted-foreground list-decimal list-inside">
+                      {selectedJob.summary.quality.top_issues.slice(0, 5).map((issue, index) => <li key={`${issue}-${index}`}>{issue}</li>)}
+                    </ol>
+                  </div>
+                ) : null}
+                {selectedJob.summary?.quality?.breakdown && (
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {Object.entries(selectedJob.summary.quality.breakdown).map(([key, item]) => (
+                      <div key={key} className="rounded-md border border-border bg-background/30 p-2">
+                        <p className="text-[10px] text-muted-foreground truncate">{item.label}</p>
+                        <p className="text-sm font-semibold text-foreground">{item.score}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {canRepair && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {[
+                      { label: "Repair book", action: "repair", icon: Wrench },
+                      { label: "Polish for showcase", action: "showcase", icon: Sparkles },
+                      { label: "Regenerate weak sections", action: "repair", icon: RefreshCw },
+                      { label: "Remove code examples", action: "code", icon: X },
+                      { label: "Improve diagrams", action: "diagrams", icon: Image },
+                      { label: "Strengthen sources", action: "sources", icon: BookOpenCheck },
+                      { label: "Fix code blocks", action: "code", icon: Code2 },
+                    ].map(item => (
+                      <Button key={item.label} variant="secondary" size="sm" onClick={() => repair(item.action as any)}>
+                        <item.icon size={13} /> {item.label}
+                      </Button>
+                    ))}
+                    <Button variant="ghost" size="sm" onClick={() => onNotice("Export is allowed; use the generated book download from Books once the artifact is available.")}>
+                      <FileDown size={13} /> Export anyway
+                    </Button>
+                  </div>
+                )}
+              </div>
+
               {/* Error */}
               {hasError && (
                 <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 mb-5">
@@ -349,7 +447,7 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
                 </div>
               )}
 
-              {["failed", "stopped", "completed_with_latex_issue"].includes(status ?? "") && (
+              {["failed", "stopped", "completed_with_latex_issue", "completed_with_warnings", "completed_with_major_issues", "qa_failed", "needs_user_review"].includes(status ?? "") && (
                 <div className="rounded-lg border border-border bg-card p-4 mb-5">
                   <div className="flex items-center justify-between gap-3 mb-3">
                     <div>
@@ -388,8 +486,9 @@ export function ProgressPage({ api, jobs, selectedJob, onSelect, onJobs, onNotic
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                 {[
                   { label: "Quality score", value: selectedJob.summary?.evaluation?.quality_score ? `${selectedJob.summary.evaluation.quality_score}/100` : "—" },
+                  { label: "Quality label", value: selectedJob.summary?.quality?.label || "—" },
                   { label: "Tokens used", value: selectedJob.summary?.llm_usage?.accounted_total_tokens ? `${(selectedJob.summary.llm_usage.accounted_total_tokens / 1000).toFixed(1)}k` : "—" },
-                  { label: "Failed stages", value: progressSummary.failed ? String(progressSummary.failed) : "—" },
+                  { label: "Weak sections", value: selectedJob.summary?.quality?.weak_section_count != null ? String(selectedJob.summary.quality.weak_section_count) : progressSummary.failed ? String(progressSummary.failed) : "—" },
                 ].map(m => (
                   <div key={m.label} className="rounded-lg border border-border bg-card p-4">
                     <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">{m.label}</p>

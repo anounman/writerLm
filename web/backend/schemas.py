@@ -136,6 +136,42 @@ class BookRequest(BaseModel):
             "'Bilingual: English explanations, German technical terms and exam answers.'"
         ),
     )
+    target_quality_score: int = Field(
+        default=75,
+        ge=0,
+        le=100,
+        description="Minimum target score before the job can be marked as cleanly completed.",
+    )
+    max_repair_passes: int = Field(
+        default=2,
+        ge=0,
+        le=5,
+        description="Maximum automatic quality repair passes before final status is chosen.",
+    )
+    hard_fail_threshold: int = Field(
+        default=45,
+        ge=0,
+        le=100,
+        description="Scores below this threshold are major quality issues, not plain completion.",
+    )
+    auto_repair: bool = Field(
+        default=True,
+        description="Automatically repair low-quality output before final assembly/completion.",
+    )
+    sample_first: bool = Field(
+        default=False,
+        description="Validate an early sample section before generating or accepting a full manuscript.",
+    )
+    quality_mode: Literal["fast_draft", "full_generation", "full_auto_repair", "sample_first"] = "full_auto_repair"
+
+
+class QualityEstimateRequest(BaseModel):
+    request: BookRequest
+
+
+class RepairRequest(BaseModel):
+    target_quality_score: int | None = Field(default=None, ge=0, le=100)
+    max_repair_passes: int | None = Field(default=None, ge=0, le=5)
 
 
 class JobOut(BaseModel):

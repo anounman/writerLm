@@ -16,6 +16,8 @@ const defaultBookRequest: BookRequest = {
   project_based: false, running_project_description: null, code_density: "none",
   example_density: "high", diagram_density: "medium", max_section_words: 900,
   force_web_research: true, language_request: null, urls: [],
+  target_quality_score: 75, max_repair_passes: 2, hard_fail_threshold: 45,
+  auto_repair: true, sample_first: false, quality_mode: "full_auto_repair",
 };
 
 const CODE_DENSITY_OPTIONS = [
@@ -34,6 +36,7 @@ export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
   const [submitting, setSubmitting] = useState(false);
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [qualityEstimate, setQualityEstimate] = useState<any>(null);
   const promptFileRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -67,6 +70,16 @@ export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
     } catch (err) {
       onNotice(friendlyApiErrorMessage(err, "Could not start job."));
     } finally { setSubmitting(false); }
+  }
+
+  async function refreshQualityEstimate(nextRequest = request) {
+    try {
+      const finalReq = { ...nextRequest, force_web_research: webResearchActive, goals: goalText.split("\n").map(s => s.trim()).filter(Boolean) };
+      if (!finalReq.topic.trim() || !finalReq.audience.trim()) return;
+      setQualityEstimate(await api.qualityEstimate(finalReq));
+    } catch {
+      setQualityEstimate(null);
+    }
   }
 
   const addFiles = (fl: FileList | File[]) => {
@@ -379,6 +392,69 @@ export function CreatePage({ api, onCreated, onNotice }: CreatePageProps) {
                   <label className="text-xs font-medium text-muted-foreground block mb-1.5">Max section words</label>
                   <Input type="number" min={100} max={3000} step={100} value={request.max_section_words ?? ""} onChange={e => setRequest(r => ({ ...r, max_section_words: parseInt(e.target.value) || 900 }))} className="text-xs" />
                 </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-5">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Quality Control</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground block mb-1.5">Quality mode</label>
+                  <select
+                    className="w-full h-8 bg-input border border-input text-foreground rounded-md px-3 text-xs focus:ring-1 focus:ring-ring outline-none"
+                    value={request.quality_mode}
+                    onChange={e => {
+                      const mode = e.target.value as BookRequest["quality_mode"];
+                      setRequest(r => ({
+                        ...r,
+                        quality_mode: mode,
+                        sample_first: mode === "sample_first",
+                        auto_repair: mode === "full_auto_repair" || mode === "sample_first",
+                      }));
+                    }}
+                  >
+                    <option value="fast_draft">Fast draft</option>
+                    <option value="full_generation">Full generation</option>
+                    <option value="full_auto_repair">Full generation + auto-repair</option>
+                    <option value="sample_first">Generate sample first</option>
+                  </select>
+                </div>
+                <label className="flex items-center justify-between cursor-pointer group">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Auto-repair</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Repair low scores before final assembly.</p>
+                  </div>
+                  <input type="checkbox" checked={request.auto_repair} onChange={e => setRequest(r => ({ ...r, auto_repair: e.target.checked }))} className="accent-foreground" />
+                </label>
+                <label className="flex items-center justify-between cursor-pointer group">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Sample first</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Validate direction before committing to the full book.</p>
+                  </div>
+                  <input type="checkbox" checked={request.sample_first} onChange={e => setRequest(r => ({ ...r, sample_first: e.target.checked, quality_mode: e.target.checked ? "sample_first" : r.quality_mode }))} className="accent-foreground" />
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Target score</label>
+                    <Input type="number" min={0} max={100} value={request.target_quality_score} onChange={e => setRequest(r => ({ ...r, target_quality_score: parseInt(e.target.value) || 75 }))} className="text-xs" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground block mb-1.5">Repair passes</label>
+                    <Input type="number" min={0} max={5} value={request.max_repair_passes} onChange={e => setRequest(r => ({ ...r, max_repair_passes: parseInt(e.target.value) || 2 }))} className="text-xs" />
+                  </div>
+                </div>
+                <Button type="button" variant="secondary" size="sm" className="w-full" onClick={() => refreshQualityEstimate()}>
+                  Estimate quality risk
+                </Button>
+                {qualityEstimate && (
+                  <div className="rounded-md border border-border bg-secondary/40 p-3">
+                    <p className="text-xs font-semibold text-foreground">Estimated risk: {qualityEstimate.risk}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Recommended: {qualityEstimate.recommended}</p>
+                    <p className="text-[11px] text-muted-foreground">Expected runtime: {qualityEstimate.expected_runtime}</p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>
