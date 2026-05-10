@@ -57,9 +57,9 @@ class ContentDensityTargets(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    code_density: Literal["high", "medium", "low"] = Field(
+    code_density: Literal["high", "medium", "low", "none"] = Field(
         default="low",
-        description="How much programming/code should appear. 'high' = code in every section, 'medium' = most sections, 'low' = only when the subject requires it.",
+        description="How much programming/code should appear. 'high' = code in every section, 'medium' = most sections, 'low' = only when the subject requires it, 'none' = no code at all.",
     )
     example_density: Literal["high", "medium", "low"] = Field(
         default="high",
